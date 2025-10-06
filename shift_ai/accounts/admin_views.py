@@ -1,6 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, authenticate
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
@@ -11,23 +10,87 @@ from .models import Store, Staff, StaffRequirement
 from .forms import StoreForm, StaffForm, StaffRequirementForm, UserRegistrationForm
 
 
+def admin_required(view_func):
+    """管理者権限が必要なデコレータ"""
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        
+        try:
+            staff = request.user.staff
+            if not staff.is_manager:
+                messages.error(request, "管理者権限が必要です。")
+                return redirect('staff:dashboard')
+        except Staff.DoesNotExist:
+            messages.error(request, "スタッフ情報が見つかりません。")
+            return redirect('login')
+        
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
 @login_required
-def dashboard(request):
-    """ダッシュボード（管理者・スタッフの判定とリダイレクト）"""
+@admin_required
+def admin_dashboard(request):
+    """管理者ダッシュボード"""
     try:
         staff = request.user.staff
-        if staff.is_manager:
-            return redirect('admin:dashboard')
-        else:
-            return redirect('staff:dashboard')
+        store = staff.store
     except Staff.DoesNotExist:
         messages.error(request, "スタッフ情報が見つかりません。")
         return redirect('login')
+    
+    # 今月のシフト状況を取得
+    from datetime import datetime, date, timedelta
+    from shift.models import Shift
+    
+    today = date.today()
+    month_start = today.replace(day=1)
+    if today.month == 12:
+        month_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+    else:
+        month_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+    
+    # 今月のシフト統計
+    monthly_shifts = Shift.objects.filter(
+        store=store,
+        date__range=[month_start, month_end]
+    )
+    
+    total_shifts = monthly_shifts.count()
+    confirmed_shifts = monthly_shifts.filter(is_confirmed=True).count()
+    unconfirmed_shifts = total_shifts - confirmed_shifts
+    
+    # 人件費計算
+    total_cost = sum(shift.wage_cost for shift in monthly_shifts.filter(is_confirmed=True))
+    
+    # 確定率計算
+    confirmation_rate = (confirmed_shifts / total_shifts * 100) if total_shifts > 0 else 0
+    
+    # スタッフ数
+    total_staff = Staff.objects.filter(store=store).count()
+    manager_count = Staff.objects.filter(store=store, is_manager=True).count()
+    regular_staff_count = total_staff - manager_count
+    
+    context = {
+        'store': store,
+        'total_shifts': total_shifts,
+        'confirmed_shifts': confirmed_shifts,
+        'unconfirmed_shifts': unconfirmed_shifts,
+        'total_cost': total_cost,
+        'confirmation_rate': confirmation_rate,
+        'total_staff': total_staff,
+        'manager_count': manager_count,
+        'regular_staff_count': regular_staff_count,
+    }
+    
+    return render(request, 'admin/dashboard.html', context)
 
 
 @login_required
-def store_settings(request):
-    """店舗設定"""
+@admin_required
+def admin_store_settings(request):
+    """管理者用店舗設定"""
     try:
         staff = request.user.staff
         store = staff.store
@@ -40,16 +103,17 @@ def store_settings(request):
         if form.is_valid():
             form.save()
             messages.success(request, "店舗設定を更新しました。")
-            return redirect('store_settings')
+            return redirect('admin:store_settings')
     else:
         form = StoreForm(instance=store)
     
-    return render(request, 'accounts/store_settings.html', {'form': form})
+    return render(request, 'admin/store_settings.html', {'form': form})
 
 
 @login_required
-def staff_management(request):
-    """スタッフ管理"""
+@admin_required
+def admin_staff_management(request):
+    """管理者用スタッフ管理"""
     try:
         staff = request.user.staff
         store = staff.store
@@ -78,12 +142,13 @@ def staff_management(request):
         'search_query': search_query,
     }
     
-    return render(request, 'accounts/staff_management.html', context)
+    return render(request, 'admin/staff_management.html', context)
 
 
 @login_required
-def staff_detail(request, staff_id):
-    """スタッフ詳細・編集"""
+@admin_required
+def admin_staff_detail(request, staff_id):
+    """管理者用スタッフ詳細・編集"""
     try:
         current_staff = request.user.staff
         store = current_staff.store
@@ -98,16 +163,17 @@ def staff_detail(request, staff_id):
         if form.is_valid():
             form.save()
             messages.success(request, "スタッフ情報を更新しました。")
-            return redirect('staff_management')
+            return redirect('admin:staff_management')
     else:
         form = StaffForm(instance=staff)
     
-    return render(request, 'accounts/staff_detail.html', {'form': form, 'staff': staff})
+    return render(request, 'admin/staff_detail.html', {'form': form, 'staff': staff})
 
 
 @login_required
-def staff_requirements(request):
-    """必要人数設定"""
+@admin_required
+def admin_staff_requirements(request):
+    """管理者用必要人数設定"""
     try:
         staff = request.user.staff
         store = staff.store
@@ -124,7 +190,7 @@ def staff_requirements(request):
             requirement.store = store
             requirement.save()
             messages.success(request, "必要人数設定を追加しました。")
-            return redirect('staff_requirements')
+            return redirect('admin:staff_requirements')
     else:
         form = StaffRequirementForm()
     
@@ -133,12 +199,13 @@ def staff_requirements(request):
         'form': form,
     }
     
-    return render(request, 'accounts/staff_requirements.html', context)
+    return render(request, 'admin/staff_requirements.html', context)
 
 
 @login_required
-def delete_requirement(request, requirement_id):
-    """必要人数設定削除"""
+@admin_required
+def admin_delete_requirement(request, requirement_id):
+    """管理者用必要人数設定削除"""
     try:
         staff = request.user.staff
         store = staff.store
@@ -152,40 +219,4 @@ def delete_requirement(request, requirement_id):
         requirement.delete()
         messages.success(request, "必要人数設定を削除しました。")
     
-    return redirect('staff_requirements')
-
-
-def register(request):
-    """ユーザー登録"""
-    if request.method == 'POST':
-        form = UserRegistrationForm(request.POST)
-        if form.is_valid():
-            with transaction.atomic():
-                user = form.save()
-                
-                # デフォルトの店舗を作成（最初のユーザーの場合）
-                store, created = Store.objects.get_or_create(
-                    name="デフォルト店舗",
-                    defaults={
-                        'opening_time': '09:00',
-                        'closing_time': '22:00',
-                        'preparation_minutes': 60,
-                        'cleanup_minutes': 60,
-                    }
-                )
-                
-                # スタッフ情報を作成
-                Staff.objects.create(
-                    user=user,
-                    store=store,
-                    employment_type='fixed',
-                    hourly_wage=1000,
-                    is_manager=True,  # 最初のユーザーは管理者
-                )
-                
-                messages.success(request, "アカウントが作成されました。ログインしてください。")
-                return redirect('login')
-    else:
-        form = UserRegistrationForm()
-    
-    return render(request, 'registration/register.html', {'form': form})
+    return redirect('admin:staff_requirements')
