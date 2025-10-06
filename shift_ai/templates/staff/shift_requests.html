@@ -1,0 +1,254 @@
+{% extends 'staff/base.html' %}
+
+{% block page_title %}希望シフト提出{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">希望シフト提出</h6>
+                <span class="badge bg-info">{{ month_start|date:"Y年m月" }}</span>
+            </div>
+            <div class="card-body">
+                <!-- 希望シフト提出フォーム -->
+                <form method="post" class="mb-4">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="request_type" class="form-label">希望種別</label>
+                            <select class="form-select" id="request_type" name="request_type" required>
+                                <option value="">選択してください</option>
+                                <option value="work">勤務希望</option>
+                                <option value="off">休み希望</option>
+                                <option value="overtime">残業希望</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="start_time" class="form-label">開始時間</label>
+                            <input type="time" class="form-control" id="start_time" name="start_time">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="end_time" class="form-label">終了時間</label>
+                            <input type="time" class="form-control" id="end_time" name="end_time">
+                        </div>
+                        <div class="col-md-3 mb-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-plus me-2"></i>希望を提出
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- カレンダー表示 -->
+                    <div class="mb-4">
+                        <h6 class="font-weight-bold mb-3">日付を選択してください</h6>
+                        <div class="calendar-grid">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered calendar-table">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th class="text-center">日</th>
+                                                    <th class="text-center">月</th>
+                                                    <th class="text-center">火</th>
+                                                    <th class="text-center">水</th>
+                                                    <th class="text-center">木</th>
+                                                    <th class="text-center">金</th>
+                                                    <th class="text-center">土</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for week in calendar_weeks %}
+                                                <tr>
+                                                    {% for day in week %}
+                                                    <td class="text-center calendar-day {% if day.is_current_month %}current-month{% else %}other-month{% endif %}">
+                                                        {% if day.is_current_month %}
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" 
+                                                                       name="dates" value="{{ day.date|date:'Y-m-d' }}" 
+                                                                       id="date_{{ day.date|date:'Y-m-d' }}">
+                                                                <label class="form-check-label" for="date_{{ day.date|date:'Y-m-d' }}">
+                                                                    {{ day.date|date:"j" }}
+                                                                </label>
+                                                            </div>
+                                                        {% else %}
+                                                            <span class="text-muted">{{ day.date|date:"j" }}</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    {% endfor %}
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 提出済み希望シフト一覧 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">提出済み希望シフト</h6>
+            </div>
+            <div class="card-body">
+                {% if shift_requests %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>日付</th>
+                                    <th>曜日</th>
+                                    <th>希望種別</th>
+                                    <th>時間</th>
+                                    <th>提出日時</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in shift_requests %}
+                                <tr>
+                                    <td>{{ request.date|date:"m/d" }}</td>
+                                    <td>{{ request.date|date:"D" }}</td>
+                                    <td>
+                                        {% if request.request_type == 'work' %}
+                                            <span class="badge bg-success">勤務希望</span>
+                                        {% elif request.request_type == 'off' %}
+                                            <span class="badge bg-warning">休み希望</span>
+                                        {% elif request.request_type == 'overtime' %}
+                                            <span class="badge bg-info">残業希望</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if request.start_time and request.end_time %}
+                                            {{ request.start_time }} - {{ request.end_time }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ request.created_at|date:"m/d H:i" }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="deleteRequest({{ request.id }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-calendar-plus fa-3x mb-3"></i>
+                        <p>まだ希望シフトが提出されていません</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 希望シフト提出ルール -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">提出ルール</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>勤務希望</h6>
+                            <p class="mb-0">希望する勤務日と時間を指定してください</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-calendar-times me-2"></i>休み希望</h6>
+                            <p class="mb-0">勤務できない日を指定してください</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert alert-success">
+                            <h6><i class="fas fa-clock me-2"></i>残業希望</h6>
+                            <p class="mb-0">追加で勤務したい日と時間を指定してください</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// カレンダーの日付を生成するJavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    generateCalendar();
+});
+
+function generateCalendar() {
+    // カレンダー生成ロジック（簡易版）
+    // 実際の実装では、サーバーサイドでカレンダーデータを生成することを推奨
+}
+
+function deleteRequest(requestId) {
+    if (confirm('この希望シフトを削除しますか？')) {
+        // 削除処理の実装
+        console.log('Delete request:', requestId);
+    }
+}
+
+// 希望種別に応じて時間入力の表示/非表示
+document.getElementById('request_type').addEventListener('change', function() {
+    const startTime = document.getElementById('start_time');
+    const endTime = document.getElementById('end_time');
+    
+    if (this.value === 'off') {
+        startTime.disabled = true;
+        endTime.disabled = true;
+        startTime.value = '';
+        endTime.value = '';
+    } else {
+        startTime.disabled = false;
+        endTime.disabled = false;
+    }
+});
+</script>
+
+<style>
+.calendar-table {
+    font-size: 0.9rem;
+}
+
+.calendar-day {
+    height: 50px;
+    vertical-align: middle;
+}
+
+.calendar-day.current-month {
+    background-color: #f8f9fa;
+}
+
+.calendar-day.other-month {
+    background-color: #e9ecef;
+    color: #6c757d;
+}
+
+.form-check-input:checked + .form-check-label {
+    font-weight: bold;
+    color: #007bff;
+}
+</style>
+{% endblock %}

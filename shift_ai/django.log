@@ -1251,3 +1251,179 @@ Not Found: /.well-known/appspecific/com.chrome.devtools.json
 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
 Not Found: /.well-known/appspecific/com.chrome.devtools.json
 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Method Not Allowed (GET): /logout/
+"GET /logout/ HTTP/1.1" 405 0
+Method Not Allowed (GET): /logout/
+"GET /logout/ HTTP/1.1" 405 0
+Method Not Allowed (GET): /logout/
+"GET /logout/ HTTP/1.1" 405 0
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Internal Server Error: /staff/
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\urls\base.py", line 81, in reverse
+    extra, resolver = resolver.namespace_dict[ns]
+                      ~~~~~~~~~~~~~~~~~~~~~~~^^^^
+KeyError: 'staff'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\accounts\staff_views.py", line 24, in wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\accounts\staff_views.py", line 92, in staff_dashboard
+    return render(request, 'staff/dashboard.html', context)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\loader_tags.py", line 65, in render
+    result = block.nodelist.render(context)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\defaulttags.py", line 480, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\urls\base.py", line 92, in reverse
+    raise NoReverseMatch("%s is not a registered namespace" % key)
+django.urls.exceptions.NoReverseMatch: 'staff' is not a registered namespace
+"GET /staff/ HTTP/1.1" 500 185148
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Internal Server Error: /staff/
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\urls\base.py", line 81, in reverse
+    extra, resolver = resolver.namespace_dict[ns]
+                      ~~~~~~~~~~~~~~~~~~~~~~~^^^^
+KeyError: 'staff'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\accounts\staff_views.py", line 24, in wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\accounts\staff_views.py", line 92, in staff_dashboard
+    return render(request, 'staff/dashboard.html', context)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\loader_tags.py", line 65, in render
+    result = block.nodelist.render(context)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\defaulttags.py", line 480, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\urls\base.py", line 92, in reverse
+    raise NoReverseMatch("%s is not a registered namespace" % key)
+django.urls.exceptions.NoReverseMatch: 'staff' is not a registered namespace
+"GET /staff/ HTTP/1.1" 500 185148
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Internal Server Error: /admin-panel/eval/attendance-records/
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\eval\admin_views.py", line 28, in wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\eval\admin_views.py", line 148, in admin_attendance_records
+    return render(request, 'admin/attendance_records.html', context)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: admin/attendance_records.html
+"GET /admin-panel/eval/attendance-records/ HTTP/1.1" 500 97250
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
