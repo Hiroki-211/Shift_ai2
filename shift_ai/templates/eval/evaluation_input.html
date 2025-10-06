@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block page_title %}評価入力{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-star"></i> スタッフ評価入力
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- 評価期間選択 -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">評価期間</label>
+                        <select class="form-select" id="periodSelect" onchange="location.href='?period=' + this.value">
+                            <option value="{{ period }}" selected>{{ period }}</option>
+                            <!-- 他の期間のオプションを動的に追加 -->
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- 評価フォーム -->
+                <form method="post" id="evaluationForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="staff_id" id="staffId">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">評価対象スタッフ</label>
+                            <select class="form-select" id="staffSelect" required>
+                                <option value="">スタッフを選択してください</option>
+                                {% for staff in target_staff %}
+                                <option value="{{ staff.id }}">{{ staff.user.get_full_name|default:staff.user.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">評価項目</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.attendance_score.id_for_label }}" class="form-label">
+                                        勤怠関連（30点満点）
+                                    </label>
+                                    {{ form.attendance_score }}
+                                    <div class="form-text">出勤率、遅刻・早退、シフト遵守</div>
+                                    {% if form.attendance_score.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.attendance_score.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.skill_score.id_for_label }}" class="form-label">
+                                        業務スキル（40点満点）
+                                    </label>
+                                    {{ form.skill_score }}
+                                    <div class="form-text">ホール業務、キッチン業務、開店・閉店作業、責任者業務</div>
+                                    {% if form.skill_score.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.skill_score.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.teamwork_score.id_for_label }}" class="form-label">
+                                        チームワーク・態度（20点満点）
+                                    </label>
+                                    {{ form.teamwork_score }}
+                                    <div class="form-text">協調性、コミュニケーション、向上心</div>
+                                    {% if form.teamwork_score.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.teamwork_score.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.customer_service_score.id_for_label }}" class="form-label">
+                                        顧客対応（10点満点）
+                                    </label>
+                                    {{ form.customer_service_score }}
+                                    <div class="form-text">接客態度、クレーム対応</div>
+                                    {% if form.customer_service_score.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.customer_service_score.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.comment.id_for_label }}" class="form-label">コメント</label>
+                                {{ form.comment }}
+                                {% if form.comment.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.comment.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 合計スコア表示 -->
+                            <div class="alert alert-info">
+                                <strong>合計スコア: <span id="totalScore">0</span>点</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 評価を保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 既存の評価一覧 -->
+        {% if evaluations %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list"></i> 評価済みスタッフ
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>スタッフ名</th>
+                                <th>勤怠</th>
+                                <th>スキル</th>
+                                <th>チームワーク</th>
+                                <th>顧客対応</th>
+                                <th>合計</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for evaluation in evaluations %}
+                            <tr>
+                                <td>{{ evaluation.staff.user.get_full_name|default:evaluation.staff.user.username }}</td>
+                                <td>{{ evaluation.attendance_score }}</td>
+                                <td>{{ evaluation.skill_score }}</td>
+                                <td>{{ evaluation.teamwork_score }}</td>
+                                <td>{{ evaluation.customer_service_score }}</td>
+                                <td>
+                                    <strong class="text-primary">{{ evaluation.total_score }}</strong>
+                                </td>
+                                <td>
+                                    <a href="{% url 'eval:evaluation_detail' evaluation.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i> 編集
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> 評価基準
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>勤怠関連（30点）</h6>
+                <ul class="list-unstyled small">
+                    <li>• 出勤率: 100%=15点、95-99%=12点、90-94%=9点</li>
+                    <li>• 遅刻・早退: なし=10点、1回=8点、2回=6点</li>
+                    <li>• シフト遵守: 無断欠勤なし=5点、1回=0点</li>
+                </ul>
+                
+                <h6>業務スキル（40点）</h6>
+                <ul class="list-unstyled small">
+                    <li>• ホール業務: オーダー取り、配膳、接客、レジ対応</li>
+                    <li>• キッチン業務: 調理スピード、盛り付け、衛生管理</li>
+                    <li>• 開店・閉店作業: 準備作業、清掃、締め作業の正確性</li>
+                    <li>• 責任者業務: スタッフ指導、トラブル対応、売上管理</li>
+                </ul>
+                
+                <h6>チームワーク・態度（20点）</h6>
+                <ul class="list-unstyled small">
+                    <li>• 協調性: 他スタッフとの連携、サポート姿勢</li>
+                    <li>• コミュニケーション: 報連相の徹底、積極的な情報共有</li>
+                    <li>• 向上心: 新しい業務への挑戦、フィードバック受容</li>
+                </ul>
+                
+                <h6>顧客対応（10点）</h6>
+                <ul class="list-unstyled small">
+                    <li>• 接客態度: 笑顔、明るさ、丁寧な言葉遣い</li>
+                    <li>• クレーム対応: 適切な初期対応、上司への報告</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // スタッフ選択時の処理
+    $('#staffSelect').change(function() {
+        $('#staffId').val($(this).val());
+    });
+    
+    // スコア入力時の合計計算
+    $('input[type="number"]').on('input', function() {
+        calculateTotalScore();
+    });
+    
+    function calculateTotalScore() {
+        var attendance = parseInt($('#{{ form.attendance_score.id_for_label }}').val()) || 0;
+        var skill = parseInt($('#{{ form.skill_score.id_for_label }}').val()) || 0;
+        var teamwork = parseInt($('#{{ form.teamwork_score.id_for_label }}').val()) || 0;
+        var customerService = parseInt($('#{{ form.customer_service_score.id_for_label }}').val()) || 0;
+        
+        var total = attendance + skill + teamwork + customerService;
+        $('#totalScore').text(total);
+        
+        // 合計スコアの色分け
+        var totalElement = $('#totalScore');
+        if (total >= 90) {
+            totalElement.removeClass('text-warning text-danger').addClass('text-success');
+        } else if (total >= 70) {
+            totalElement.removeClass('text-success text-danger').addClass('text-warning');
+        } else {
+            totalElement.removeClass('text-success text-warning').addClass('text-danger');
+        }
+    }
+    
+    // 初期合計スコア計算
+    calculateTotalScore();
+});
+</script>
+{% endblock %}

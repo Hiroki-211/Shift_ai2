@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+
+{% block page_title %}シフト作成{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <h5><i class="fas fa-calendar-plus"></i> シフト作成・管理</h5>
+    </div>
+    <div class="col-md-6">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-primary" id="generateAiBtn">
+                <i class="fas fa-robot"></i> AIシフト生成
+            </button>
+            <button type="button" class="btn btn-success" id="confirmShiftsBtn">
+                <i class="fas fa-check"></i> シフト確定
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 日付範囲選択 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="start_date" class="form-label">開始日</label>
+                <input type="date" class="form-control" id="start_date" name="start_date" 
+                       value="{{ start_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="end_date" class="form-label">終了日</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" 
+                       value="{{ end_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fas fa-search"></i> 表示
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- シフト一覧 -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-calendar"></i> シフト一覧
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if existing_shifts %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="selectAll" class="form-check-input">
+                        </th>
+                        <th>日付</th>
+                        <th>スタッフ</th>
+                        <th>時間</th>
+                        <th>勤務時間</th>
+                        <th>人件費</th>
+                        <th>状態</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for shift in existing_shifts %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" name="shift_ids" value="{{ shift.id }}" 
+                                   class="form-check-input shift-checkbox">
+                        </td>
+                        <td>{{ shift.date|date:"m/d (D)" }}</td>
+                        <td>
+                            <strong>{{ shift.staff.user.get_full_name|default:shift.staff.user.username }}</strong>
+                            {% if shift.staff.is_manager %}
+                                <span class="badge bg-success ms-1">責任者</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ shift.start_time }} - {{ shift.end_time }}</td>
+                        <td>{{ shift.duration_hours|floatformat:1 }}時間</td>
+                        <td>¥{{ shift.wage_cost|floatformat:0 }}</td>
+                        <td>
+                            {% if shift.is_confirmed %}
+                                <span class="badge bg-success">確定</span>
+                            {% else %}
+                                <span class="badge bg-warning">未確定</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'shift:shift_detail' shift.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form method="post" action="{% url 'shift:delete_shift' shift.id %}" 
+                                  onsubmit="return confirm('このシフトを削除しますか？')" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 統計情報 -->
+        <div class="row mt-3">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">総シフト数</h6>
+                        <h4 class="text-primary">{{ existing_shifts|length }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">確定シフト</h6>
+                        <h4 class="text-success">
+                            {% for shift in existing_shifts %}
+                                {% if shift.is_confirmed %}{{ forloop.counter0|add:1 }}{% endif %}
+                            {% endfor %}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">未確定シフト</h6>
+                        <h4 class="text-warning">
+                            {% for shift in existing_shifts %}
+                                {% if not shift.is_confirmed %}{{ forloop.counter0|add:1 }}{% endif %}
+                            {% endfor %}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">総人件費</h6>
+                        <h4 class="text-info">
+                            ¥{% for shift in existing_shifts %}{% if shift.is_confirmed %}{{ shift.wage_cost|add:0 }}{% endif %}{% endfor %}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-calendar fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">シフトがありません</h5>
+            <p class="text-muted">AIシフト生成ボタンからシフトを作成してください。</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- AIシフト生成モーダル -->
+<div class="modal fade" id="aiGenerateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-robot"></i> AIシフト生成
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>指定した期間のシフトをAIが自動生成します。</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    スタッフの希望シフトと必要人数設定を考慮して最適なシフトを作成します。
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" id="confirmGenerateBtn">
+                    <i class="fas fa-robot"></i> 生成開始
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 全選択チェックボックス
+    $('#selectAll').change(function() {
+        $('.shift-checkbox').prop('checked', this.checked);
+    });
+    
+    // AIシフト生成
+    $('#generateAiBtn').click(function() {
+        $('#aiGenerateModal').modal('show');
+    });
+    
+    $('#confirmGenerateBtn').click(function() {
+        var startDate = $('#start_date').val();
+        var endDate = $('#end_date').val();
+        
+        $.ajax({
+            url: '{% url "shift:generate_ai_shifts" %}',
+            method: 'POST',
+            data: {
+                'start_date': startDate,
+                'end_date': endDate,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    location.reload();
+                } else {
+                    alert('エラー: ' + response.error);
+                }
+            },
+            error: function(xhr) {
+                alert('エラーが発生しました。');
+            }
+        });
+        
+        $('#aiGenerateModal').modal('hide');
+    });
+    
+    // シフト確定
+    $('#confirmShiftsBtn').click(function() {
+        var selectedShifts = $('.shift-checkbox:checked');
+        if (selectedShifts.length === 0) {
+            alert('確定するシフトを選択してください。');
+            return;
+        }
+        
+        var shiftIds = [];
+        selectedShifts.each(function() {
+            shiftIds.push($(this).val());
+        });
+        
+        $.ajax({
+            url: '{% url "shift:confirm_shifts" %}',
+            method: 'POST',
+            data: {
+                'shift_ids': shiftIds,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    location.reload();
+                } else {
+                    alert('エラー: ' + response.error);
+                }
+            },
+            error: function(xhr) {
+                alert('エラーが発生しました。');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

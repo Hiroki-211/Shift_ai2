@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+
+{% block page_title %}希望シフト提出{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-check"></i> 希望シフト提出
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- 希望シフト提出フォーム -->
+                <form method="post" id="shiftRequestForm">
+                    {% csrf_token %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">希望種別</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="request_type" 
+                                       id="off_request" value="off" checked>
+                                <label class="form-check-label" for="off_request">
+                                    <i class="fas fa-times-circle text-danger"></i> 休み希望
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="request_type" 
+                                       id="work_request" value="work">
+                                <label class="form-check-label" for="work_request">
+                                    <i class="fas fa-check-circle text-success"></i> 勤務希望
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6" id="timeInputs" style="display: none;">
+                            <div class="row">
+                                <div class="col-6">
+                                    <label for="start_time" class="form-label">希望開始時刻</label>
+                                    <input type="time" class="form-control" id="start_time" name="start_time">
+                                </div>
+                                <div class="col-6">
+                                    <label for="end_time" class="form-label">希望終了時刻</label>
+                                    <input type="time" class="form-control" id="end_time" name="end_time">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">希望日を選択してください</label>
+                        <div class="calendar-grid" id="calendarGrid">
+                            <!-- カレンダーがここに動的に生成されます -->
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> 希望を提出
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 既存の希望シフト一覧 -->
+        {% if shift_requests %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list"></i> 提出済み希望シフト
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>日付</th>
+                                <th>種別</th>
+                                <th>時間</th>
+                                <th>提出日</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for request in shift_requests %}
+                            <tr>
+                                <td>{{ request.date|date:"m/d (D)" }}</td>
+                                <td>
+                                    {% if request.request_type == 'off' %}
+                                        <span class="badge bg-danger">休み希望</span>
+                                    {% else %}
+                                        <span class="badge bg-success">勤務希望</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if request.start_time and request.end_time %}
+                                        {{ request.start_time }} - {{ request.end_time }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ request.submitted_at|date:"m/d H:i" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> 希望シフトについて
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>休み希望</h6>
+                <p class="text-muted">勤務できない日を選択してください。AIシフト生成時に考慮されます。</p>
+                
+                <h6>勤務希望</h6>
+                <p class="text-muted">勤務したい日時を選択してください。希望時間も指定できます。</p>
+                
+                <h6>提出期限</h6>
+                <p class="text-muted">毎月20日までに翌月の希望を提出してください。</p>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>注意:</strong> 希望は必ずしも反映されるとは限りません。店舗の運営状況により調整される場合があります。
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 希望種別の変更
+    $('input[name="request_type"]').change(function() {
+        if ($(this).val() === 'work') {
+            $('#timeInputs').show();
+        } else {
+            $('#timeInputs').hide();
+        }
+    });
+    
+    // カレンダー生成
+    generateCalendar();
+    
+    function generateCalendar() {
+        var startDate = new Date('{{ month_start|date:"Y-m-d" }}');
+        var endDate = new Date('{{ month_end|date:"Y-m-d" }}');
+        var calendarGrid = $('#calendarGrid');
+        
+        calendarGrid.empty();
+        
+        var currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            var dateStr = currentDate.toISOString().split('T')[0];
+            var dayName = ['日', '月', '火', '水', '木', '金', '土'][currentDate.getDay()];
+            var dayNumber = currentDate.getDate();
+            
+            var dayElement = $(`
+                <div class="calendar-day" data-date="${dateStr}">
+                    <div class="card text-center">
+                        <div class="card-body p-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="dates" value="${dateStr}" id="date_${dateStr}">
+                                <label class="form-check-label" for="date_${dateStr}">
+                                    <div class="fw-bold">${dayNumber}</div>
+                                    <div class="small text-muted">${dayName}</div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            
+            calendarGrid.append(dayElement);
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+    }
+    
+    // フォーム送信
+    $('#shiftRequestForm').submit(function(e) {
+        var selectedDates = $('input[name="dates"]:checked');
+        if (selectedDates.length === 0) {
+            e.preventDefault();
+            alert('希望日を選択してください。');
+            return false;
+        }
+        
+        var requestType = $('input[name="request_type"]:checked').val();
+        if (requestType === 'work') {
+            var startTime = $('#start_time').val();
+            var endTime = $('#end_time').val();
+            if (!startTime || !endTime) {
+                e.preventDefault();
+                alert('勤務希望の場合は開始時刻と終了時刻を入力してください。');
+                return false;
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+}
+
+.calendar-day .card {
+    border: 2px solid #e9ecef;
+    transition: all 0.2s;
+}
+
+.calendar-day .card:hover {
+    border-color: #007bff;
+    transform: translateY(-2px);
+}
+
+.calendar-day input[type="checkbox"]:checked + label .card {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}
+</style>
+{% endblock %}

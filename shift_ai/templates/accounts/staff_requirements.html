@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block page_title %}必要人数設定{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock"></i> 必要人数設定
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- 新規追加フォーム -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">新しい設定を追加</h6>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="{{ form.day_of_week.id_for_label }}" class="form-label">曜日</label>
+                                    {{ form.day_of_week }}
+                                    {% if form.day_of_week.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.day_of_week.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-3 mb-3">
+                                    <label for="{{ form.start_time.id_for_label }}" class="form-label">開始時刻</label>
+                                    {{ form.start_time }}
+                                    {% if form.start_time.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.start_time.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-3 mb-3">
+                                    <label for="{{ form.end_time.id_for_label }}" class="form-label">終了時刻</label>
+                                    {{ form.end_time }}
+                                    {% if form.end_time.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.end_time.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-3 mb-3">
+                                    <label for="{{ form.required_staff.id_for_label }}" class="form-label">必要人数</label>
+                                    {{ form.required_staff }}
+                                    {% if form.required_staff.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.required_staff.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.required_managers.id_for_label }}" class="form-label">必要責任者数</label>
+                                    {{ form.required_managers }}
+                                    {% if form.required_managers.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.required_managers.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.required_hall_skill.id_for_label }}" class="form-label">必要ホールスキル人数</label>
+                                    {{ form.required_hall_skill }}
+                                    {% if form.required_hall_skill.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.required_hall_skill.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.required_kitchen_skill.id_for_label }}" class="form-label">必要キッチンスキル人数</label>
+                                    {{ form.required_kitchen_skill }}
+                                    {% if form.required_kitchen_skill.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.required_kitchen_skill.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> 設定を追加
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- 既存設定一覧 -->
+                {% if requirements %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>曜日</th>
+                                <th>時間帯</th>
+                                <th>必要人数</th>
+                                <th>責任者</th>
+                                <th>スキル要件</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for requirement in requirements %}
+                            <tr>
+                                <td>{{ requirement.get_day_of_week_display }}</td>
+                                <td>{{ requirement.start_time }} - {{ requirement.end_time }}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ requirement.required_staff }}人</span>
+                                </td>
+                                <td>
+                                    {% if requirement.required_managers > 0 %}
+                                        <span class="badge bg-success">{{ requirement.required_managers }}人</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if requirement.required_hall_skill > 0 %}
+                                        <span class="badge bg-info">ホール {{ requirement.required_hall_skill }}人</span>
+                                    {% endif %}
+                                    {% if requirement.required_kitchen_skill > 0 %}
+                                        <span class="badge bg-warning">キッチン {{ requirement.required_kitchen_skill }}人</span>
+                                    {% endif %}
+                                    {% if requirement.required_hall_skill == 0 and requirement.required_kitchen_skill == 0 %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="post" action="{% url 'accounts:delete_requirement' requirement.id %}" 
+                                          onsubmit="return confirm('この設定を削除しますか？')" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i> 削除
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">必要人数設定がありません</h5>
+                    <p class="text-muted">上記のフォームから新しい設定を追加してください。</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> 設定について
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>必要人数</h6>
+                <p class="text-muted">各時間帯に必要なスタッフの総数を設定します。</p>
+                
+                <h6>責任者数</h6>
+                <p class="text-muted">責任者として必要な人数を設定します。</p>
+                
+                <h6>スキル要件</h6>
+                <p class="text-muted">ホール業務やキッチン業務に必要なスキルを持つスタッフの人数を設定します。</p>
+                
+                <h6>AIシフト生成</h6>
+                <p class="text-muted">これらの設定はAIシフト生成時の制約条件として使用されます。</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

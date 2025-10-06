@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+
+{% block page_title %}シフト確認{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar"></i> 今月のシフト
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if shifts %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>日付</th>
+                                <th>曜日</th>
+                                <th>時間</th>
+                                <th>勤務時間</th>
+                                <th>状態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for shift in shifts %}
+                            <tr>
+                                <td>{{ shift.date|date:"m/d" }}</td>
+                                <td>{{ shift.date|date:"D" }}</td>
+                                <td>
+                                    <strong>{{ shift.start_time }} - {{ shift.end_time }}</strong>
+                                </td>
+                                <td>{{ shift.duration_hours|floatformat:1 }}時間</td>
+                                <td>
+                                    {% if shift.is_confirmed %}
+                                        <span class="badge bg-success">確定</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">未確定</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 統計情報 -->
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">総勤務日数</h6>
+                                <h4 class="text-primary">{{ shifts|length }}日</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">確定シフト</h6>
+                                <h4 class="text-success">
+                                    {% for shift in shifts %}
+                                        {% if shift.is_confirmed %}{{ forloop.counter0|add:1 }}{% endif %}
+                                    {% endfor %}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">未確定シフト</h6>
+                                <h4 class="text-warning">
+                                    {% for shift in shifts %}
+                                        {% if not shift.is_confirmed %}{{ forloop.counter0|add:1 }}{% endif %}
+                                    {% endfor %}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">総勤務時間</h6>
+                                <h4 class="text-info">{{ total_hours|floatformat:1 }}時間</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 週別勤務時間 -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">週別勤務時間</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="weeklyHoursChart" width="400" height="100"></canvas>
+                    </div>
+                </div>
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-calendar fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">今月のシフトがありません</h5>
+                    <p class="text-muted">管理者がシフトを作成するまでお待ちください。</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user"></i> スタッフ情報
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>{{ staff.user.get_full_name|default:staff.user.username }}</h6>
+                <p class="text-muted">{{ staff.user.email }}</p>
+                
+                <hr>
+                
+                <h6>勤務情報</h6>
+                <ul class="list-unstyled">
+                    <li><strong>雇用形態:</strong> {{ staff.get_employment_type_display }}</li>
+                    <li><strong>時給:</strong> ¥{{ staff.hourly_wage }}</li>
+                    <li><strong>週最大労働時間:</strong> {{ staff.max_weekly_hours }}時間</li>
+                    <li><strong>責任者:</strong> {% if staff.is_manager %}はい{% else %}いいえ{% endif %}</li>
+                </ul>
+                
+                <h6>スキルレベル</h6>
+                <div class="mb-2">
+                    <label class="form-label">ホールスキル</label>
+                    <div class="progress">
+                        <div class="progress-bar" style="width: {{ hall_skill_percentage }}%">
+                            {{ staff.hall_skill_level }}/5
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">キッチンスキル</label>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" style="width: {{ kitchen_skill_percentage }}%">
+                            {{ staff.kitchen_skill_level }}/5
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> シフトについて
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>シフト確定</h6>
+                <p class="text-muted">確定されたシフトは変更できません。未確定のシフトは管理者が調整する可能性があります。</p>
+                
+                <h6>勤務時間</h6>
+                <p class="text-muted">週最大労働時間を超えないよう調整されます。</p>
+                
+                <h6>希望シフト</h6>
+                <p class="text-muted">
+                    <a href="{% url 'shift:staff_shift_requests' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-calendar-check"></i> 希望シフト提出
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    {% if shifts %}
+    // 週別勤務時間グラフ
+    var weeklyData = calculateWeeklyHours();
+    var ctx = document.getElementById('weeklyHoursChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: weeklyData.labels,
+            datasets: [{
+                label: '勤務時間',
+                data: weeklyData.hours,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: '時間'
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+    
+    function calculateWeeklyHours() {
+        var shifts = {{ shifts|safe }};
+        var weeklyHours = {};
+        
+        // 週別に勤務時間を集計
+        shifts.forEach(function(shift) {
+            var date = new Date(shift.date);
+            var weekStart = new Date(date);
+            weekStart.setDate(date.getDate() - date.getDay());
+            var weekKey = weekStart.toISOString().split('T')[0];
+            
+            if (!weeklyHours[weekKey]) {
+                weeklyHours[weekKey] = 0;
+            }
+            weeklyHours[weekKey] += shift.duration_hours;
+        });
+        
+        var labels = [];
+        var hours = [];
+        
+        Object.keys(weeklyHours).sort().forEach(function(weekKey) {
+            var weekStart = new Date(weekKey);
+            labels.push(weekStart.toLocaleDateString('ja-JP', {month: 'short', day: 'numeric'}));
+            hours.push(weeklyHours[weekKey]);
+        });
+        
+        return {labels: labels, hours: hours};
+    }
+});
+</script>
+{% endblock %}

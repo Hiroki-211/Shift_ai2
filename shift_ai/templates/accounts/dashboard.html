@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block page_title %}ダッシュボード{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 今月のシフト統計 -->
+    <div class="col-md-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar-alt fa-2x text-primary mb-3"></i>
+                <h5 class="card-title">総シフト数</h5>
+                <h2 class="text-primary">{{ total_shifts }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-success mb-3"></i>
+                <h5 class="card-title">確定シフト</h5>
+                <h2 class="text-success">{{ confirmed_shifts }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+                <h5 class="card-title">未確定シフト</h5>
+                <h2 class="text-warning">{{ unconfirmed_shifts }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-yen-sign fa-2x text-info mb-3"></i>
+                <h5 class="card-title">人件費</h5>
+                <h2 class="text-info">¥{{ total_cost|floatformat:0 }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar"></i> 今月のシフト状況
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-3">
+                    <div class="progress-bar" role="progressbar" 
+                         style="width: {{ confirmation_rate }}%">
+                        {{ confirmed_shifts }} / {{ total_shifts }}
+                    </div>
+                </div>
+                <p class="text-muted">確定率: {{ confirmation_rate|floatformat:1 }}%</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-store"></i> 店舗情報
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>{{ store.name }}</h6>
+                <p class="text-muted">
+                    <i class="fas fa-clock"></i> {{ store.opening_time }} - {{ store.closing_time }}
+                </p>
+                <p class="text-muted">
+                    <i class="fas fa-tools"></i> 準備: {{ store.preparation_minutes }}分
+                </p>
+                <p class="text-muted">
+                    <i class="fas fa-broom"></i> 片付け: {{ store.cleanup_minutes }}分
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tasks"></i> クイックアクション
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'shift:shift_creation' %}" class="btn btn-primary w-100">
+                            <i class="fas fa-calendar-plus"></i><br>
+                            シフト作成
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'accounts:staff_management' %}" class="btn btn-success w-100">
+                            <i class="fas fa-users"></i><br>
+                            スタッフ管理
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'eval:evaluation_input' %}" class="btn btn-warning w-100">
+                            <i class="fas fa-star"></i><br>
+                            評価入力
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'shift:staff_shift_requests' %}" class="btn btn-info w-100">
+                            <i class="fas fa-calendar-check"></i><br>
+                            希望シフト
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

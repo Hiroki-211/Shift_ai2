@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+
+{% block page_title %}評価結果{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        {% if latest_evaluation %}
+        <!-- 最新の評価結果 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-star"></i> 最新評価結果（{{ latest_evaluation.evaluation_period }}）
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">勤怠関連</h6>
+                                <h3 class="text-primary">{{ latest_evaluation.attendance_score }}</h3>
+                                <small class="text-muted">/ 30点</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">業務スキル</h6>
+                                <h3 class="text-success">{{ latest_evaluation.skill_score }}</h3>
+                                <small class="text-muted">/ 40点</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">チームワーク</h6>
+                                <h3 class="text-info">{{ latest_evaluation.teamwork_score }}</h3>
+                                <small class="text-muted">/ 20点</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">顧客対応</h6>
+                                <h3 class="text-warning">{{ latest_evaluation.customer_service_score }}</h3>
+                                <small class="text-muted">/ 10点</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">総合スコア</h6>
+                                <h1 class="display-4 
+                                    {% if latest_evaluation.total_score >= 90 %}text-success
+                                    {% elif latest_evaluation.total_score >= 70 %}text-warning
+                                    {% else %}text-danger{% endif %}">
+                                    {{ latest_evaluation.total_score }}
+                                </h1>
+                                <small class="text-muted">/ 100点</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">評価者コメント</h6>
+                                {% if latest_evaluation.comment %}
+                                    <p class="card-text">{{ latest_evaluation.comment }}</p>
+                                {% else %}
+                                    <p class="text-muted">コメントはありません。</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 評価推移グラフ -->
+        {% if evaluation_history|length > 1 %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line"></i> 評価推移
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="evaluationChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-star fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">評価結果がありません</h5>
+                <p class="text-muted">管理者による評価が行われるまでお待ちください。</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- 評価履歴 -->
+        {% if evaluations %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history"></i> 評価履歴
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>評価期間</th>
+                                <th>勤怠</th>
+                                <th>スキル</th>
+                                <th>チームワーク</th>
+                                <th>顧客対応</th>
+                                <th>合計</th>
+                                <th>評価者</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for evaluation in evaluations %}
+                            <tr>
+                                <td>{{ evaluation.evaluation_period }}</td>
+                                <td>{{ evaluation.attendance_score }}</td>
+                                <td>{{ evaluation.skill_score }}</td>
+                                <td>{{ evaluation.teamwork_score }}</td>
+                                <td>{{ evaluation.customer_service_score }}</td>
+                                <td>
+                                    <strong class="
+                                        {% if evaluation.total_score >= 90 %}text-success
+                                        {% elif evaluation.total_score >= 70 %}text-warning
+                                        {% else %}text-danger{% endif %}">
+                                        {{ evaluation.total_score }}
+                                    </strong>
+                                </td>
+                                <td>{{ evaluation.evaluator.user.get_full_name|default:evaluation.evaluator.user.username }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user"></i> スタッフ情報
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>{{ staff.user.get_full_name|default:staff.user.username }}</h6>
+                <p class="text-muted">{{ staff.user.email }}</p>
+                
+                <hr>
+                
+                <h6>平均スコア</h6>
+                {% if avg_scores.avg_total %}
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="card">
+                            <div class="card-body p-2">
+                                <h6 class="card-title">総合</h6>
+                                <h4 class="text-primary">{{ avg_scores.avg_total|floatformat:1 }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card">
+                            <div class="card-body p-2">
+                                <h6 class="card-title">評価回数</h6>
+                                <h4 class="text-info">{{ evaluations|length }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> 評価について
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>評価基準</h6>
+                <ul class="list-unstyled small">
+                    <li>• 勤怠関連: 30点</li>
+                    <li>• 業務スキル: 40点</li>
+                    <li>• チームワーク: 20点</li>
+                    <li>• 顧客対応: 10点</li>
+                    <li>• <strong>合計: 100点</strong></li>
+                </ul>
+                
+                <h6>評価サイクル</h6>
+                <ul class="list-unstyled small">
+                    <li>• 月次評価: 毎月</li>
+                    <li>• 四半期評価: 3ヶ月ごと</li>
+                    <li>• 年次評価: 年1回</li>
+                </ul>
+                
+                <h6>スコア目安</h6>
+                <ul class="list-unstyled small">
+                    <li>• 90点以上: 優秀</li>
+                    <li>• 70-89点: 良好</li>
+                    <li>• 70点未満: 要改善</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    {% if evaluation_history|length > 1 %}
+    // 評価推移グラフ
+    var ctx = document.getElementById('evaluationChart').getContext('2d');
+    var evaluationData = {{ evaluation_history|safe }};
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: evaluationData.map(function(item) { return item.period; }),
+            datasets: [
+                {
+                    label: '総合スコア',
+                    data: evaluationData.map(function(item) { return item.total_score; }),
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                },
+                {
+                    label: '勤怠',
+                    data: evaluationData.map(function(item) { return item.attendance_score; }),
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1
+                },
+                {
+                    label: 'スキル',
+                    data: evaluationData.map(function(item) { return item.skill_score; }),
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.1
+                },
+                {
+                    label: 'チームワーク',
+                    data: evaluationData.map(function(item) { return item.teamwork_score; }),
+                    borderColor: 'rgb(255, 205, 86)',
+                    backgroundColor: 'rgba(255, 205, 86, 0.2)',
+                    tension: 0.1
+                },
+                {
+                    label: '顧客対応',
+                    data: evaluationData.map(function(item) { return item.customer_service_score; }),
+                    borderColor: 'rgb(153, 102, 255)',
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'スコア'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}
