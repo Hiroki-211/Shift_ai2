@@ -20,7 +20,7 @@ def admin_required(view_func):
             staff = request.user.staff
             if not staff.is_manager:
                 messages.error(request, "管理者権限が必要です。")
-                return redirect('staff:dashboard')
+                return redirect('staff_accounts:dashboard')
         except Staff.DoesNotExist:
             messages.error(request, "スタッフ情報が見つかりません。")
             return redirect('login')
@@ -103,7 +103,7 @@ def admin_store_settings(request):
         if form.is_valid():
             form.save()
             messages.success(request, "店舗設定を更新しました。")
-            return redirect('admin:store_settings')
+            return redirect('admin_accounts:store_settings')
     else:
         form = StoreForm(instance=store)
     
@@ -163,7 +163,7 @@ def admin_staff_detail(request, staff_id):
         if form.is_valid():
             form.save()
             messages.success(request, "スタッフ情報を更新しました。")
-            return redirect('admin:staff_management')
+            return redirect('admin_accounts:staff_management')
     else:
         form = StaffForm(instance=staff)
     
@@ -190,7 +190,7 @@ def admin_staff_requirements(request):
             requirement.store = store
             requirement.save()
             messages.success(request, "必要人数設定を追加しました。")
-            return redirect('admin:staff_requirements')
+            return redirect('admin_accounts:staff_requirements')
     else:
         form = StaffRequirementForm()
     
@@ -219,4 +219,4 @@ def admin_delete_requirement(request, requirement_id):
         requirement.delete()
         messages.success(request, "必要人数設定を削除しました。")
     
-    return redirect('admin:staff_requirements')
+    return redirect('admin_accounts:staff_requirements')

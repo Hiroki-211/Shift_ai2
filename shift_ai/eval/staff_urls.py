@@ -1,7 +1,7 @@
 from django.urls import path
 from . import staff_views
 
-app_name = 'staff'
+app_name = 'staff_eval'
 
 urlpatterns = [
     # スタッフ評価・勤怠機能

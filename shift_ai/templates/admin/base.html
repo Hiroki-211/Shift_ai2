@@ -57,7 +57,7 @@
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
-                               href="{% url 'admin:dashboard' %}">
+                               href="{% url 'admin_accounts:dashboard' %}">
                                 <i class="fas fa-tachometer-alt me-2"></i>
                                 ダッシュボード
                             </a>
@@ -65,7 +65,7 @@
                         
                         <li class="nav-item">
                             <a class="nav-link {% if 'store' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'admin:store_settings' %}">
+                               href="{% url 'admin_accounts:store_settings' %}">
                                 <i class="fas fa-store me-2"></i>
                                 店舗設定
                             </a>
@@ -73,7 +73,7 @@
                         
                         <li class="nav-item">
                             <a class="nav-link {% if 'staff' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'admin:staff_management' %}">
+                               href="{% url 'admin_accounts:staff_management' %}">
                                 <i class="fas fa-users me-2"></i>
                                 スタッフ管理
                             </a>
@@ -81,7 +81,7 @@
                         
                         <li class="nav-item">
                             <a class="nav-link {% if 'shift' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'admin:shift_creation' %}">
+                               href="{% url 'admin_shift:shift_creation' %}">
                                 <i class="fas fa-calendar-alt me-2"></i>
                                 シフト管理
                             </a>
@@ -89,7 +89,7 @@
                         
                         <li class="nav-item">
                             <a class="nav-link {% if 'evaluation' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'admin:evaluation_input' %}">
+                               href="{% url 'admin_eval:evaluation_input' %}">
                                 <i class="fas fa-star me-2"></i>
                                 評価管理
                             </a>
@@ -97,7 +97,7 @@
                         
                         <li class="nav-item">
                             <a class="nav-link {% if 'attendance' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'admin:attendance_records' %}">
+                               href="{% url 'admin_eval:attendance_records' %}">
                                 <i class="fas fa-clock me-2"></i>
                                 勤怠管理
                             </a>
@@ -108,7 +108,7 @@
                     
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'staff:dashboard' %}">
+                            <a class="nav-link" href="{% url 'staff_accounts:dashboard' %}">
                                 <i class="fas fa-user me-2"></i>
                                 スタッフ画面へ
                             </a>

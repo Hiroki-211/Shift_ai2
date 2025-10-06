@@ -20,7 +20,7 @@ def admin_required(view_func):
             staff = request.user.staff
             if not staff.is_manager:
                 messages.error(request, "管理者権限が必要です。")
-                return redirect('staff:dashboard')
+                return redirect('staff_accounts:dashboard')
         except Staff.DoesNotExist:
             messages.error(request, "スタッフ情報が見つかりません。")
             return redirect('login')
@@ -66,7 +66,7 @@ def admin_evaluation_input(request):
             evaluation.evaluation_period = period
             evaluation.save()
             messages.success(request, f"{target_staff_obj.user.get_full_name()}の評価を保存しました。")
-            return redirect('admin:evaluation_input')
+            return redirect('admin_eval:evaluation_input')
     else:
         form = EvaluationForm()
     
@@ -98,7 +98,7 @@ def admin_evaluation_detail(request, evaluation_id):
         if form.is_valid():
             form.save()
             messages.success(request, "評価を更新しました。")
-            return redirect('admin:evaluation_input')
+            return redirect('admin_eval:evaluation_input')
     else:
         form = EvaluationForm(instance=evaluation)
     
@@ -166,7 +166,7 @@ def admin_attendance_detail(request, record_id):
         if form.is_valid():
             form.save()
             messages.success(request, "勤怠記録を更新しました。")
-            return redirect('admin:attendance_records')
+            return redirect('admin_eval:attendance_records')
     else:
         form = AttendanceRecordForm(instance=record)
     
