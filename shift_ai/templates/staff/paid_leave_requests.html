@@ -1,0 +1,149 @@
+{% extends 'staff/base.html' %}
+{% load static %}
+
+{% block title %}有給提出 - 各種申請{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- パンくずリスト -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'staff_accounts:dashboard' %}">ダッシュボード</a></li>
+            <li class="breadcrumb-item"><a href="#">各種申請</a></li>
+            <li class="breadcrumb-item active" aria-current="page">有給提出</li>
+        </ol>
+    </nav>
+
+    <!-- ページヘッダー -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">有給提出</h1>
+    </div>
+
+    <!-- 有給残日数表示 -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                有給残日数
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ remaining_paid_leave }}日
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 有給申請フォーム -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">有給申請</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group mb-3">
+                            <label for="leave_date" class="form-label">有給取得日</label>
+                            <input type="date" class="form-control" id="leave_date" name="leave_date" required>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="reason" class="form-label">理由（任意）</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="3" 
+                                      placeholder="有給取得の理由を入力してください"></textarea>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>注意：</strong>有給申請は事前に提出してください。急な申請は承認されない場合があります。
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i>
+                                有給申請を提出
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">申請履歴</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>申請日</th>
+                                    <th>有給取得日</th>
+                                    <th>理由</th>
+                                    <th>ステータス</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">
+                                        申請履歴はありません
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 有給取得ルール -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">有給取得ルール</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold">申請期限</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>原則として1週間前までに申請</li>
+                                <li><i class="fas fa-check text-success me-2"></i>緊急時は3日前まで</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold">取得制限</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>連続取得は最大5日まで</li>
+                                <li><i class="fas fa-check text-success me-2"></i>繁忙期は制限あり</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 今日より前の日付を選択不可にする
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('leave_date').min = today;
+});
+</script>
+{% endblock %}

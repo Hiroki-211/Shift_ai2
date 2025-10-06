@@ -1,0 +1,314 @@
+{% extends 'staff/base.html' %}
+
+{% block page_title %}プロフィール{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- プロフィール情報 -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">基本情報</h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user-circle fa-5x text-primary"></i>
+                    </div>
+                </div>
+                <h5 class="font-weight-bold">{{ staff.user.get_full_name|default:staff.user.username }}</h5>
+                <p class="text-muted mb-3">{{ staff.user.email }}</p>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="h5 text-primary">{{ staff.employment_type|title }}</div>
+                        <small class="text-muted">雇用形態</small>
+                    </div>
+                    <div class="col-6">
+                        <div class="h5 text-success">¥{{ staff.hourly_wage|floatformat:0 }}</div>
+                        <small class="text-muted">時給</small>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="text-left">
+                    <h6 class="font-weight-bold mb-3">スキルレベル</h6>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>ホール業務</span>
+                            <span>{{ staff.hall_skill_level }}/5</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-primary" role="progressbar" 
+                                 style="width: {{ hall_skill_percentage }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>キッチン業務</span>
+                            <span>{{ staff.kitchen_skill_level }}/5</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ kitchen_skill_percentage }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 勤務統計 -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">勤務統計</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="h3 text-primary">0</div>
+                        <small class="text-muted">今月の勤務日数</small>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="h3 text-success">0h</div>
+                        <small class="text-muted">今月の勤務時間</small>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="h3 text-info">0</div>
+                        <small class="text-muted">今月のシフト数</small>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="h3 text-warning">¥0</div>
+                        <small class="text-muted">今月の予想給与</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 最近の評価 -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">最近の評価</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-star fa-3x mb-3"></i>
+                    <p>まだ評価がありません</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 勤務履歴 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">最近の勤務履歴</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>日付</th>
+                                <th>曜日</th>
+                                <th>出勤時間</th>
+                                <th>退勤時間</th>
+                                <th>勤務時間</th>
+                                <th>備考</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="fas fa-clock fa-2x mb-2"></i>
+                                    <p class="mb-0">まだ勤務記録がありません</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- スキル向上のヒント -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">スキル向上のヒント</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-lightbulb me-2"></i>ホール業務の向上</h6>
+                            <ul class="mb-0">
+                                <li>接客マナーの向上</li>
+                                <li>メニュー知識の習得</li>
+                                <li>効率的な動線の習得</li>
+                                <li>チームワークの向上</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-success">
+                            <h6><i class="fas fa-utensils me-2"></i>キッチン業務の向上</h6>
+                            <ul class="mb-0">
+                                <li>調理技術の習得</li>
+                                <li>食材知識の向上</li>
+                                <li>衛生管理の徹底</li>
+                                <li>スピードと正確性の向上</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 店舗情報 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">所属店舗情報</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold">{{ store.name }}</h6>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-clock me-1"></i>
+                            営業時間: {{ store.opening_time }} - {{ store.closing_time }}
+                        </p>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-tools me-1"></i>
+                            準備・片付け: {{ store.preparation_minutes }}分
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold">連絡先</h6>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-phone me-1"></i>
+                            電話: {{ store.phone|default:"未設定" }}
+                        </p>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-envelope me-1"></i>
+                            メール: {{ store.email|default:"未設定" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// プロフィール画像のアップロード（将来の実装用）
+function uploadProfileImage() {
+    // プロフィール画像アップロードの実装
+    console.log('Profile image upload');
+}
+
+// スキルレベルの詳細表示
+function showSkillDetails(skillType) {
+    const skillData = {
+        'hall': {
+            title: 'ホール業務スキル',
+            description: '接客、オーダー取り、テーブルセッティングなどのホール業務に関するスキル',
+            tips: [
+                'お客様への挨拶と笑顔を心がける',
+                'メニューの詳細を覚える',
+                '効率的な動線を身につける',
+                'チームメンバーとの連携を大切にする'
+            ]
+        },
+        'kitchen': {
+            title: 'キッチン業務スキル',
+            description: '調理、食材管理、衛生管理などのキッチン業務に関するスキル',
+            tips: [
+                '基本的な調理技術を身につける',
+                '食材の保存方法を覚える',
+                '衛生管理を徹底する',
+                'スピードと正確性を両立させる'
+            ]
+        }
+    };
+    
+    const skill = skillData[skillType];
+    if (skill) {
+        alert(`${skill.title}\n\n${skill.description}\n\n向上のコツ:\n${skill.tips.join('\n')}`);
+    }
+}
+
+// ページ読み込み時の初期化
+document.addEventListener('DOMContentLoaded', function() {
+    // スキルレベルバーのクリックイベント
+    const skillBars = document.querySelectorAll('.progress-bar');
+    skillBars.forEach(bar => {
+        bar.addEventListener('click', function() {
+            const skillType = this.classList.contains('bg-primary') ? 'hall' : 'kitchen';
+            showSkillDetails(skillType);
+        });
+    });
+});
+</script>
+
+<style>
+.profile-avatar {
+    margin-bottom: 1rem;
+}
+
+.progress {
+    height: 20px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.progress:hover {
+    opacity: 0.8;
+}
+
+.progress-bar {
+    transition: width 0.3s ease;
+}
+
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.alert {
+    border: none;
+    border-left: 4px solid;
+}
+
+.alert-info {
+    border-left-color: #17a2b8;
+}
+
+.alert-success {
+    border-left-color: #28a745;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+</style>
+{% endblock %}

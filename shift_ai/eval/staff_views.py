@@ -80,7 +80,7 @@ def staff_evaluation_view(request):
 @login_required
 @staff_required
 def staff_attendance_records(request):
-    """スタッフ勤怠記録管理"""
+    """スタッフ勤怠記録確認"""
     try:
         staff = request.user.staff
         store = staff.store
@@ -88,7 +88,7 @@ def staff_attendance_records(request):
         messages.error(request, "スタッフ情報が見つかりません。")
         return redirect('login')
     
-    # 今月の勤怠記録を取得
+    # 今月の日付範囲を取得
     today = date.today()
     month_start = today.replace(day=1)
     if today.month == 12:
@@ -96,33 +96,37 @@ def staff_attendance_records(request):
     else:
         month_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
     
+    # 今月の勤怠記録を取得
     attendance_records = AttendanceRecord.objects.filter(
         staff=staff,
         date__range=[month_start, month_end]
-    ).order_by('-date')
+    ).order_by('date')
     
-    # 勤務時間集計
-    total_work_hours = sum(record.work_hours for record in attendance_records)
-    avg_work_hours = total_work_hours / len(attendance_records) if attendance_records else 0
+    # 今月の全日付のリストを作成
+    monthly_attendance = []
+    current_date = month_start
+    while current_date <= month_end:
+        # 該当日の勤怠記録を検索
+        day_record = next(
+            (record for record in attendance_records if record.date == current_date), 
+            None
+        )
+        
+        monthly_attendance.append({
+            'date': current_date,
+            'record': day_record
+        })
+        
+        current_date += timedelta(days=1)
     
-    if request.method == 'POST':
-        # 勤怠記録の追加
-        form = AttendanceRecordForm(request.POST)
-        if form.is_valid():
-            attendance_record = form.save(commit=False)
-            attendance_record.staff = staff
-            attendance_record.save()
-            messages.success(request, "勤怠記録を追加しました。")
-            return redirect('staff_eval:attendance_records')
-    else:
-        form = AttendanceRecordForm()
+    # 勤務日数の集計
+    work_days = len([day for day in monthly_attendance if day['record']])
     
     context = {
         'staff': staff,
-        'attendance_records': attendance_records,
-        'form': form,
-        'total_work_hours': total_work_hours,
-        'avg_work_hours': avg_work_hours,
+        'attendance_records': attendance_records,  # 既存のコードとの互換性のため
+        'monthly_attendance': monthly_attendance,
+        'work_days': work_days,
         'month_start': month_start,
         'month_end': month_end,
     }

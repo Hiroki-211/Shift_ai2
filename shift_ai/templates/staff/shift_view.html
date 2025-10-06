@@ -1,0 +1,178 @@
+{% extends 'staff/base.html' %}
+
+{% block page_title %}シフト確認{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 今月のシフト統計 -->
+    <div class="col-xl-6 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">今月のシフト数</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ shift_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-alt fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">確定シフト</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ confirmed_shift_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- シフト一覧 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">今月のシフト一覧</h6>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary active" id="all-btn">全て</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="confirmed-btn">確定済み</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="pending-btn">未確定</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>日付</th>
+                                <th>曜日</th>
+                                <th>開始時間</th>
+                                <th>終了時間</th>
+                                <th>勤務時間</th>
+                                <th>状態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for day_data in monthly_shifts %}
+                            <tr class="{% if not day_data.shift %}table-light{% endif %}">
+                                <td>{{ day_data.date|date:"m/d" }}</td>
+                                <td>
+                                    <span class="{% if day_data.date|date:'D' == 'Sun' %}text-danger{% elif day_data.date|date:'D' == 'Sat' %}text-primary{% endif %}">
+                                        {{ day_data.date|date:"D" }}
+                                    </span>
+                                </td>
+                                <td>{{ day_data.shift.start_time|default:"-" }}</td>
+                                <td>{{ day_data.shift.end_time|default:"-" }}</td>
+                                <td>
+                                    {% if day_data.shift %}
+                                        {{ day_data.shift.duration_hours|floatformat:1 }}h
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if day_data.shift and day_data.shift.is_confirmed %}
+                                        <span class="badge bg-success">確定</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">未確定</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if day_data.shift %}
+                                        <a href="{% url 'staff_shift:shift_detail' day_data.shift.id %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> 詳細
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// フィルターボタンの機能
+document.addEventListener('DOMContentLoaded', function() {
+    const allBtn = document.getElementById('all-btn');
+    const confirmedBtn = document.getElementById('confirmed-btn');
+    const pendingBtn = document.getElementById('pending-btn');
+    const tableRows = document.querySelectorAll('tbody tr');
+    
+    function setActiveButton(activeBtn) {
+        [allBtn, confirmedBtn, pendingBtn].forEach(btn => {
+            btn.classList.remove('active');
+        });
+        activeBtn.classList.add('active');
+    }
+    
+    function filterRows(filter) {
+        tableRows.forEach(row => {
+            const statusBadge = row.querySelector('.badge');
+            const isConfirmed = statusBadge && statusBadge.textContent.includes('確定');
+            
+            switch(filter) {
+                case 'all':
+                    row.style.display = '';
+                    break;
+                case 'confirmed':
+                    row.style.display = isConfirmed ? '' : 'none';
+                    break;
+                case 'pending':
+                    row.style.display = !isConfirmed ? '' : 'none';
+                    break;
+            }
+        });
+    }
+    
+    allBtn.addEventListener('click', function() {
+        setActiveButton(this);
+        filterRows('all');
+    });
+    
+    confirmedBtn.addEventListener('click', function() {
+        setActiveButton(this);
+        filterRows('confirmed');
+    });
+    
+    pendingBtn.addEventListener('click', function() {
+        setActiveButton(this);
+        filterRows('pending');
+    });
+});
+</script>
+
+<style>
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}

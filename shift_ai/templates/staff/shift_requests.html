@@ -1,0 +1,715 @@
+{% extends 'staff/base.html' %}
+
+{% block page_title %}シフト提出{% endblock %}
+
+{% block content %}
+<!-- メモリー時間設定 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-clock me-2"></i>よく使う時間をメモリー
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">メモリー1</label>
+                        <div class="input-group">
+                            <input type="time" class="form-control" id="memory1_start" placeholder="開始時間">
+                            <span class="input-group-text">-</span>
+                            <input type="time" class="form-control" id="memory1_end" placeholder="終了時間">
+                            <button class="btn btn-outline-primary" onclick="setMemory(1)">
+                                <i class="fas fa-save"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">メモリー2</label>
+                        <div class="input-group">
+                            <input type="time" class="form-control" id="memory2_start" placeholder="開始時間">
+                            <span class="input-group-text">-</span>
+                            <input type="time" class="form-control" id="memory2_end" placeholder="終了時間">
+                            <button class="btn btn-outline-primary" onclick="setMemory(2)">
+                                <i class="fas fa-save"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">メモリー3</label>
+                        <div class="input-group">
+                            <input type="time" class="form-control" id="memory3_start" placeholder="開始時間">
+                            <span class="input-group-text">-</span>
+                            <input type="time" class="form-control" id="memory3_end" placeholder="終了時間">
+                            <button class="btn btn-outline-primary" onclick="setMemory(3)">
+                                <i class="fas fa-save"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- シフト提出カレンダー -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">シフト提出カレンダー</h6>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="previousMonth()">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="btn btn-sm btn-outline-secondary disabled" id="current-month">{{ month_start|date:"Y年m月" }}</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="nextMonth()">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- 希望種別選択 -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">希望種別</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="request_type" id="work_type" value="work" checked>
+                            <label class="btn btn-outline-success" for="work_type">勤務希望</label>
+                            
+                            <input type="radio" class="btn-check" name="request_type" id="off_type" value="off">
+                            <label class="btn btn-outline-warning" for="off_type">休み希望</label>
+                            
+                            <input type="radio" class="btn-check" name="request_type" id="overtime_type" value="overtime">
+                            <label class="btn btn-outline-info" for="overtime_type">残業希望</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">時間設定</label>
+                        <div class="input-group">
+                            <input type="time" class="form-control" id="start_time" name="start_time">
+                            <span class="input-group-text">-</span>
+                            <input type="time" class="form-control" id="end_time" name="end_time">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- メモリー時間ボタン -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <label class="form-label">メモリー時間で設定</label>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary" onclick="useMemory(1)" id="memory1_btn" disabled>
+                                メモリー1
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="useMemory(2)" id="memory2_btn" disabled>
+                                メモリー2
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="useMemory(3)" id="memory3_btn" disabled>
+                                メモリー3
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- カレンダー表示 -->
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <div class="calendar-weekdays">
+                            <div class="weekday sunday">日</div>
+                            <div class="weekday">月</div>
+                            <div class="weekday">火</div>
+                            <div class="weekday">水</div>
+                            <div class="weekday">木</div>
+                            <div class="weekday">金</div>
+                            <div class="weekday saturday">土</div>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid">
+                        {% for week in calendar_weeks %}
+                        <div class="calendar-week">
+                            {% for day in week %}
+                            <div class="calendar-day {% if day.is_current_month %}current-month{% else %}other-month{% endif %} {% if day.date|date:'D' == 'Sun' %}sunday{% elif day.date|date:'D' == 'Sat' %}saturday{% endif %}" 
+                                 data-date="{{ day.date|date:'Y-m-d' }}" 
+                                 onclick="selectDate(this)">
+                                <div class="day-content">
+                                    <div class="day-number">{{ day.date|date:"j" }}</div>
+                                    <div class="day-status" id="status_{{ day.date|date:'Y-m-d' }}">
+                                        <!-- 既存の希望シフト表示 -->
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- 提出ボタン -->
+                <div class="row mt-3">
+                    <div class="col-12 text-center">
+                        <button type="button" class="btn btn-primary btn-lg" onclick="submitShiftRequests()">
+                            <i class="fas fa-paper-plane me-2"></i>選択した日付でシフト提出
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 提出済み希望シフト一覧 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">提出済み希望シフト</h6>
+            </div>
+            <div class="card-body">
+                {% if shift_requests %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>日付</th>
+                                    <th>曜日</th>
+                                    <th>希望種別</th>
+                                    <th>時間</th>
+                                    <th>提出日時</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in shift_requests %}
+                                <tr>
+                                    <td>{{ request.date|date:"m/d" }}</td>
+                                    <td>{{ request.date|date:"D" }}</td>
+                                    <td>
+                                        {% if request.request_type == 'work' %}
+                                            <span class="badge bg-success">勤務希望</span>
+                                        {% elif request.request_type == 'off' %}
+                                            <span class="badge bg-warning">休み希望</span>
+                                        {% elif request.request_type == 'overtime' %}
+                                            <span class="badge bg-info">残業希望</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if request.start_time and request.end_time %}
+                                            {{ request.start_time }} - {{ request.end_time }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ request.created_at|date:"m/d H:i" }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="deleteRequest({{ request.id }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-calendar-plus fa-3x mb-3"></i>
+                        <p>まだ希望シフトが提出されていません</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 希望シフト提出ルール -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">提出ルール</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>勤務希望</h6>
+                            <p class="mb-0">希望する勤務日と時間を指定してください</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-calendar-times me-2"></i>休み希望</h6>
+                            <p class="mb-0">勤務できない日を指定してください</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert alert-success">
+                            <h6><i class="fas fa-clock me-2"></i>残業希望</h6>
+                            <p class="mb-0">追加で勤務したい日と時間を指定してください</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedDates = [];
+let memories = {};
+
+// ページ読み込み時の初期化
+document.addEventListener('DOMContentLoaded', function() {
+    loadMemories();
+    loadExistingRequests();
+    updateMemoryButtons();
+    highlightToday();
+});
+
+// メモリー機能
+function setMemory(memoryNum) {
+    const startTime = document.getElementById(`memory${memoryNum}_start`).value;
+    const endTime = document.getElementById(`memory${memoryNum}_end`).value;
+    
+    if (startTime && endTime) {
+        memories[memoryNum] = { start: startTime, end: endTime };
+        localStorage.setItem('shift_memories', JSON.stringify(memories));
+        updateMemoryButtons();
+        alert(`メモリー${memoryNum}を保存しました！`);
+    } else {
+        alert('開始時間と終了時間を両方入力してください。');
+    }
+}
+
+function useMemory(memoryNum) {
+    if (memories[memoryNum]) {
+        document.getElementById('start_time').value = memories[memoryNum].start;
+        document.getElementById('end_time').value = memories[memoryNum].end;
+    }
+}
+
+function loadMemories() {
+    const saved = localStorage.getItem('shift_memories');
+    if (saved) {
+        memories = JSON.parse(saved);
+    }
+}
+
+function updateMemoryButtons() {
+    for (let i = 1; i <= 3; i++) {
+        const btn = document.getElementById(`memory${i}_btn`);
+        if (memories[i]) {
+            btn.disabled = false;
+            btn.textContent = `メモリー${i} (${memories[i].start}-${memories[i].end})`;
+        } else {
+            btn.disabled = true;
+            btn.textContent = `メモリー${i}`;
+        }
+    }
+}
+
+// カレンダー機能
+function selectDate(cell) {
+    if (!cell.classList.contains('current-month')) return;
+    
+    const date = cell.dataset.date;
+    const isSelected = selectedDates.includes(date);
+    
+    if (isSelected) {
+        // 選択解除
+        selectedDates = selectedDates.filter(d => d !== date);
+        cell.classList.remove('selected');
+        updateDayStatus(cell, '');
+    } else {
+        // 選択
+        selectedDates.push(date);
+        cell.classList.add('selected');
+        updateDayStatus(cell, getSelectedType());
+    }
+    
+    updateSubmitButton();
+}
+
+function getSelectedType() {
+    const selectedType = document.querySelector('input[name="request_type"]:checked');
+    return selectedType ? selectedType.value : 'work';
+}
+
+function updateDayStatus(cell, type) {
+    const statusDiv = cell.querySelector('.day-status');
+    if (!statusDiv) return;
+    
+    const startTime = document.getElementById('start_time').value;
+    const endTime = document.getElementById('end_time').value;
+    
+    let statusHtml = '';
+    if (type === 'work' && startTime && endTime) {
+        statusHtml = `<small class="badge bg-success">${startTime}-${endTime}</small>`;
+    } else if (type === 'off') {
+        statusHtml = `<small class="badge bg-warning">休み</small>`;
+    } else if (type === 'overtime' && startTime && endTime) {
+        statusHtml = `<small class="badge bg-info">残業 ${startTime}-${endTime}</small>`;
+    }
+    
+    statusDiv.innerHTML = statusHtml;
+}
+
+function updateSubmitButton() {
+    const submitBtn = document.querySelector('button[onclick="submitShiftRequests()"]');
+    if (selectedDates.length > 0) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = `選択した日付でシフト提出 (${selectedDates.length}日)`;
+    } else {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '日付を選択してください';
+    }
+}
+
+// 希望種別変更時の処理
+document.querySelectorAll('input[name="request_type"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        selectedDates.forEach(date => {
+            const cell = document.querySelector(`[data-date="${date}"]`);
+            if (cell) {
+                updateDayStatus(cell, this.value);
+            }
+        });
+    });
+});
+
+// 時間変更時の処理
+document.getElementById('start_time').addEventListener('change', updateAllSelectedDays);
+document.getElementById('end_time').addEventListener('change', updateAllSelectedDays);
+
+function updateAllSelectedDays() {
+    const type = getSelectedType();
+    selectedDates.forEach(date => {
+        const cell = document.querySelector(`[data-date="${date}"]`);
+        if (cell) {
+            updateDayStatus(cell, type);
+        }
+    });
+}
+
+// シフト提出
+function submitShiftRequests() {
+    if (selectedDates.length === 0) {
+        alert('日付を選択してください。');
+        return;
+    }
+    
+    const requestType = getSelectedType();
+    const startTime = document.getElementById('start_time').value;
+    const endTime = document.getElementById('end_time').value;
+    
+    if (requestType !== 'off' && (!startTime || !endTime)) {
+        alert('開始時間と終了時間を入力してください。');
+        return;
+    }
+    
+    // フォームデータを作成
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    formData.append('request_type', requestType);
+    formData.append('start_time', startTime);
+    formData.append('end_time', endTime);
+    
+    selectedDates.forEach(date => {
+        formData.append('dates', date);
+    });
+    
+    // 送信
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            alert('シフト提出が完了しました！');
+            location.reload();
+        } else {
+            alert('エラーが発生しました。');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('エラーが発生しました。');
+    });
+}
+
+// 既存の希望シフトを読み込み
+function loadExistingRequests() {
+    // サーバーから既存の希望シフトを取得して表示
+    // 実装は省略（実際のプロジェクトでは実装が必要）
+}
+
+// 今日の日付をハイライト
+function highlightToday() {
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0];
+    
+    const todayCell = document.querySelector(`[data-date="${todayString}"]`);
+    if (todayCell && todayCell.classList.contains('current-month')) {
+        todayCell.classList.add('today');
+    }
+}
+
+// 月移動（簡易版）
+function previousMonth() {
+    // 実装は省略
+    console.log('Previous month');
+}
+
+function nextMonth() {
+    // 実装は省略
+    console.log('Next month');
+}
+
+// 削除機能
+function deleteRequest(requestId) {
+    if (confirm('この希望シフトを削除しますか？')) {
+        fetch(`/staff/shift/delete-request/${requestId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('削除に失敗しました。');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('エラーが発生しました。');
+        });
+    }
+}
+</script>
+
+<style>
+/* カレンダーコンテナ */
+.calendar-container {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* カレンダーヘッダー */
+.calendar-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.weekday {
+    padding: 12px 8px;
+    border-right: 1px solid #ddd;
+    background: #f8f9fa;
+}
+
+.weekday:last-child {
+    border-right: none;
+}
+
+.weekday.sunday {
+    color: #dc3545;
+}
+
+.weekday.saturday {
+    color: #007bff;
+}
+
+/* カレンダーグリッド */
+.calendar-grid {
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 1px solid #ddd;
+}
+
+.calendar-week:last-child {
+    border-bottom: none;
+}
+
+/* カレンダー日 */
+.calendar-day {
+    min-height: 80px;
+    border-right: 1px solid #ddd;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    position: relative;
+    background: white;
+}
+
+.calendar-day:last-child {
+    border-right: none;
+}
+
+.calendar-day.current-month {
+    background: white;
+}
+
+.calendar-day.current-month:hover {
+    background: #f0f8ff !important;
+}
+
+.calendar-day.selected {
+    background: #e3f2fd !important;
+    border: 2px solid #2196f3;
+}
+
+.calendar-day.other-month {
+    background: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.calendar-day.other-month:hover {
+    background: #f8f9fa !important;
+}
+
+/* 日付コンテンツ */
+.day-content {
+    padding: 8px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.day-number {
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.day-status {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.day-status .badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+    text-align: center;
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+/* 土日の色分け */
+.calendar-day.sunday .day-number {
+    color: #dc3545;
+}
+
+.calendar-day.saturday .day-number {
+    color: #007bff;
+}
+
+.calendar-day.selected.sunday .day-number,
+.calendar-day.selected.saturday .day-number {
+    color: #333;
+}
+
+/* 今日の日付 */
+.calendar-day.today {
+    background: #e8f5e8 !important;
+    border: 2px solid #28a745;
+}
+
+.calendar-day.today .day-number {
+    font-weight: 700;
+    color: #155724;
+}
+
+/* メモリーセクション */
+.memory-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+}
+
+/* ボタンスタイル */
+.btn-group .btn-check:checked + .btn {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+#current-month {
+    min-width: 120px;
+    font-weight: 600;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+    .calendar-day {
+        min-height: 60px;
+    }
+    
+    .day-content {
+        padding: 6px 4px;
+    }
+    
+    .day-number {
+        font-size: 14px;
+    }
+    
+    .day-status .badge {
+        font-size: 9px;
+        padding: 1px 4px;
+    }
+}
+
+/* 選択状態のアニメーション */
+.calendar-day.selected {
+    animation: selectPulse 0.3s ease-in-out;
+}
+
+@keyframes selectPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+/* ホバー効果 */
+.calendar-day.current-month:hover .day-number {
+    font-size: 18px;
+    transition: font-size 0.2s ease;
+}
+
+/* 選択された日付のスタイル */
+.calendar-day.selected .day-number {
+    font-weight: 700;
+    color: #1976d2;
+}
+</style>
+{% endblock %}
+
+

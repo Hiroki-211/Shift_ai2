@@ -1,0 +1,385 @@
+{% extends 'staff/base.html' %}
+
+{% block page_title %}評価確認{% endblock %}
+
+{% block content %}
+<!-- 最新評価サマリー -->
+{% if latest_evaluation %}
+<div class="row">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">総合評価</div>
+                        <div class="h2 mb-0 font-weight-bold">{{ latest_evaluation.total_score }}/100</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-star fa-3x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">評価期間</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ latest_evaluation.evaluation_period }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">評価者</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ latest_evaluation.evaluator.user.get_full_name }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-tie fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 評価詳細 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">評価詳細</h6>
+            </div>
+            <div class="card-body">
+                {% if latest_evaluation %}
+                    <div class="row">
+                        <!-- 勤怠関連評価 -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-primary">
+                                <div class="card-body">
+                                    <h6 class="font-weight-bold text-primary mb-3">
+                                        <i class="fas fa-clock me-2"></i>勤怠関連 (30点満点)
+                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span>出勤率</span>
+                                        <span class="font-weight-bold">{{ latest_evaluation.attendance_score }}/30</span>
+                                    </div>
+                                    <div class="progress mb-3">
+                                        <div class="progress-bar bg-primary" role="progressbar" 
+                                             style="width: {{ latest_evaluation.attendance_score|floatformat:0|add:"0" }}%"></div>
+                                    </div>
+                                    <small class="text-muted">遅刻・早退、シフト遵守の評価</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 業務スキル評価 -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-success">
+                                <div class="card-body">
+                                    <h6 class="font-weight-bold text-success mb-3">
+                                        <i class="fas fa-tools me-2"></i>業務スキル (40点満点)
+                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span>スキルレベル</span>
+                                        <span class="font-weight-bold">{{ latest_evaluation.skill_score }}/40</span>
+                                    </div>
+                                    <div class="progress mb-3">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ latest_evaluation.skill_score|floatformat:0|add:"0" }}%"></div>
+                                    </div>
+                                    <small class="text-muted">ホール・キッチン業務の技術評価</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- チームワーク評価 -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-info">
+                                <div class="card-body">
+                                    <h6 class="font-weight-bold text-info mb-3">
+                                        <i class="fas fa-users me-2"></i>チームワーク (20点満点)
+                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span>協調性</span>
+                                        <span class="font-weight-bold">{{ latest_evaluation.teamwork_score }}/20</span>
+                                    </div>
+                                    <div class="progress mb-3">
+                                        <div class="progress-bar bg-info" role="progressbar" 
+                                             style="width: {{ latest_evaluation.teamwork_score|floatformat:0|add:"0" }}%"></div>
+                                    </div>
+                                    <small class="text-muted">協調性、コミュニケーション能力</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 顧客対応評価 -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-warning">
+                                <div class="card-body">
+                                    <h6 class="font-weight-bold text-warning mb-3">
+                                        <i class="fas fa-smile me-2"></i>顧客対応 (10点満点)
+                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span>接客態度</span>
+                                        <span class="font-weight-bold">{{ latest_evaluation.customer_service_score }}/10</span>
+                                    </div>
+                                    <div class="progress mb-3">
+                                        <div class="progress-bar bg-warning" role="progressbar" 
+                                             style="width: {{ latest_evaluation.customer_service_score|floatformat:0|add:"0" }}%"></div>
+                                    </div>
+                                    <small class="text-muted">接客態度、クレーム対応</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- コメント -->
+                    {% if latest_evaluation.comments %}
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card border-left-secondary">
+                                <div class="card-body">
+                                    <h6 class="font-weight-bold text-secondary mb-3">
+                                        <i class="fas fa-comment me-2"></i>評価コメント
+                                    </h6>
+                                    <p class="mb-0">{{ latest_evaluation.comments }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-star fa-4x mb-3"></i>
+                        <h5>まだ評価がありません</h5>
+                        <p>管理者による評価をお待ちください</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 評価推移グラフ -->
+{% if evaluation_history %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">評価推移</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="evaluationChart" width="400" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 過去の評価一覧 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">過去の評価一覧</h6>
+            </div>
+            <div class="card-body">
+                {% if evaluations %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>評価期間</th>
+                                    <th>総合評価</th>
+                                    <th>勤怠</th>
+                                    <th>スキル</th>
+                                    <th>チームワーク</th>
+                                    <th>顧客対応</th>
+                                    <th>評価者</th>
+                                    <th>評価日</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evaluation in evaluations %}
+                                <tr>
+                                    <td>{{ evaluation.evaluation_period }}</td>
+                                    <td>
+                                        <span class="badge {% if evaluation.total_score >= 80 %}bg-success{% elif evaluation.total_score >= 60 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ evaluation.total_score }}/100
+                                        </span>
+                                    </td>
+                                    <td>{{ evaluation.attendance_score }}</td>
+                                    <td>{{ evaluation.skill_score }}</td>
+                                    <td>{{ evaluation.teamwork_score }}</td>
+                                    <td>{{ evaluation.customer_service_score }}</td>
+                                    <td>{{ evaluation.evaluator.user.get_full_name }}</td>
+                                    <td>{{ evaluation.created_at|date:"Y/m/d" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-history fa-3x mb-3"></i>
+                        <p>過去の評価がありません</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 平均評価 -->
+{% if avg_scores %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">平均評価</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-2">
+                        <div class="h4 text-primary">{{ avg_scores.avg_total|floatformat:1 }}</div>
+                        <small class="text-muted">総合平均</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="h4 text-primary">{{ avg_scores.avg_attendance|floatformat:1 }}</div>
+                        <small class="text-muted">勤怠平均</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="h4 text-success">{{ avg_scores.avg_skill|floatformat:1 }}</div>
+                        <small class="text-muted">スキル平均</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="h4 text-info">{{ avg_scores.avg_teamwork|floatformat:1 }}</div>
+                        <small class="text-muted">チームワーク平均</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="h4 text-warning">{{ avg_scores.avg_customer_service|floatformat:1 }}</div>
+                        <small class="text-muted">顧客対応平均</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="h4 text-secondary">{{ evaluations.count }}</div>
+                        <small class="text-muted">評価回数</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// 評価推移グラフ
+{% if evaluation_history %}
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('evaluationChart').getContext('2d');
+    const evaluationData = {{ evaluation_history|safe }};
+    
+    const periods = evaluationData.map(item => item.period);
+    const totalScores = evaluationData.map(item => item.total_score);
+    const attendanceScores = evaluationData.map(item => item.attendance_score);
+    const skillScores = evaluationData.map(item => item.skill_score);
+    const teamworkScores = evaluationData.map(item => item.teamwork_score);
+    const customerServiceScores = evaluationData.map(item => item.customer_service_score);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: periods,
+            datasets: [{
+                label: '総合評価',
+                data: totalScores,
+                borderColor: '#4facfe',
+                backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                tension: 0.1
+            }, {
+                label: '勤怠',
+                data: attendanceScores,
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                tension: 0.1
+            }, {
+                label: 'スキル',
+                data: skillScores,
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.1
+            }, {
+                label: 'チームワーク',
+                data: teamworkScores,
+                borderColor: '#17a2b8',
+                backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                tension: 0.1
+            }, {
+                label: '顧客対応',
+                data: customerServiceScores,
+                borderColor: '#ffc107',
+                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    });
+});
+{% endif %}
+</script>
+
+<style>
+.border-left-primary {
+    border-left: 4px solid #007bff !important;
+}
+
+.border-left-success {
+    border-left: 4px solid #28a745 !important;
+}
+
+.border-left-info {
+    border-left: 4px solid #17a2b8 !important;
+}
+
+.border-left-warning {
+    border-left: 4px solid #ffc107 !important;
+}
+
+.border-left-secondary {
+    border-left: 4px solid #6c757d !important;
+}
+
+.progress {
+    height: 8px;
+}
+</style>
+{% endblock %}
