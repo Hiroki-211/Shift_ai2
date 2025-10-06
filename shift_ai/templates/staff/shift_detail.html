@@ -1,0 +1,319 @@
+{% extends 'staff/base.html' %}
+
+{% block page_title %}シフト詳細{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- シフト基本情報 -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">シフト詳細情報</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold text-muted">日付</h6>
+                        <p class="h5">{{ shift.date|date:"Y年m月d日 (D)" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold text-muted">状態</h6>
+                        <p>
+                            {% if shift.is_confirmed %}
+                                <span class="badge bg-success fs-6">確定</span>
+                            {% else %}
+                                <span class="badge bg-warning fs-6">未確定</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold text-muted">開始時間</h6>
+                        <p class="h5 text-primary">{{ shift.start_time }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold text-muted">終了時間</h6>
+                        <p class="h5 text-primary">{{ shift.end_time }}</p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold text-muted">勤務時間</h6>
+                        <p class="h5 text-success">{{ shift.duration_hours|floatformat:1 }}時間</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold text-muted">予想給与</h6>
+                        <p class="h5 text-warning">¥{{ shift.wage_cost|floatformat:0 }}</p>
+                    </div>
+                </div>
+                
+                {% if shift.notes %}
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="font-weight-bold text-muted">備考</h6>
+                        <p class="text-muted">{{ shift.notes }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- シフト関連情報 -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">関連情報</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold text-muted">店舗</h6>
+                        <p>{{ shift.store.name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold text-muted">スタッフ</h6>
+                        <p>{{ shift.staff.user.get_full_name|default:shift.staff.user.username }}</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold text-muted">作成日時</h6>
+                        <p>{{ shift.created_at|date:"Y年m月d日 H:i" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold text-muted">更新日時</h6>
+                        <p>{{ shift.updated_at|date:"Y年m月d日 H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- サイドバー情報 -->
+    <div class="col-xl-4 col-lg-5">
+        <!-- 勤務統計 -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">今月の勤務統計</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="h4 text-primary">0</div>
+                        <small class="text-muted">勤務日数</small>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="h4 text-success">0h</div>
+                        <small class="text-muted">総勤務時間</small>
+                    </div>
+                    <div class="col-6">
+                        <div class="h4 text-info">0</div>
+                        <small class="text-muted">シフト数</small>
+                    </div>
+                    <div class="col-6">
+                        <div class="h4 text-warning">¥0</div>
+                        <small class="text-muted">予想給与</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- スキルレベル -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">スキルレベル</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>ホール業務</span>
+                        <span>{{ staff.hall_skill_level }}/5</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-primary" role="progressbar" 
+                             style="width: {{ hall_skill_percentage }}%"></div>
+                    </div>
+                </div>
+                <div class="mb-0">
+                    <div class="d-flex justify-content-between">
+                        <span>キッチン業務</span>
+                        <span>{{ staff.kitchen_skill_level }}/5</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {{ kitchen_skill_percentage }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- クイックアクション -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">クイックアクション</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'staff_shift:shift_view' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>シフト一覧に戻る
+                    </a>
+                    <a href="{% url 'staff_shift:shift_requests' %}" class="btn btn-outline-success">
+                        <i class="fas fa-calendar-plus me-2"></i>希望シフト提出
+                    </a>
+                    <a href="{% url 'staff_eval:attendance_records' %}" class="btn btn-outline-info">
+                        <i class="fas fa-clock me-2"></i>勤怠記録
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 注意事項 -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-warning">注意事項</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                        遅刻・早退は事前に連絡してください
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-clock text-info me-2"></i>
+                        出勤時間の5分前には到着してください
+                    </li>
+                    <li class="mb-0">
+                        <i class="fas fa-phone text-success me-2"></i>
+                        急な変更は早めに連絡してください
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- シフト変更履歴（将来の実装用） -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">シフト変更履歴</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-history fa-3x mb-3"></i>
+                    <p>変更履歴はありません</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// シフト詳細の印刷機能
+function printShift() {
+    window.print();
+}
+
+// シフトをカレンダーに追加
+function addToCalendar() {
+    const startDateTime = new Date('{{ shift.date|date:"Y-m-d" }}T{{ shift.start_time }}');
+    const endDateTime = new Date('{{ shift.date|date:"Y-m-d" }}T{{ shift.end_time }}');
+    
+    const title = 'シフト勤務';
+    const description = '{{ shift.store.name }}でのシフト勤務';
+    const location = '{{ shift.store.name }}';
+    
+    // Google Calendar用のURL
+    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startDateTime.toISOString().replace(/[-:]/g, '').split('.')[0]}Z/${endDateTime.toISOString().replace(/[-:]/g, '').split('.')[0]}Z&details=${encodeURIComponent(description)}&location=${encodeURIComponent(location)}`;
+    
+    window.open(googleCalendarUrl, '_blank');
+}
+
+// シフトの共有機能
+function shareShift() {
+    if (navigator.share) {
+        navigator.share({
+            title: 'シフト情報',
+            text: `{{ shift.date|date:"Y年m月d日" }} {{ shift.start_time }}-{{ shift.end_time }} のシフト`,
+            url: window.location.href
+        });
+    } else {
+        // フォールバック: URLをコピー
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            alert('URLをクリップボードにコピーしました');
+        });
+    }
+}
+
+// ページ読み込み時の初期化
+document.addEventListener('DOMContentLoaded', function() {
+    // シフトの状態に応じて表示を調整
+    const shiftStatus = '{{ shift.is_confirmed }}';
+    if (shiftStatus === 'True') {
+        // 確定シフトの場合の特別な処理
+        console.log('確定シフトです');
+    } else {
+        // 未確定シフトの場合の特別な処理
+        console.log('未確定シフトです');
+    }
+});
+</script>
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.progress {
+    height: 20px;
+}
+
+.progress-bar {
+    transition: width 0.3s ease;
+}
+
+.btn {
+    transition: all 0.2s;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.badge {
+    font-size: 0.9rem;
+}
+
+.list-unstyled li {
+    font-size: 0.9rem;
+}
+
+@media print {
+    .card-header,
+    .btn,
+    .card:not(.main-card) {
+        display: none !important;
+    }
+    
+    .main-card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+{% endblock %}

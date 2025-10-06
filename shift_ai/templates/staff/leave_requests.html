@@ -1,0 +1,137 @@
+{% extends 'staff/base.html' %}
+{% load static %}
+
+{% block title %}希望休提出 - 各種申請{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- パンくずリスト -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'staff_accounts:dashboard' %}">ダッシュボード</a></li>
+            <li class="breadcrumb-item"><a href="#">各種申請</a></li>
+            <li class="breadcrumb-item active" aria-current="page">希望休提出</li>
+        </ol>
+    </nav>
+
+    <!-- ページヘッダー -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">希望休提出</h1>
+    </div>
+
+    <!-- 注意事項 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>注意事項：</strong>希望休提出は固定契約者のみ利用可能です。提出後は管理者の承認が必要です。
+            </div>
+        </div>
+    </div>
+
+    <!-- 希望休申請フォーム -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">希望休申請</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group mb-3">
+                            <label for="leave_date" class="form-label">希望休日</label>
+                            <input type="date" class="form-control" id="leave_date" name="leave_date" required>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="reason" class="form-label">理由（任意）</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="3" 
+                                      placeholder="希望休の理由を入力してください"></textarea>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i>
+                                希望休を申請
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">申請状況</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>申請日</th>
+                                    <th>希望休日</th>
+                                    <th>理由</th>
+                                    <th>ステータス</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">
+                                        申請履歴はありません
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- カレンダー表示 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">今月のカレンダー</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>日</th>
+                                    <th>月</th>
+                                    <th>火</th>
+                                    <th>水</th>
+                                    <th>木</th>
+                                    <th>金</th>
+                                    <th>土</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">
+                                        カレンダー機能は今後実装予定です
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 今日より前の日付を選択不可にする
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('leave_date').min = today;
+});
+</script>
+{% endblock %}

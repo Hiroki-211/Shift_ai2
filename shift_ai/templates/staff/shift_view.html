@@ -5,13 +5,13 @@
 {% block content %}
 <div class="row">
     <!-- 今月のシフト統計 -->
-    <div class="col-xl-3 col-md-6 mb-4">
+    <div class="col-xl-6 col-md-6 mb-4">
         <div class="card stat-card">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-uppercase mb-1">今月のシフト数</div>
-                        <div class="h5 mb-0 font-weight-bold">{{ shifts.count }}</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ shift_count }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-calendar-alt fa-2x text-white-50"></i>
@@ -21,13 +21,13 @@
         </div>
     </div>
 
-    <div class="col-xl-3 col-md-6 mb-4">
+    <div class="col-xl-6 col-md-6 mb-4">
         <div class="card stat-card">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-uppercase mb-1">確定シフト</div>
-                        <div class="h5 mb-0 font-weight-bold">{{ shifts|length|add:"-1" }}</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ confirmed_shift_count }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-check-circle fa-2x text-white-50"></i>
@@ -36,92 +36,70 @@
             </div>
         </div>
     </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">勤務時間</div>
-                        <div class="h5 mb-0 font-weight-bold">{{ total_hours|floatformat:1 }}h</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-clock fa-2x text-white-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">予想給与</div>
-                        <div class="h5 mb-0 font-weight-bold">¥{{ staff.hourly_wage|floatformat:0 }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-yen-sign fa-2x text-white-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
-<!-- カレンダービュー -->
+
+<!-- シフト一覧 -->
 <div class="row">
     <div class="col-12">
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold text-primary">今月のシフトカレンダー</h6>
+                <h6 class="m-0 font-weight-bold text-primary">今月のシフト一覧</h6>
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="previousMonth()">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <span class="btn btn-sm btn-outline-secondary disabled">{{ month_start|date:"Y年m月" }}</span>
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="nextMonth()">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary active" id="all-btn">全て</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="confirmed-btn">確定済み</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="pending-btn">未確定</button>
                 </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered calendar-table">
+                    <table class="table table-hover">
                         <thead class="table-light">
                             <tr>
-                                <th class="text-center">日</th>
-                                <th class="text-center">月</th>
-                                <th class="text-center">火</th>
-                                <th class="text-center">水</th>
-                                <th class="text-center">木</th>
-                                <th class="text-center">金</th>
-                                <th class="text-center">土</th>
+                                <th>日付</th>
+                                <th>曜日</th>
+                                <th>開始時間</th>
+                                <th>終了時間</th>
+                                <th>勤務時間</th>
+                                <th>状態</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for week_start, week_shifts in weekly_shifts.items %}
-                            <tr>
-                                {% for day in week_range %}
-                                <td class="text-center calendar-day {% if day.is_current_month %}current-month{% else %}other-month{% endif %}">
-                                    <div class="d-flex flex-column align-items-center">
-                                        <span class="fw-bold">{{ day.date|date:"j" }}</span>
-                                        {% for shift in week_shifts %}
-                                            {% if shift.date == day.date %}
-                                                <div class="shift-info mt-1">
-                                                    <small class="badge bg-primary">{{ shift.start_time }} - {{ shift.end_time }}</small>
-                                                    {% if shift.is_confirmed %}
-                                                        <i class="fas fa-check-circle text-success ms-1"></i>
-                                                    {% else %}
-                                                        <i class="fas fa-clock text-warning ms-1"></i>
-                                                    {% endif %}
-                                                </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
+                            {% for day_data in monthly_shifts %}
+                            <tr class="{% if not day_data.shift %}table-light{% endif %}">
+                                <td>{{ day_data.date|date:"m/d" }}</td>
+                                <td>
+                                    <span class="{% if day_data.date|date:'D' == 'Sun' %}text-danger{% elif day_data.date|date:'D' == 'Sat' %}text-primary{% endif %}">
+                                        {{ day_data.date|date:"D" }}
+                                    </span>
                                 </td>
-                                {% endfor %}
+                                <td>{{ day_data.shift.start_time|default:"-" }}</td>
+                                <td>{{ day_data.shift.end_time|default:"-" }}</td>
+                                <td>
+                                    {% if day_data.shift %}
+                                        {{ day_data.shift.duration_hours|floatformat:1 }}h
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if day_data.shift and day_data.shift.is_confirmed %}
+                                        <span class="badge bg-success">確定</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">未確定</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if day_data.shift %}
+                                        <a href="{% url 'staff_shift:shift_detail' day_data.shift.id %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> 詳細
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -132,165 +110,69 @@
     </div>
 </div>
 
-<!-- シフト一覧 -->
-<div class="row">
-    <div class="col-12">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">シフト詳細一覧</h6>
-            </div>
-            <div class="card-body">
-                {% if shifts %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>日付</th>
-                                    <th>曜日</th>
-                                    <th>開始時間</th>
-                                    <th>終了時間</th>
-                                    <th>勤務時間</th>
-                                    <th>状態</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for shift in shifts %}
-                                <tr>
-                                    <td>{{ shift.date|date:"m/d" }}</td>
-                                    <td>{{ shift.date|date:"D" }}</td>
-                                    <td>{{ shift.start_time }}</td>
-                                    <td>{{ shift.end_time }}</td>
-                                    <td>{{ shift.duration_hours|floatformat:1 }}h</td>
-                                    <td>
-                                        {% if shift.is_confirmed %}
-                                            <span class="badge bg-success">確定</span>
-                                        {% else %}
-                                            <span class="badge bg-warning">未確定</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'staff_shift:shift_detail' shift.id %}" 
-                                           class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye"></i> 詳細
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-calendar-alt fa-3x mb-3"></i>
-                        <p>今月のシフトはありません</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- スキルレベル表示 -->
-<div class="row">
-    <div class="col-12">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">スキルレベル</h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>ホール業務</h6>
-                        <div class="progress mb-3">
-                            <div class="progress-bar" role="progressbar" 
-                                 style="width: {{ hall_skill_percentage }}%" 
-                                 aria-valuenow="{{ staff.hall_skill_level }}" 
-                                 aria-valuemin="0" aria-valuemax="5">
-                                {{ staff.hall_skill_level }}/5
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>キッチン業務</h6>
-                        <div class="progress mb-3">
-                            <div class="progress-bar" role="progressbar" 
-                                 style="width: {{ kitchen_skill_percentage }}%" 
-                                 aria-valuenow="{{ staff.kitchen_skill_level }}" 
-                                 aria-valuemin="0" aria-valuemax="5">
-                                {{ staff.kitchen_skill_level }}/5
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="text-center">
-                    <small class="text-muted">スキルレベルを上げることで、より多くのシフトに参加できます</small>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function previousMonth() {
-    // 前月への移動処理
-    console.log('Previous month');
-}
-
-function nextMonth() {
-    // 次月への移動処理
-    console.log('Next month');
-}
-
-// カレンダーの日付クリック処理
+// フィルターボタンの機能
 document.addEventListener('DOMContentLoaded', function() {
-    const calendarDays = document.querySelectorAll('.calendar-day');
-    calendarDays.forEach(day => {
-        day.addEventListener('click', function() {
-            // 日付クリック時の処理
-            console.log('Day clicked:', this);
+    const allBtn = document.getElementById('all-btn');
+    const confirmedBtn = document.getElementById('confirmed-btn');
+    const pendingBtn = document.getElementById('pending-btn');
+    const tableRows = document.querySelectorAll('tbody tr');
+    
+    function setActiveButton(activeBtn) {
+        [allBtn, confirmedBtn, pendingBtn].forEach(btn => {
+            btn.classList.remove('active');
         });
+        activeBtn.classList.add('active');
+    }
+    
+    function filterRows(filter) {
+        tableRows.forEach(row => {
+            const statusBadge = row.querySelector('.badge');
+            const isConfirmed = statusBadge && statusBadge.textContent.includes('確定');
+            
+            switch(filter) {
+                case 'all':
+                    row.style.display = '';
+                    break;
+                case 'confirmed':
+                    row.style.display = isConfirmed ? '' : 'none';
+                    break;
+                case 'pending':
+                    row.style.display = !isConfirmed ? '' : 'none';
+                    break;
+            }
+        });
+    }
+    
+    allBtn.addEventListener('click', function() {
+        setActiveButton(this);
+        filterRows('all');
+    });
+    
+    confirmedBtn.addEventListener('click', function() {
+        setActiveButton(this);
+        filterRows('confirmed');
+    });
+    
+    pendingBtn.addEventListener('click', function() {
+        setActiveButton(this);
+        filterRows('pending');
     });
 });
 </script>
 
 <style>
-.calendar-table {
-    font-size: 0.9rem;
+.table th {
+    border-top: none;
+    font-weight: 600;
 }
 
-.calendar-day {
-    height: 80px;
-    vertical-align: top;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.calendar-day:hover {
-    background-color: #e3f2fd !important;
-}
-
-.calendar-day.current-month {
-    background-color: #f8f9fa;
-}
-
-.calendar-day.other-month {
-    background-color: #e9ecef;
-    color: #6c757d;
-}
-
-.shift-info {
-    font-size: 0.8rem;
-}
-
-.progress {
-    height: 20px;
-}
-
-.progress-bar {
-    background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
 }
 </style>
 {% endblock %}

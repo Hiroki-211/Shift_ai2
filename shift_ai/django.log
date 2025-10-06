@@ -1427,3 +1427,656 @@ Not Found: /.well-known/appspecific/com.chrome.devtools.json
 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
 Not Found: /.well-known/appspecific/com.chrome.devtools.json
 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /admin-panel/ HTTP/1.1" 200 13728
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /admin-panel/ HTTP/1.1" 200 13728
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Internal Server Error: /staff/
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\urls\base.py", line 81, in reverse
+    extra, resolver = resolver.namespace_dict[ns]
+                      ~~~~~~~~~~~~~~~~~~~~~~~^^^^
+KeyError: 'staff'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\accounts\staff_views.py", line 24, in wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\accounts\staff_views.py", line 92, in staff_dashboard
+    return render(request, 'staff/dashboard.html', context)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\loader_tags.py", line 65, in render
+    result = block.nodelist.render(context)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\defaulttags.py", line 480, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\urls\base.py", line 92, in reverse
+    raise NoReverseMatch("%s is not a registered namespace" % key)
+django.urls.exceptions.NoReverseMatch: 'staff' is not a registered namespace
+"GET /staff/ HTTP/1.1" 500 185148
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Watching for file changes with StatReloader
+Internal Server Error: /staff/
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\urls\base.py", line 81, in reverse
+    extra, resolver = resolver.namespace_dict[ns]
+                      ~~~~~~~~~~~~~~~~~~~~~~~^^^^
+KeyError: 'staff'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\accounts\staff_views.py", line 24, in wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\accounts\staff_views.py", line 92, in staff_dashboard
+    return render(request, 'staff/dashboard.html', context)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\loader_tags.py", line 65, in render
+    result = block.nodelist.render(context)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\template\defaulttags.py", line 480, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\urls\base.py", line 92, in reverse
+    raise NoReverseMatch("%s is not a registered namespace" % key)
+django.urls.exceptions.NoReverseMatch: 'staff' is not a registered namespace
+"GET /staff/ HTTP/1.1" 500 185285
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/ HTTP/1.1" 200 13856
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14605
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14263
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/evaluation/ HTTP/1.1" 200 10208
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14263
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/evaluation/ HTTP/1.1" 200 10208
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/attendance-records/ HTTP/1.1" 200 15442
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/profile/ HTTP/1.1" 200 17849
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/evaluation/ HTTP/1.1" 200 10208
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14263
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14605
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/evaluation/ HTTP/1.1" 200 10208
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/attendance-records/ HTTP/1.1" 200 15442
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/attendance-records/ HTTP/1.1" 200 15442
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/profile/ HTTP/1.1" 200 17849
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/attendance-records/ HTTP/1.1" 200 15442
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/profile/ HTTP/1.1" 200 17849
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14263
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14605
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14263
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/ HTTP/1.1" 200 13856
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/attendance-records/ HTTP/1.1" 200 15442
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14605
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14263
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/ HTTP/1.1" 200 13856
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14605
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14263
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14605
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_urls.py changed, reloading.
+Watching for file changes with StatReloader
+C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py changed, reloading.
+Watching for file changes with StatReloader
+C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py changed, reloading.
+Watching for file changes with StatReloader
+C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14994
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/ HTTP/1.1" 200 14981
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14994
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14652
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14994
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14652
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Internal Server Error: /staff/shift/leave-requests/
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 26, in wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 188, in leave_requests
+    if not staff.is_contract_employee:
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Staff' object has no attribute 'is_contract_employee'
+"GET /staff/shift/leave-requests/ HTTP/1.1" 500 79847
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/attendance-records/ HTTP/1.1" 200 13726
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/profile/ HTTP/1.1" 200 18238
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/attendance-records/ HTTP/1.1" 200 13726
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/ HTTP/1.1" 200 14981
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/ HTTP/1.1" 200 11666
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/attendance-records/ HTTP/1.1" 200 13726
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/attendance-records/ HTTP/1.1" 200 10526
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/ HTTP/1.1" 200 11666
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14652
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/ HTTP/1.1" 200 11666
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14994
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14994
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14994
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14652
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14994
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/ HTTP/1.1" 200 11666
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14994
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Internal Server Error: /staff/shift/leave-requests/
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 26, in wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 188, in leave_requests
+    if not staff.is_contract_employee:
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Staff' object has no attribute 'is_contract_employee'
+"GET /staff/shift/leave-requests/ HTTP/1.1" 500 79843
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14652
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14994
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Internal Server Error: /staff/shift/leave-requests/
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 26, in wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 188, in leave_requests
+    if not staff.is_contract_employee:
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Staff' object has no attribute 'is_contract_employee'
+"GET /staff/shift/leave-requests/ HTTP/1.1" 500 79843
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\eval\staff_views.py changed, reloading.
+Watching for file changes with StatReloader
+C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\eval\staff_views.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14994
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/paid-leave-requests/ HTTP/1.1" 200 13158
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/paid-leave-requests/ HTTP/1.1" 200 13158
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Internal Server Error: /staff/shift/leave-requests/
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 26, in wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 188, in leave_requests
+    if not staff.is_contract_employee:
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Staff' object has no attribute 'is_contract_employee'
+"GET /staff/shift/leave-requests/ HTTP/1.1" 500 79852
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/attendance-records/ HTTP/1.1" 200 42091
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14994
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14652
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14994
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14652
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14994
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14652
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 14994
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py changed, reloading.
+Watching for file changes with StatReloader
+C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 46366
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14652
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14652
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Internal Server Error: /staff/shift/leave-requests/
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 26, in wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 194, in leave_requests
+    if not staff.is_contract_employee:
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Staff' object has no attribute 'is_contract_employee'
+"GET /staff/shift/leave-requests/ HTTP/1.1" 500 79847
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/paid-leave-requests/ HTTP/1.1" 200 13158
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/attendance-records/ HTTP/1.1" 200 42091
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/profile/ HTTP/1.1" 200 18238
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14652
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/ HTTP/1.1" 200 11666
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/ HTTP/1.1" 200 11666
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 46366
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14652
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14652
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 46366
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 14652
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 24738
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 46366
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/ HTTP/1.1" 200 11666
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 46366
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 24738
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 46366
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 24738
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Internal Server Error: /staff/shift/leave-requests/
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 26, in wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 194, in leave_requests
+    if not staff.is_contract_employee:
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Staff' object has no attribute 'is_contract_employee'
+"GET /staff/shift/leave-requests/ HTTP/1.1" 500 79847
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/paid-leave-requests/ HTTP/1.1" 200 13158
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Internal Server Error: /staff/shift/leave-requests/
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 26, in wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 194, in leave_requests
+    if not staff.is_contract_employee:
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Staff' object has no attribute 'is_contract_employee'
+"GET /staff/shift/leave-requests/ HTTP/1.1" 500 79852
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/paid-leave-requests/ HTTP/1.1" 200 14178
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/paid-leave-requests/ HTTP/1.1" 200 14178
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Internal Server Error: /staff/shift/leave-requests/
+Traceback (most recent call last):
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 26, in wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py", line 194, in leave_requests
+    if not staff.is_contract_employee:
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Staff' object has no attribute 'is_contract_employee'
+"GET /staff/shift/leave-requests/ HTTP/1.1" 500 79852
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 46983
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 25355
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 46983
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 25355
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 29014
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 28501
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 46983
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 28501
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/ HTTP/1.1" 200 13009
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 46983
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 28501
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/attendance-records/ HTTP/1.1" 200 42708
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/profile/ HTTP/1.1" 200 18855
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/eval/attendance-records/ HTTP/1.1" 200 42708
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-view/ HTTP/1.1" 200 46983
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 28501
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 28501
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+Watching for file changes with StatReloader
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 28501
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
+C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py changed, reloading.
+Watching for file changes with StatReloader
+C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py changed, reloading.
+Watching for file changes with StatReloader

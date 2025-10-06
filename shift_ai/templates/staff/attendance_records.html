@@ -1,17 +1,27 @@
 {% extends 'staff/base.html' %}
 
-{% block page_title %}勤怠記録{% endblock %}
+{% block page_title %}勤怠確認{% endblock %}
 
 {% block content %}
+<!-- 注意事項 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>注意：</strong>ここに表示されるのは管理者が確定した勤怠記録のみです。未確定の場合は実際の打刻時間が表示されます。
+        </div>
+    </div>
+</div>
+
 <!-- 今月の勤怠統計 -->
 <div class="row">
-    <div class="col-xl-3 col-md-6 mb-4">
+    <div class="col-xl-12 col-md-12 mb-4">
         <div class="card stat-card">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-uppercase mb-1">今月の勤務日数</div>
-                        <div class="h5 mb-0 font-weight-bold">{{ attendance_records.count }}日</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ work_days }}日</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-calendar-check fa-2x text-white-50"></i>
@@ -21,99 +31,8 @@
         </div>
     </div>
 
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">総勤務時間</div>
-                        <div class="h5 mb-0 font-weight-bold">{{ total_work_hours|floatformat:1 }}h</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-clock fa-2x text-white-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">平均勤務時間</div>
-                        <div class="h5 mb-0 font-weight-bold">{{ avg_work_hours|floatformat:1 }}h</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-chart-line fa-2x text-white-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">予想給与</div>
-                        <div class="h5 mb-0 font-weight-bold">¥{{ staff.hourly_wage|floatformat:0 }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-yen-sign fa-2x text-white-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
-<!-- 勤怠記録追加フォーム -->
-<div class="row">
-    <div class="col-12">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">勤怠記録追加</h6>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <label for="id_date" class="form-label">日付</label>
-                            <input type="date" class="form-control" id="id_date" name="date" required>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label for="id_clock_in" class="form-label">出勤時間</label>
-                            <input type="time" class="form-control" id="id_clock_in" name="clock_in" required>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label for="id_clock_out" class="form-label">退勤時間</label>
-                            <input type="time" class="form-control" id="id_clock_out" name="clock_out" required>
-                        </div>
-                        <div class="col-md-3 mb-3 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-plus me-2"></i>記録追加
-                            </button>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="id_break_minutes" class="form-label">休憩時間（分）</label>
-                            <input type="number" class="form-control" id="id_break_minutes" name="break_minutes" value="60" min="0">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="id_notes" class="form-label">備考</label>
-                            <input type="text" class="form-control" id="id_notes" name="notes" placeholder="特記事項があれば記入">
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- 勤怠記録一覧 -->
 <div class="row">
@@ -121,55 +40,59 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">勤怠記録一覧</h6>
-                <span class="badge bg-info">{{ month_start|date:"Y年m月" }}</span>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary active" id="all-btn">全て</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="confirmed-btn">確定済み</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="pending-btn">未確定</button>
+                </div>
             </div>
             <div class="card-body">
-                {% if attendance_records %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>日付</th>
-                                    <th>曜日</th>
-                                    <th>出勤時間</th>
-                                    <th>退勤時間</th>
-                                    <th>休憩時間</th>
-                                    <th>勤務時間</th>
-                                    <th>備考</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for record in attendance_records %}
-                                <tr>
-                                    <td>{{ record.date|date:"m/d" }}</td>
-                                    <td>{{ record.date|date:"D" }}</td>
-                                    <td>{{ record.clock_in|default:"-" }}</td>
-                                    <td>{{ record.clock_out|default:"-" }}</td>
-                                    <td>{{ record.break_minutes|default:"-" }}分</td>
-                                    <td>{{ record.work_hours|floatformat:1 }}h</td>
-                                    <td>{{ record.notes|default:"-" }}</td>
-                                    <td>
-                                        <a href="{% url 'staff_eval:attendance_detail' record.id %}" 
-                                           class="btn btn-sm btn-outline-primary me-1">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button class="btn btn-sm btn-outline-danger" 
-                                                onclick="deleteRecord({{ record.id }})">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-clock fa-3x mb-3"></i>
-                        <p>今月の勤怠記録がありません</p>
-                    </div>
-                {% endif %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>日付</th>
+                                <th>曜日</th>
+                                <th>出勤時間</th>
+                                <th>退勤時間</th>
+                                <th>休憩時間</th>
+                                <th>勤務時間</th>
+                                <th>ステータス</th>
+                                <th>備考</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for day_data in monthly_attendance %}
+                            <tr class="{% if not day_data.record %}table-light{% endif %}">
+                                <td>{{ day_data.date|date:"m/d" }}</td>
+                                <td>
+                                    <span class="{% if day_data.date|date:'D' == 'Sun' %}text-danger{% elif day_data.date|date:'D' == 'Sat' %}text-primary{% endif %}">
+                                        {{ day_data.date|date:"D" }}
+                                    </span>
+                                </td>
+                                <td>{{ day_data.record.clock_in|default:"-" }}</td>
+                                <td>{{ day_data.record.clock_out|default:"-" }}</td>
+                                <td>{{ day_data.record.break_minutes|default:"-" }}{% if day_data.record.break_minutes %}分{% endif %}</td>
+                                <td>
+                                    {% if day_data.record %}
+                                        {{ day_data.record.work_hours|floatformat:1 }}h
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if day_data.record and day_data.record.is_confirmed %}
+                                        <span class="badge bg-success">確定済み</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">未確定</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ day_data.record.notes|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -191,36 +114,6 @@
 </div>
 {% endif %}
 
-<!-- 勤怠統計サマリー -->
-<div class="row">
-    <div class="col-12">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">勤怠統計サマリー</h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 text-center">
-                        <div class="h4 text-primary">{{ attendance_records.count }}</div>
-                        <small class="text-muted">勤務日数</small>
-                    </div>
-                    <div class="col-md-3 text-center">
-                        <div class="h4 text-success">{{ total_work_hours|floatformat:1 }}h</div>
-                        <small class="text-muted">総勤務時間</small>
-                    </div>
-                    <div class="col-md-3 text-center">
-                        <div class="h4 text-info">{{ avg_work_hours|floatformat:1 }}h</div>
-                        <small class="text-muted">平均勤務時間</small>
-                    </div>
-                    <div class="col-md-3 text-center">
-                        <div class="h4 text-warning">¥{{ staff.hourly_wage|floatformat:0 }}</div>
-                        <small class="text-muted">時給</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -282,44 +175,53 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 {% endif %}
 
-// 削除確認
-function deleteRecord(recordId) {
-    if (confirm('この勤怠記録を削除しますか？')) {
-        // 削除処理の実装
-        fetch(`/staff/eval/attendance/${recordId}/delete/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => {
-            if (response.ok) {
-                location.reload();
-            } else {
-                alert('削除に失敗しました');
+// フィルターボタンの機能
+document.addEventListener('DOMContentLoaded', function() {
+    const allBtn = document.getElementById('all-btn');
+    const confirmedBtn = document.getElementById('confirmed-btn');
+    const pendingBtn = document.getElementById('pending-btn');
+    const tableRows = document.querySelectorAll('tbody tr');
+    
+    function setActiveButton(activeBtn) {
+        [allBtn, confirmedBtn, pendingBtn].forEach(btn => {
+            btn.classList.remove('active');
+        });
+        activeBtn.classList.add('active');
+    }
+    
+    function filterRows(filter) {
+        tableRows.forEach(row => {
+            const statusBadge = row.querySelector('.badge');
+            const isConfirmed = statusBadge && statusBadge.textContent.includes('確定済み');
+            
+            switch(filter) {
+                case 'all':
+                    row.style.display = '';
+                    break;
+                case 'confirmed':
+                    row.style.display = isConfirmed ? '' : 'none';
+                    break;
+                case 'pending':
+                    row.style.display = !isConfirmed ? '' : 'none';
+                    break;
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('エラーが発生しました');
         });
     }
-}
-
-// 現在の日時を自動入力
-document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date();
-    const dateInput = document.getElementById('id_date');
-    const clockInInput = document.getElementById('id_clock_in');
     
-    // 今日の日付を設定
-    dateInput.value = today.toISOString().split('T')[0];
+    allBtn.addEventListener('click', function() {
+        setActiveButton(this);
+        filterRows('all');
+    });
     
-    // 現在時刻を出勤時間に設定（参考用）
-    const now = new Date();
-    const timeString = now.toTimeString().slice(0, 5);
-    clockInInput.value = timeString;
+    confirmedBtn.addEventListener('click', function() {
+        setActiveButton(this);
+        filterRows('confirmed');
+    });
+    
+    pendingBtn.addEventListener('click', function() {
+        setActiveButton(this);
+        filterRows('pending');
+    });
 });
 </script>
 

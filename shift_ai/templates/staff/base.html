@@ -86,23 +86,39 @@
                             <a class="nav-link {% if 'shift_requests' in request.resolver_match.url_name %}active{% endif %}" 
                                href="{% url 'staff_shift:shift_requests' %}">
                                 <i class="fas fa-calendar-plus me-2"></i>
-                                希望シフト提出
+                                シフト提出
                             </a>
                         </li>
                         
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'evaluation' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'staff_eval:evaluation_view' %}">
-                                <i class="fas fa-star me-2"></i>
-                                評価確認
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="applicationsDropdown" role="button" 
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-file-alt me-2"></i>
+                                各種申請
                             </a>
+                            <ul class="dropdown-menu" aria-labelledby="applicationsDropdown">
+                                <li>
+                                    <a class="dropdown-item {% if 'leave_requests' in request.resolver_match.url_name %}active{% endif %}" 
+                                       href="{% url 'staff_shift:leave_requests' %}">
+                                        <i class="fas fa-calendar-times me-2"></i>
+                                        希望休提出
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if 'paid_leave_requests' in request.resolver_match.url_name %}active{% endif %}" 
+                                       href="{% url 'staff_shift:paid_leave_requests' %}">
+                                        <i class="fas fa-calendar-check me-2"></i>
+                                        有給提出
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         
                         <li class="nav-item">
                             <a class="nav-link {% if 'attendance' in request.resolver_match.url_name %}active{% endif %}" 
                                href="{% url 'staff_eval:attendance_records' %}">
                                 <i class="fas fa-clock me-2"></i>
-                                勤怠記録
+                                勤怠確認
                             </a>
                         </li>
                         
