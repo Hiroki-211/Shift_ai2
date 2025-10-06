@@ -794,3 +794,80 @@ Not Found: /favicon.ico
 "GET /store-settings/ HTTP/1.1" 200 9597
 "GET /staff-management/ HTTP/1.1" 200 8385
 "GET /shift/ HTTP/1.1" 200 11553
+Watching for file changes with StatReloader
+"GET / HTTP/1.1" 200 10338
+Not Found: /favicon.ico
+"GET /favicon.ico HTTP/1.1" 404 4674
+"GET /eval/evaluation-input/ HTTP/1.1" 200 15305
+"GET /shift/ HTTP/1.1" 200 11553
+"GET /staff-requirements/ HTTP/1.1" 200 12000
+"GET /eval/evaluation-input/ HTTP/1.1" 200 15305
+Internal Server Error: /eval/evaluation-input/
+Traceback (most recent call last):
+  File "C:\shift_ai2\venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\shift_ai2\venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\shift_ai2\venv\lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\shift_ai2\shift_ai\eval\views.py", line 49, in evaluation_input
+    return redirect('evaluation_input')
+  File "C:\shift_ai2\venv\lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+  File "C:\shift_ai2\venv\lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\shift_ai2\venv\lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\shift_ai2\venv\lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'evaluation_input' not found. 'evaluation_input' is not a valid view function or pattern name.
+"POST /eval/evaluation-input/ HTTP/1.1" 500 97775
+Watching for file changes with StatReloader
+Not Found: /eval/
+"GET /eval/ HTTP/1.1" 404 6239
+"GET / HTTP/1.1" 200 10846
+"GET /staff-management/ HTTP/1.1" 200 8385
+"GET /store-settings/ HTTP/1.1" 200 9597
+"GET / HTTP/1.1" 200 10338
+"GET /staff-management/ HTTP/1.1" 200 8385
+"GET /staff/1/ HTTP/1.1" 200 10770
+"GET /shift/staff-requests/ HTTP/1.1" 200 15067
+"GET /eval/evaluation-input/ HTTP/1.1" 200 17164
+"GET /eval/attendance-records/ HTTP/1.1" 200 12800
+"GET /store-settings/ HTTP/1.1" 200 9597
+"GET /store-settings/ HTTP/1.1" 200 9597
+"GET /staff-management/ HTTP/1.1" 200 8385
+"GET /staff-requirements/ HTTP/1.1" 200 12000
+Internal Server Error: /staff-requirements/
+Traceback (most recent call last):
+  File "C:\shift_ai2\venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\shift_ai2\venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\shift_ai2\venv\lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\shift_ai2\shift_ai\accounts\views.py", line 163, in staff_requirements
+    return redirect('staff_requirements')
+  File "C:\shift_ai2\venv\lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+  File "C:\shift_ai2\venv\lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\shift_ai2\venv\lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\shift_ai2\venv\lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'staff_requirements' not found. 'staff_requirements' is not a valid view function or pattern name.
+"POST /staff-requirements/ HTTP/1.1" 500 96978
+"GET /staff-requirements/ HTTP/1.1" 200 14626
+"GET /eval/evaluation-input/ HTTP/1.1" 200 17164
+"GET /shift/staff-view/ HTTP/1.1" 200 10391
+"GET /shift/staff-requests/ HTTP/1.1" 200 15067
+"GET /shift/ HTTP/1.1" 200 11553
+Forbidden (CSRF token missing.): /shift/generate-ai/
+"POST /shift/generate-ai/ HTTP/1.1" 403 2534
+"GET /shift/?start_date=2025-10-06&end_date=2025-11-05 HTTP/1.1" 200 11553
+"GET /shift/?start_date=2025-10-01&end_date=2025-11-05 HTTP/1.1" 200 11553
+"GET /shift/staff-view/ HTTP/1.1" 200 10391
+"GET /eval/evaluation-input/ HTTP/1.1" 200 17164
+"GET /eval/attendance-records/ HTTP/1.1" 200 12800
+"GET /eval/staff-evaluation/ HTTP/1.1" 200 14037
