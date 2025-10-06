@@ -21,7 +21,7 @@ def admin_required(view_func):
             staff = request.user.staff
             if not staff.is_manager:
                 messages.error(request, "管理者権限が必要です。")
-                return redirect('staff:dashboard')
+                return redirect('staff_accounts:dashboard')
         except Staff.DoesNotExist:
             messages.error(request, "スタッフ情報が見つかりません。")
             return redirect('login')
@@ -162,7 +162,7 @@ def admin_shift_detail(request, shift_id):
         except ValueError:
             messages.error(request, "無効な時間形式です。")
         
-        return redirect('admin:shift_creation')
+        return redirect('admin_shift:shift_creation')
     
     return render(request, 'admin/shift_detail.html', {'shift': shift})
 
@@ -184,7 +184,7 @@ def admin_delete_shift(request, shift_id):
         shift.delete()
         messages.success(request, "シフトを削除しました。")
     
-    return redirect('admin:shift_creation')
+    return redirect('admin_shift:shift_creation')
 
 
 @login_required

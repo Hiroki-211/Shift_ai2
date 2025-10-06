@@ -86,7 +86,7 @@ def staff_shift_requests(request):
                     continue
             
             messages.success(request, f"{created_count}件の希望シフトを提出しました。")
-            return redirect('staff:shift_requests')
+            return redirect('staff_shift:shift_requests')
     
     context = {
         'staff': staff,

@@ -113,7 +113,7 @@ def staff_attendance_records(request):
             attendance_record.staff = staff
             attendance_record.save()
             messages.success(request, "勤怠記録を追加しました。")
-            return redirect('staff:attendance_records')
+            return redirect('staff_eval:attendance_records')
     else:
         form = AttendanceRecordForm()
     
@@ -148,7 +148,7 @@ def staff_attendance_detail(request, record_id):
         if form.is_valid():
             form.save()
             messages.success(request, "勤怠記録を更新しました。")
-            return redirect('staff:attendance_records')
+            return redirect('staff_eval:attendance_records')
     else:
         form = AttendanceRecordForm(instance=record)
     
@@ -171,6 +171,6 @@ def staff_attendance_delete(request, record_id):
     if request.method == 'POST':
         record.delete()
         messages.success(request, "勤怠記録を削除しました。")
-        return redirect('staff:attendance_records')
+        return redirect('staff_eval:attendance_records')
     
     return render(request, 'staff/attendance_delete.html', {'record': record})

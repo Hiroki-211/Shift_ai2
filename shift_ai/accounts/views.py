@@ -17,9 +17,9 @@ def dashboard(request):
     try:
         staff = request.user.staff
         if staff.is_manager:
-            return redirect('admin:dashboard')
+            return redirect('admin_accounts:dashboard')
         else:
-            return redirect('staff:dashboard')
+            return redirect('staff_accounts:dashboard')
     except Staff.DoesNotExist:
         messages.error(request, "スタッフ情報が見つかりません。")
         return redirect('login')
