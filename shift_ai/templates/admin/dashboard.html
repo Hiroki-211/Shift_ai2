@@ -1,0 +1,184 @@
+{% extends 'admin/base.html' %}
+
+{% block page_title %}管理者ダッシュボード{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 統計カード -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">今月のシフト数</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_shifts }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-alt fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">確定シフト</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ confirmed_shifts }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">未確定シフト</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ unconfirmed_shifts }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">今月の人件費</div>
+                        <div class="h5 mb-0 font-weight-bold">¥{{ total_cost|floatformat:0 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-yen-sign fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- シフト確定率 -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">シフト確定率</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <div class="h1 mb-0 font-weight-bold text-primary">{{ confirmation_rate|floatformat:1 }}%</div>
+                    <div class="text-muted">確定率</div>
+                </div>
+                <div class="progress mt-3">
+                    <div class="progress-bar" role="progressbar" style="width: {{ confirmation_rate }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- スタッフ統計 -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">スタッフ統計</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h3 mb-0 font-weight-bold text-primary">{{ total_staff }}</div>
+                            <div class="text-muted small">総スタッフ数</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h3 mb-0 font-weight-bold text-success">{{ manager_count }}</div>
+                            <div class="text-muted small">管理者数</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="text-center">
+                            <div class="h3 mb-0 font-weight-bold text-info">{{ regular_staff_count }}</div>
+                            <div class="text-muted small">一般スタッフ数</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 店舗情報 -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">店舗情報</h6>
+            </div>
+            <div class="card-body">
+                <h6 class="font-weight-bold">{{ store.name }}</h6>
+                <p class="text-muted mb-2">
+                    <i class="fas fa-clock me-1"></i>
+                    営業時間: {{ store.opening_time }} - {{ store.closing_time }}
+                </p>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-tools me-1"></i>
+                    準備・片付け: {{ store.preparation_minutes }}分
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- クイックアクション -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">クイックアクション</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'admin:shift_creation' %}" class="btn btn-primary btn-block w-100">
+                            <i class="fas fa-calendar-plus me-2"></i>
+                            シフト作成
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'admin:staff_management' %}" class="btn btn-success btn-block w-100">
+                            <i class="fas fa-users me-2"></i>
+                            スタッフ管理
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'admin:evaluation_input' %}" class="btn btn-warning btn-block w-100">
+                            <i class="fas fa-star me-2"></i>
+                            評価入力
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'admin:store_settings' %}" class="btn btn-info btn-block w-100">
+                            <i class="fas fa-cog me-2"></i>
+                            店舗設定
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

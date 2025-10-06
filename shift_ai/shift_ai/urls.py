@@ -27,8 +27,18 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', accounts_views.register, name='register'),
     
-    # アプリケーションURLs
-    path('', include('accounts.urls')),
+    # 管理者画面
+    path('admin-panel/', include('accounts.admin_urls')),
+    path('admin-panel/shift/', include('shift.admin_urls')),
+    path('admin-panel/eval/', include('eval.admin_urls')),
+    
+    # スタッフ画面
+    path('staff/', include('accounts.staff_urls')),
+    path('staff/shift/', include('shift.staff_urls')),
+    path('staff/eval/', include('eval.staff_urls')),
+    
+    # リダイレクト用（既存のURLとの互換性のため）
+    path('', accounts_views.dashboard, name='dashboard'),
     path('shift/', include('shift.urls')),
     path('eval/', include('eval.urls')),
 ]

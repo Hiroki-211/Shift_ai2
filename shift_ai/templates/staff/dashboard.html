@@ -1,0 +1,230 @@
+{% extends 'staff/base.html' %}
+
+{% block page_title %}スタッフダッシュボード{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 今月のシフト統計 -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">今月のシフト数</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ monthly_shifts.count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-alt fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">確定シフト</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ confirmed_shifts.count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">勤務時間</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_hours|floatformat:1 }}h</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">時給</div>
+                        <div class="h5 mb-0 font-weight-bold">¥{{ staff.hourly_wage }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-yen-sign fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- スキルレベル -->
+    <div class="col-xl-6 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">スキルレベル</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>ホール業務</span>
+                        <span>{{ staff.hall_skill_level }}/5</span>
+                    </div>
+                    <div class="skill-bar">
+                        <div class="skill-progress" style="width: {{ hall_skill_percentage }}%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>キッチン業務</span>
+                        <span>{{ staff.kitchen_skill_level }}/5</span>
+                    </div>
+                    <div class="skill-bar">
+                        <div class="skill-progress" style="width: {{ kitchen_skill_percentage }}%"></div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <small class="text-muted">スキルレベルを上げることで、より多くのシフトに参加できます</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最新の評価 -->
+    <div class="col-xl-6 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">最新の評価</h6>
+            </div>
+            <div class="card-body">
+                {% if latest_evaluation %}
+                    <div class="text-center">
+                        <div class="h1 mb-0 font-weight-bold text-primary">{{ latest_evaluation.total_score }}/100</div>
+                        <div class="text-muted">総合評価</div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="h5 mb-0 text-success">{{ latest_evaluation.attendance_score }}</div>
+                                <div class="text-muted small">勤怠</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="h5 mb-0 text-info">{{ latest_evaluation.skill_score }}</div>
+                                <div class="text-muted small">スキル</div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-star fa-3x mb-3"></i>
+                        <p>まだ評価がありません</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 今月のシフト一覧 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">今月のシフト</h6>
+                <a href="{% url 'staff:shift_view' %}" class="btn btn-sm btn-primary">詳細を見る</a>
+            </div>
+            <div class="card-body">
+                {% if monthly_shifts %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>日付</th>
+                                    <th>開始時間</th>
+                                    <th>終了時間</th>
+                                    <th>勤務時間</th>
+                                    <th>状態</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for shift in monthly_shifts|slice:":5" %}
+                                <tr>
+                                    <td>{{ shift.date|date:"m/d (D)" }}</td>
+                                    <td>{{ shift.start_time }}</td>
+                                    <td>{{ shift.end_time }}</td>
+                                    <td>{{ shift.duration_hours|floatformat:1 }}h</td>
+                                    <td>
+                                        {% if shift.is_confirmed %}
+                                            <span class="badge bg-success">確定</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">未確定</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+                        <p>今月のシフトはありません</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- クイックアクション -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">クイックアクション</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'staff:shift_view' %}" class="btn btn-primary btn-block w-100">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            シフト確認
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'staff:shift_requests' %}" class="btn btn-success btn-block w-100">
+                            <i class="fas fa-calendar-plus me-2"></i>
+                            希望シフト提出
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'staff:evaluation_view' %}" class="btn btn-warning btn-block w-100">
+                            <i class="fas fa-star me-2"></i>
+                            評価確認
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'staff:attendance_records' %}" class="btn btn-info btn-block w-100">
+                            <i class="fas fa-clock me-2"></i>
+                            勤怠記録
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
