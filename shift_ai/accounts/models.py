@@ -29,6 +29,7 @@ class Staff(models.Model):
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="ユーザー")
+    employee_id = models.CharField(max_length=20, unique=True, verbose_name="社員ID", blank=True)
     store = models.ForeignKey(Store, on_delete=models.CASCADE, verbose_name="店舗")
     employment_type = models.CharField(
         max_length=20, 
@@ -56,7 +57,31 @@ class Staff(models.Model):
         verbose_name_plural = "スタッフ"
 
     def __str__(self):
-        return f"{self.user.get_full_name()} ({self.store.name})"
+        return f"{self.employee_id} - {self.user.get_full_name()} ({self.store.name})"
+    
+    def save(self, *args, **kwargs):
+        """社員IDを自動生成"""
+        if not self.employee_id:
+            # 店舗コード（3桁）+ 連番（4桁）の形式
+            store_code = str(self.store.id).zfill(3)
+            # 同じ店舗の最大連番を取得
+            last_staff = Staff.objects.filter(
+                store=self.store,
+                employee_id__startswith=store_code
+            ).order_by('-employee_id').first()
+            
+            if last_staff and last_staff.employee_id:
+                try:
+                    last_number = int(last_staff.employee_id[-4:])
+                    new_number = last_number + 1
+                except (ValueError, IndexError):
+                    new_number = 1
+            else:
+                new_number = 1
+            
+            self.employee_id = f"{store_code}{str(new_number).zfill(4)}"
+        
+        super().save(*args, **kwargs)
 
 
 class StaffRequirement(models.Model):

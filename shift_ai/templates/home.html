@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIシフト管理システム</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        .home-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        .home-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        .home-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .home-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        .login-options {
+            padding: 3rem 2rem;
+        }
+        .login-option-card {
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            height: 100%;
+        }
+        .login-option-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        .admin-card {
+            border-color: #f093fb;
+        }
+        .admin-card:hover {
+            border-color: #f5576c;
+            background: linear-gradient(135deg, rgba(240, 147, 251, 0.05) 0%, rgba(245, 87, 108, 0.05) 100%);
+        }
+        .staff-card {
+            border-color: #667eea;
+        }
+        .staff-card:hover {
+            border-color: #764ba2;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        }
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+        }
+        .admin-icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .staff-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-login-choice {
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn-admin {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+            color: white;
+        }
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+            color: white;
+        }
+        .btn-staff {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+        .btn-staff:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="home-card">
+                    <div class="home-header">
+                        <h1><i class="fas fa-calendar-alt"></i> AIシフト管理システム</h1>
+                        <p>あなたの役割を選択してログインしてください</p>
+                    </div>
+                    
+                    <div class="login-options">
+                        <div class="row g-4">
+                            <!-- 管理者ログイン -->
+                            <div class="col-md-6">
+                                <div class="login-option-card admin-card" onclick="location.href='{% url 'admin_login' %}'">
+                                    <div class="icon-circle admin-icon">
+                                        <i class="fas fa-user-shield"></i>
+                                    </div>
+                                    <h3>管理者</h3>
+                                    <p class="text-muted mb-4">店舗管理者・マネージャーの方</p>
+                                    <ul class="text-start mb-4">
+                                        <li>シフト作成・管理</li>
+                                        <li>スタッフ管理</li>
+                                        <li>勤怠管理</li>
+                                        <li>評価・給与管理</li>
+                                    </ul>
+                                    <a href="{% url 'admin_login' %}" class="btn btn-admin btn-login-choice w-100">
+                                        <i class="fas fa-sign-in-alt"></i> 管理者としてログイン
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- スタッフログイン -->
+                            <div class="col-md-6">
+                                <div class="login-option-card staff-card" onclick="location.href='{% url 'staff_login' %}'">
+                                    <div class="icon-circle staff-icon">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <h3>スタッフ</h3>
+                                    <p class="text-muted mb-4">従業員の方</p>
+                                    <ul class="text-start mb-4">
+                                        <li>シフト希望提出</li>
+                                        <li>シフト確認</li>
+                                        <li>勤怠入力</li>
+                                        <li>休暇申請</li>
+                                    </ul>
+                                    <a href="{% url 'staff_login' %}" class="btn btn-staff btn-login-choice w-100">
+                                        <i class="fas fa-sign-in-alt"></i> スタッフとしてログイン
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

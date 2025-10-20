@@ -134,15 +134,6 @@
                     <hr class="text-white">
                     
                     <ul class="nav flex-column">
-                        {% if request.user.staff.is_manager %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'admin_accounts:dashboard' %}">
-                                <i class="fas fa-cogs me-2"></i>
-                                管理者画面へ
-                            </a>
-                        </li>
-                        {% endif %}
-                        
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'logout' %}">
                                 <i class="fas fa-sign-out-alt me-2"></i>

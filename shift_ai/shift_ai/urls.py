@@ -22,7 +22,12 @@ from accounts import views as accounts_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     
+    # ホームページ
+    path('', accounts_views.home, name='home'),
+    
     # 認証関連
+    path('admin-login/', accounts_views.AdminLoginView.as_view(), name='admin_login'),
+    path('staff-login/', accounts_views.StaffLoginView.as_view(), name='staff_login'),
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', accounts_views.register, name='register'),
@@ -38,7 +43,7 @@ urlpatterns = [
     path('staff/eval/', include('eval.staff_urls')),
     
     # リダイレクト用（既存のURLとの互換性のため）
-    path('', accounts_views.dashboard, name='dashboard'),
+    path('dashboard/', accounts_views.dashboard, name='dashboard'),
     path('shift/', include('shift.urls')),
     path('eval/', include('eval.urls')),
 ]
