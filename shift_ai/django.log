@@ -2080,3 +2080,6 @@ Watching for file changes with StatReloader
 Watching for file changes with StatReloader
 C:\Users\minec\Documents\23a31g0001\sistemkaihatu\Shift_ai2\shift_ai\shift\staff_views.py changed, reloading.
 Watching for file changes with StatReloader
+"GET /staff/shift/shift-requests/ HTTP/1.1" 200 55534
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+"GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 4210
