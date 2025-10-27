@@ -352,6 +352,9 @@ def admin_shift_submission_status(request):
     total_count = len(staff_status_list)
     submission_rate = (submitted_count / total_count * 100) if total_count > 0 else 0
     
+    # 総希望日数計算
+    total_requests = sum(s['work_requests'] + s['off_requests'] for s in staff_status_list)
+    
     context = {
         'store': store,
         'month_start': next_month_start,
@@ -360,6 +363,7 @@ def admin_shift_submission_status(request):
         'submitted_count': submitted_count,
         'not_submitted_count': total_count - submitted_count,
         'submission_rate': submission_rate,
+        'total_requests': total_requests,
     }
     
     return render(request, 'admin/shift_submission_status.html', context)

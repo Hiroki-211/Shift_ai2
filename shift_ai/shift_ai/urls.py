@@ -28,8 +28,7 @@ urlpatterns = [
     # 認証関連
     path('admin-login/', accounts_views.AdminLoginView.as_view(), name='admin_login'),
     path('staff-login/', accounts_views.StaffLoginView.as_view(), name='staff_login'),
-    path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'),
     path('register/', accounts_views.register, name='register'),
     
     # 管理者画面

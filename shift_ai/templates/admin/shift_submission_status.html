@@ -41,7 +41,7 @@
             <div class="card-body">
                 <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
                 <h6 class="text-muted mb-1">提出済み</h6>
-                <h2 class="mb-0 text-success" id="submitted-count">0</h2>
+                <h2 class="mb-0 text-success" id="submitted-count">{{ submitted_count }}</h2>
                 <small class="text-muted">人</small>
             </div>
         </div>
@@ -51,7 +51,7 @@
             <div class="card-body">
                 <i class="fas fa-clock fa-2x text-warning mb-2"></i>
                 <h6 class="text-muted mb-1">未提出</h6>
-                <h2 class="mb-0 text-warning" id="not-submitted-count">0</h2>
+                <h2 class="mb-0 text-warning" id="not-submitted-count">{{ not_submitted_count }}</h2>
                 <small class="text-muted">人</small>
             </div>
         </div>
@@ -61,7 +61,7 @@
             <div class="card-body">
                 <i class="fas fa-calendar-alt fa-2x text-info mb-2"></i>
                 <h6 class="text-muted mb-1">総希望日数</h6>
-                <h2 class="mb-0 text-info" id="total-requests">0</h2>
+                <h2 class="mb-0 text-info" id="total-requests">{{ total_requests }}</h2>
                 <small class="text-muted">日</small>
             </div>
         </div>
@@ -71,7 +71,7 @@
             <div class="card-body">
                 <i class="fas fa-percentage fa-2x text-primary mb-2"></i>
                 <h6 class="text-muted mb-1">提出率</h6>
-                <h2 class="mb-0 text-primary" id="submission-rate">0%</h2>
+                <h2 class="mb-0 text-primary" id="submission-rate">{{ submission_rate|floatformat:1 }}%</h2>
             </div>
         </div>
     </div>
@@ -224,74 +224,32 @@
 
 {% block extra_js %}
 <script>
-let staffData = [];
+let staffData = [
+    {% for staff in staff_status_list %}
+    {
+        id: {{ staff.id }},
+        name: '{{ staff.name }}',
+        employment_type: '{{ staff.employment_type }}',
+        is_submitted: {{ staff.is_submitted|lower }},
+        work_requests: {{ staff.work_requests }},
+        off_requests: {{ staff.off_requests }},
+        submitted_at: {% if staff.submitted_at %}'{{ staff.submitted_at }}'{% else %}null{% endif %}
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
 let selectedStaffId = null;
 
 // 初期化
 document.addEventListener('DOMContentLoaded', function() {
-    loadSubmissionStatus();
+    updateStaffTable();
 });
 
 // 提出状況読み込み
 function loadSubmissionStatus() {
     const targetMonth = document.getElementById('target-month').value;
     
-    // サーバーからデータ取得
-    // デモデータで表示
-    staffData = [
-        {
-            id: 1,
-            name: '山田太郎',
-            employment_type: '固定契約',
-            is_submitted: true,
-            work_requests: 15,
-            off_requests: 2,
-            submitted_at: '2025-10-15 14:30'
-        },
-        {
-            id: 2,
-            name: '佐藤花子',
-            employment_type: 'アルバイト',
-            is_submitted: true,
-            work_requests: 20,
-            off_requests: 3,
-            submitted_at: '2025-10-18 09:15'
-        },
-        {
-            id: 3,
-            name: '田中一郎',
-            employment_type: 'アルバイト',
-            is_submitted: false,
-            work_requests: 0,
-            off_requests: 0,
-            submitted_at: null
-        },
-        {
-            id: 4,
-            name: '鈴木美咲',
-            employment_type: 'パート',
-            is_submitted: true,
-            work_requests: 18,
-            off_requests: 1,
-            submitted_at: '2025-10-19 16:45'
-        },
-    ];
-    
-    updateSummary();
-    updateStaffTable();
-}
-
-// サマリー更新
-function updateSummary() {
-    const submitted = staffData.filter(s => s.is_submitted).length;
-    const notSubmitted = staffData.filter(s => !s.is_submitted).length;
-    const totalRequests = staffData.reduce((sum, s) => sum + s.work_requests + s.off_requests, 0);
-    const submissionRate = ((submitted / staffData.length) * 100).toFixed(0);
-    
-    document.getElementById('submitted-count').textContent = submitted;
-    document.getElementById('not-submitted-count').textContent = notSubmitted;
-    document.getElementById('total-requests').textContent = totalRequests;
-    document.getElementById('submission-rate').textContent = submissionRate + '%';
+    // ページをリロードして新しい月のデータを取得
+    window.location.href = `/admin-panel/shift/submission-status/?month=${targetMonth}`;
 }
 
 // スタッフテーブル更新

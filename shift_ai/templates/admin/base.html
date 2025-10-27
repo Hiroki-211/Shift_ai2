@@ -138,10 +138,13 @@
                     
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'logout' %}">
-                                <i class="fas fa-sign-out-alt me-2"></i>
-                                ログアウト
-                            </a>
+                            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="nav-link" style="border: none; background: none; width: 100%; text-align: left; color: rgba(255,255,255,.75);">
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    ログアウト
+                                </button>
+                            </form>
                         </li>
                     </ul>
                 </div>
