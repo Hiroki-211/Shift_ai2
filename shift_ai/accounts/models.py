@@ -14,6 +14,18 @@ class Store(models.Model):
     has_break_time = models.BooleanField(default=False, verbose_name="中休憩の有無")
     lunch_end_time = models.TimeField(verbose_name="ランチタイム終了時刻", null=True, blank=True)
     dinner_start_time = models.TimeField(verbose_name="ディナー営業開始時刻", null=True, blank=True)
+    shift_submission_start_day = models.IntegerField(
+        default=1, 
+        verbose_name="シフト提出開始日",
+        validators=[MinValueValidator(1), MaxValueValidator(28)],
+        help_text="各月の何日からシフト提出が可能になるか（1-28日）"
+    )
+    shift_submission_deadline_day = models.IntegerField(
+        default=20,
+        verbose_name="シフト提出締切日",
+        validators=[MinValueValidator(1), MaxValueValidator(28)],
+        help_text="各月の何日までシフト提出が可能か（1-28日）"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

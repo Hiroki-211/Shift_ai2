@@ -10,7 +10,7 @@ class StoreForm(forms.ModelForm):
     
     class Meta:
         model = Store
-        fields = ['name', 'opening_time', 'service_start_time', 'closing_time', 'last_order_time', 'has_break_time', 'lunch_end_time', 'dinner_start_time']
+        fields = ['name', 'opening_time', 'service_start_time', 'closing_time', 'last_order_time', 'has_break_time', 'lunch_end_time', 'dinner_start_time', 'shift_submission_start_day', 'shift_submission_deadline_day']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'opening_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
@@ -20,6 +20,8 @@ class StoreForm(forms.ModelForm):
             'has_break_time': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'lunch_end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
             'dinner_start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'shift_submission_start_day': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 28}),
+            'shift_submission_deadline_day': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 28}),
         }
 
 

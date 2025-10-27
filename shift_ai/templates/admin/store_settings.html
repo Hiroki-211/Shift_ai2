@@ -127,6 +127,38 @@
                         </div>
                     </div>
                     
+                    <!-- シフト提出期間設定 -->
+                    <hr class="my-4">
+                    <h5 class="mb-3"><i class="fas fa-calendar-check"></i> シフト提出期間設定</h5>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.shift_submission_start_day.id_for_label }}" class="form-label">シフト提出開始日</label>
+                            {{ form.shift_submission_start_day }}
+                            {% if form.shift_submission_start_day.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.shift_submission_start_day.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">各月の何日からシフト提出が可能になるか（1-28日）<br>例：11月のシフトは10月の設定日から提出可能</small>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="{{ form.shift_submission_deadline_day.id_for_label }}" class="form-label">シフト提出締切日</label>
+                            {{ form.shift_submission_deadline_day }}
+                            {% if form.shift_submission_deadline_day.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.shift_submission_deadline_day.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">各月の何日までシフト提出が可能か（1-28日）<br>例：11月のシフトの提出期限は10月の設定日</small>
+                        </div>
+                    </div>
+                    
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save"></i> 設定を保存
@@ -156,6 +188,9 @@
                 
                 <h6>休憩時間</h6>
                 <p class="text-muted">ランチタイム終了からディナー営業開始までの休憩時間を設定します。</p>
+                
+                <h6>シフト提出期間</h6>
+                <p class="text-muted">スタッフがシフトを提出できる期間を設定します。次の月のシフト提出期間は前月の設定日となります。</p>
             </div>
         </div>
     </div>

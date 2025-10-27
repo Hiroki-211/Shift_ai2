@@ -56,9 +56,21 @@ def staff_shift_requests(request):
         date__range=[next_month_start, next_month_end]
     ).order_by('date')
     
-    # 提出期限（来月の20日）を設定
-    submission_deadline = date(next_month_start.year, next_month_start.month, 20)
-    can_edit = today <= submission_deadline
+    # 提出期限と提出開始日の設定
+    # 例：11月のシフトの提出期限は10月の設定日
+    store = staff.store
+    
+    # 提出開始日（前月の設定日）
+    if next_month_start.month == 1:
+        # 来月が1月の場合、前月（今月）は12月
+        submission_start = date(today.year, 12, store.shift_submission_start_day)
+        submission_deadline = date(today.year, 12, store.shift_submission_deadline_day)
+    else:
+        submission_start = date(today.year, today.month, store.shift_submission_start_day)
+        submission_deadline = date(today.year, today.month, store.shift_submission_deadline_day)
+    
+    # 提出可能期間かどうか
+    can_edit = submission_start <= today <= submission_deadline
     
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -170,6 +182,8 @@ def staff_shift_requests(request):
         'calendar_weeks': calendar_weeks,
         'submitted_shifts': submitted_shifts,
         'can_edit': can_edit,
+        'today': today,
+        'submission_start': submission_start,
         'submission_deadline': submission_deadline,
     }
     
