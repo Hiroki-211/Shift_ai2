@@ -58,60 +58,83 @@
     <div class="col-12">
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold text-primary">シフト提出カレンダー</h6>
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="previousMonth()">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <span class="btn btn-sm btn-outline-secondary disabled" id="current-month">{{ month_start|date:"Y年m月" }}</span>
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="nextMonth()">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
+                <div>
+                    <h6 class="m-0 font-weight-bold text-primary">シフト提出カレンダー</h6>
+                    {% if not can_edit %}
+                        <small class="text-danger">
+                            <i class="fas fa-lock me-1"></i>提出期限を過ぎました（{{ submission_deadline|date:"m月d日" }}まで）
+                        </small>
+                    {% else %}
+                        <small class="text-info">
+                            <i class="fas fa-info-circle me-1"></i>提出期限: {{ submission_deadline|date:"m月d日" }}
+                        </small>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    {% if can_edit %}
+                        <button type="button" class="btn btn-sm btn-outline-warning" id="edit-mode-btn" onclick="toggleEditMode()">
+                            <i class="fas fa-edit me-1"></i>編集モード
+                        </button>
+                        <button type="button" class="btn btn-sm btn-success" id="save-changes-btn" onclick="saveAllChanges()" style="display: none;">
+                            <i class="fas fa-save me-1"></i>変更を保存
+                        </button>
+                    {% endif %}
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="previousMonth()">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span class="btn btn-sm btn-outline-secondary disabled" id="current-month">{{ month_start|date:"Y年m月" }}</span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="nextMonth()">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
-                <!-- 希望種別選択 -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">希望種別</label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="request_type" id="work_type" value="work" checked>
-                            <label class="btn btn-outline-success" for="work_type">勤務希望</label>
-                            
-                            <input type="radio" class="btn-check" name="request_type" id="off_type" value="off">
-                            <label class="btn btn-outline-warning" for="off_type">休み希望</label>
-                            
-                            <input type="radio" class="btn-check" name="request_type" id="overtime_type" value="overtime">
-                            <label class="btn btn-outline-info" for="overtime_type">残業希望</label>
-                        </div>
+                {% if not can_edit %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        提出期限を過ぎたため、シフトの新規提出・編集はできません。管理者にご連絡ください。
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">時間設定</label>
-                        <div class="input-group">
-                            <input type="time" class="form-control" id="start_time" name="start_time">
-                            <span class="input-group-text">-</span>
-                            <input type="time" class="form-control" id="end_time" name="end_time">
-                        </div>
-                    </div>
+                {% endif %}
+                
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    カレンダーは{{ month_start|date:"Y年m月" }}の提出用です。カレンダーに表示されている日付を選択してシフトを提出してください。
                 </div>
                 
-                <!-- メモリー時間ボタン -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <label class="form-label">メモリー時間で設定</label>
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-primary" onclick="useMemory(1)" id="memory1_btn" disabled>
-                                メモリー1
-                            </button>
-                            <button type="button" class="btn btn-outline-primary" onclick="useMemory(2)" id="memory2_btn" disabled>
-                                メモリー2
-                            </button>
-                            <button type="button" class="btn btn-outline-primary" onclick="useMemory(3)" id="memory3_btn" disabled>
-                                メモリー3
-                            </button>
+                <!-- 編集モード用のフォーム -->
+                <div id="edit-mode-form" style="display: none;">
+                    <div class="alert alert-warning mb-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        編集モード：カレンダー上の提出済み日付をクリックすると、その日のシフトが削除されます。時間を設定してからクリックすると新しいシフトが追加されます。
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">希望種別</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="edit_request_type" id="edit_work_type" value="work" checked>
+                                <label class="btn btn-outline-success" for="edit_work_type">勤務希望</label>
+                                
+                                <input type="radio" class="btn-check" name="edit_request_type" id="edit_off_type" value="off">
+                                <label class="btn btn-outline-warning" for="edit_off_type">休み希望</label>
+                                
+                                <input type="radio" class="btn-check" name="edit_request_type" id="edit_overtime_type" value="overtime">
+                                <label class="btn btn-outline-info" for="edit_overtime_type">残業希望</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">時間設定</label>
+                            <div class="input-group">
+                                <input type="time" class="form-control" id="edit_start_time" name="edit_start_time">
+                                <span class="input-group-text">-</span>
+                                <input type="time" class="form-control" id="edit_end_time" name="edit_end_time">
+                            </div>
+                            <small class="text-muted">右クリックでシフトを削除できます</small>
                         </div>
                     </div>
                 </div>
+
                 
                 <!-- カレンダー表示 -->
                 <div class="calendar-container">
@@ -132,11 +155,11 @@
                             {% for day in week %}
                             <div class="calendar-day {% if day.is_current_month %}current-month{% else %}other-month{% endif %} {% if day.date|date:'D' == 'Sun' %}sunday{% elif day.date|date:'D' == 'Sat' %}saturday{% endif %}" 
                                  data-date="{{ day.date|date:'Y-m-d' }}" 
-                                 onclick="selectDate(this)">
+                                 onclick="{% if can_edit %}selectDate(this){% endif %}"
+                                 oncontextmenu="{% if can_edit %}deleteShiftOnRightClick(this, event){% endif %}">
                                 <div class="day-content">
                                     <div class="day-number">{{ day.date|date:"j" }}</div>
-                                    <div class="day-status" id="status_{{ day.date|date:'Y-m-d' }}">
-                                        <!-- 既存の希望シフト表示 -->
+                                    <div class="day-status" id="status_{{ day.date|date:'Y-m-d' }}" data-submitted="{{ day.date|date:'Y-m-d' }}">
                                     </div>
                                 </div>
                             </div>
@@ -145,84 +168,12 @@
                         {% endfor %}
                     </div>
                 </div>
-                
-                <!-- 提出ボタン -->
-                <div class="row mt-3">
-                    <div class="col-12 text-center">
-                        <button type="button" class="btn btn-primary btn-lg" onclick="submitShiftRequests()">
-                            <i class="fas fa-paper-plane me-2"></i>選択した日付でシフト提出
-                        </button>
-                    </div>
-                </div>
+
             </div>
         </div>
     </div>
 </div>
 
-<!-- 提出済み希望シフト一覧 -->
-<div class="row">
-    <div class="col-12">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">提出済み希望シフト</h6>
-            </div>
-            <div class="card-body">
-                {% if shift_requests %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>日付</th>
-                                    <th>曜日</th>
-                                    <th>希望種別</th>
-                                    <th>時間</th>
-                                    <th>提出日時</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for request in shift_requests %}
-                                <tr>
-                                    <td>{{ request.date|date:"m/d" }}</td>
-                                    <td>{{ request.date|date:"D" }}</td>
-                                    <td>
-                                        {% if request.request_type == 'work' %}
-                                            <span class="badge bg-success">勤務希望</span>
-                                        {% elif request.request_type == 'off' %}
-                                            <span class="badge bg-warning">休み希望</span>
-                                        {% elif request.request_type == 'overtime' %}
-                                            <span class="badge bg-info">残業希望</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if request.start_time and request.end_time %}
-                                            {{ request.start_time }} - {{ request.end_time }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ request.created_at|date:"m/d H:i" }}</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-danger" 
-                                                onclick="deleteRequest({{ request.id }})">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-calendar-plus fa-3x mb-3"></i>
-                        <p>まだ希望シフトが提出されていません</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- 希望シフト提出ルール -->
 <div class="row">
@@ -262,6 +213,19 @@
 <script>
 let selectedDates = [];
 let memories = {};
+let isEditMode = false;
+let pendingChanges = {}; // 編集モードでの変更を追跡
+
+// 提出済みシフトのデータ
+let submittedShifts = {
+    {% for date, shift in submitted_shifts.items %}
+    '{{ date|date:"Y-m-d" }}': {
+        request_type: '{{ shift.request_type }}',
+        start_time: '{{ shift.start_time|time:"H:i" }}',
+        end_time: '{{ shift.end_time|time:"H:i" }}'
+    },
+    {% endfor %}
+};
 
 // ページ読み込み時の初期化
 document.addEventListener('DOMContentLoaded', function() {
@@ -269,6 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadExistingRequests();
     updateMemoryButtons();
     highlightToday();
+    displaySubmittedShifts();
 });
 
 // メモリー機能
@@ -313,26 +278,190 @@ function updateMemoryButtons() {
     }
 }
 
+// 編集モード切り替え
+function toggleEditMode() {
+    isEditMode = !isEditMode;
+    const editBtn = document.getElementById('edit-mode-btn');
+    const saveBtn = document.getElementById('save-changes-btn');
+    const editForm = document.getElementById('edit-mode-form');
+    
+    console.log('toggleEditMode:', isEditMode, editForm);
+    
+    if (isEditMode) {
+        editBtn.innerHTML = '<i class="fas fa-times me-1"></i>編集終了';
+        editBtn.classList.remove('btn-outline-warning');
+        editBtn.classList.add('btn-warning');
+        saveBtn.style.display = 'inline-block';
+        if (editForm) {
+            editForm.style.display = 'block';
+            console.log('Edit form displayed');
+        } else {
+            console.error('Edit form not found!');
+        }
+        
+        // 提出済みシフトを編集可能にする
+        document.querySelectorAll('.calendar-day.submitted').forEach(cell => {
+            cell.classList.remove('submitted');
+            cell.style.cursor = 'pointer';
+        });
+    } else {
+        editBtn.innerHTML = '<i class="fas fa-edit me-1"></i>編集モード';
+        editBtn.classList.remove('btn-warning');
+        editBtn.classList.add('btn-outline-warning');
+        saveBtn.style.display = 'none';
+        if (editForm) editForm.style.display = 'none';
+        
+        // 提出済みシフトを元に戻す
+        displaySubmittedShifts();
+        pendingChanges = {};
+    }
+}
+
+// 選択したシフトを削除
+let selectedShiftDate = null;
+
 // カレンダー機能
 function selectDate(cell) {
     if (!cell.classList.contains('current-month')) return;
     
-    const date = cell.dataset.date;
-    const isSelected = selectedDates.includes(date);
+    console.log('selectDate called, isEditMode:', isEditMode);
     
-    if (isSelected) {
-        // 選択解除
-        selectedDates = selectedDates.filter(d => d !== date);
-        cell.classList.remove('selected');
-        updateDayStatus(cell, '');
-    } else {
-        // 選択
-        selectedDates.push(date);
-        cell.classList.add('selected');
-        updateDayStatus(cell, getSelectedType());
+    // 提出期限を過ぎている場合は選択不可
+    const canEdit = {{ can_edit|lower }};
+    if (!canEdit) {
+        alert('提出期限を過ぎたため、シフトの変更はできません。');
+        return;
     }
     
-    updateSubmitButton();
+    const date = cell.dataset.date;
+    
+    if (isEditMode) {
+        console.log('Edit mode: calling editSubmittedShift for date:', date);
+        // 編集モード：提出済みシフトを編集
+        // 既に削除済みの場合は、そのまま編集処理を進める
+        editSubmittedShift(cell, date);
+    } else {
+        // 通常モード：編集モードでのみシフト追加可能
+        if (date in submittedShifts) {
+            alert('この日は既にシフトが提出されています。編集する場合は「編集モード」ボタンを押してください。');
+        } else {
+            alert('シフトを追加するには「編集モード」ボタンを押してから操作してください。');
+        }
+        return;
+    }
+}
+
+// 提出済みシフトの編集
+function editSubmittedShift(cell, date) {
+    const requestTypeRadio = document.querySelector('input[name="edit_request_type"]:checked');
+    const requestType = requestTypeRadio ? requestTypeRadio.value : 'work';
+    const startTimeInput = document.getElementById('edit_start_time');
+    const endTimeInput = document.getElementById('edit_end_time');
+    const startTime = startTimeInput ? startTimeInput.value : '';
+    const endTime = endTimeInput ? endTimeInput.value : '';
+    
+    console.log('editSubmittedShift called:', {date, requestType, startTime, endTime, isEditMode});
+    console.log('Start time element:', startTimeInput, 'value:', startTime);
+    console.log('End time element:', endTimeInput, 'value:', endTime);
+    
+    // 時間が入力されている場合のみ処理を進める
+    if (!(requestType === 'off' || (startTime && endTime))) {
+        alert('開始時間と終了時間を入力してください。現在の入力値: ' + startTime + ' - ' + endTime);
+        return;
+    }
+    
+    const isExistingShift = date in submittedShifts || (date in pendingChanges && pendingChanges[date].action === 'update');
+    
+    // 既存のシフトを削除（一度だけ）
+    if (date in submittedShifts) {
+        delete submittedShifts[date];
+    }
+    
+    // 全てのクラスをクリア
+    cell.classList.remove('deleted', 'modified', 'selected-edit');
+    
+    // 新しいシフトを追加
+    pendingChanges[date] = {
+        action: 'update',
+        request_type: requestType,
+        start_time: startTime,
+        end_time: endTime
+    };
+    
+    console.log('Added to pendingChanges:', pendingChanges);
+    
+    // カレンダー表示を更新
+    cell.classList.add('modified');
+    updateDayStatusForEdit(cell, requestType, startTime, endTime);
+    
+    if (isExistingShift) {
+        alert(`${date}のシフトを更新しました。`);
+    } else {
+        alert(`${date}にシフトを追加しました。`);
+    }
+    
+    // 保存ボタンを有効化
+    const saveBtn = document.getElementById('save-changes-btn');
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = `<i class="fas fa-save me-1"></i>変更を保存 (${Object.keys(pendingChanges).length}件)`;
+    
+    console.log('Save button updated');
+}
+
+// 右クリックでシフトを削除
+function deleteShiftOnRightClick(cell, event) {
+    if (!isEditMode) return;
+    
+    event.preventDefault(); // コンテキストメニューを無効化
+    
+    const date = cell.dataset.date;
+    
+    if (!confirm(`${date}のシフトを削除しますか？`)) {
+        return;
+    }
+    
+    // 既存のシフトを削除
+    if (date in submittedShifts) {
+        delete submittedShifts[date];
+    }
+    
+    // 削除を記録
+    pendingChanges[date] = {
+        action: 'delete'
+    };
+    
+    // カレンダー表示をクリア
+    const statusDiv = cell.querySelector('.day-status');
+    if (statusDiv) {
+        statusDiv.innerHTML = '';
+    }
+    cell.classList.remove('modified', 'selected-edit');
+    cell.classList.add('deleted');
+    
+    alert(`${date}のシフトを削除しました。`);
+    
+    // 保存ボタンを有効化
+    const saveBtn = document.getElementById('save-changes-btn');
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = `<i class="fas fa-save me-1"></i>変更を保存 (${Object.keys(pendingChanges).length}件)`;
+}
+
+// 編集モード用の日付表示更新
+function updateDayStatusForEdit(cell, type, startTime, endTime) {
+    const statusDiv = cell.querySelector('.day-status');
+    if (!statusDiv) return;
+    
+    let statusHtml = '';
+    if (type === 'work' && startTime && endTime) {
+        statusHtml = `<small class="badge bg-success">${startTime}-${endTime}</small>`;
+    } else if (type === 'off') {
+        statusHtml = `<small class="badge bg-warning">休み</small>`;
+    } else if (type === 'overtime' && startTime && endTime) {
+        statusHtml = `<small class="badge bg-info">残業 ${startTime}-${endTime}</small>`;
+    }
+    
+    statusDiv.innerHTML = statusHtml;
+    cell.classList.add('modified');
 }
 
 function getSelectedType() {
@@ -396,6 +525,84 @@ function updateAllSelectedDays() {
     });
 }
 
+// 変更を保存
+function saveAllChanges() {
+    console.log('saveAllChanges called, pendingChanges:', pendingChanges);
+    
+    if (Object.keys(pendingChanges).length === 0) {
+        alert('変更がありません。');
+        return;
+    }
+    
+    if (!confirm(`${Object.keys(pendingChanges).length}件の変更を保存しますか？`)) {
+        return;
+    }
+    
+    // フォームデータを作成
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    formData.append('action', 'update_existing');
+    
+    // 削除と更新を分けて処理
+    const deleteDates = [];
+    const updateDates = [];
+    const requestTypes = [];
+    const startTimes = [];
+    const endTimes = [];
+    
+    for (const [date, change] of Object.entries(pendingChanges)) {
+        console.log('Processing change:', date, change);
+        if (change.action === 'delete') {
+            deleteDates.push(date);
+        } else if (change.action === 'update') {
+            updateDates.push(date);
+            requestTypes.push(change.request_type);
+            startTimes.push(change.start_time);
+            endTimes.push(change.end_time);
+        }
+    }
+    
+    console.log('Delete dates:', deleteDates);
+    console.log('Update dates:', updateDates);
+    
+    // 削除データを追加
+    deleteDates.forEach(date => {
+        formData.append('delete_dates', date);
+    });
+    
+    // 更新データを追加
+    updateDates.forEach(date => {
+        formData.append('update_dates', date);
+    });
+    requestTypes.forEach(type => {
+        formData.append('request_types', type);
+    });
+    startTimes.forEach(time => {
+        formData.append('start_times', time);
+    });
+    endTimes.forEach(time => {
+        formData.append('end_times', time);
+    });
+    
+    // 送信
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            alert('シフトの変更が完了しました！');
+            location.reload();
+        } else {
+            alert('エラーが発生しました。');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('エラーが発生しました。');
+    });
+}
+
 // シフト提出
 function submitShiftRequests() {
     if (selectedDates.length === 0) {
@@ -442,10 +649,33 @@ function submitShiftRequests() {
     });
 }
 
+// 提出済みシフトを表示
+function displaySubmittedShifts() {
+    for (const [date, shift] of Object.entries(submittedShifts)) {
+        const cell = document.querySelector(`[data-date="${date}"]`);
+        if (cell) {
+            // 提出済みマークを追加
+            cell.classList.add('submitted');
+            const statusDiv = cell.querySelector('.day-status');
+            if (statusDiv) {
+                let statusHtml = '';
+                if (shift.request_type === 'work') {
+                    statusHtml = `<small class="badge bg-success">${shift.start_time}-${shift.end_time}</small>`;
+                } else if (shift.request_type === 'off') {
+                    statusHtml = `<small class="badge bg-warning">休み</small>`;
+                } else if (shift.request_type === 'overtime') {
+                    statusHtml = `<small class="badge bg-info">残業 ${shift.start_time}-${shift.end_time}</small>`;
+                }
+                statusDiv.innerHTML = statusHtml;
+            }
+        }
+    }
+}
+
 // 既存の希望シフトを読み込み
 function loadExistingRequests() {
-    // サーバーから既存の希望シフトを取得して表示
-    // 実装は省略（実際のプロジェクトでは実装が必要）
+    // 提出済みシフトをカレンダーに表示
+    displaySubmittedShifts();
 }
 
 // 今日の日付をハイライト
@@ -708,6 +938,55 @@ function deleteRequest(requestId) {
 .calendar-day.selected .day-number {
     font-weight: 700;
     color: #1976d2;
+}
+
+/* 提出済みの日付のスタイル */
+.calendar-day.submitted {
+    background: #f8f9fa !important;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.calendar-day.submitted:hover {
+    background: #f8f9fa !important;
+}
+
+.calendar-day.submitted .day-number {
+    color: #6c757d;
+}
+
+.calendar-day.submitted .day-status .badge {
+    cursor: default;
+}
+
+/* 編集された日付のスタイル */
+.calendar-day.modified {
+    background: #fff3cd !important;
+    border: 2px solid #ffc107;
+}
+
+.calendar-day.modified .day-number {
+    color: #856404;
+    font-weight: 700;
+}
+
+/* 削除された日付のスタイル */
+.calendar-day.deleted {
+    background: #f8d7da !important;
+    border: 2px solid #dc3545;
+    opacity: 0.7;
+}
+
+.calendar-day.deleted .day-number {
+    color: #721c24;
+    text-decoration: line-through;
+}
+
+/* 編集モードで選択された日付のスタイル */
+.calendar-day.selected-edit {
+    background: #e7f3ff !important;
+    border: 2px solid #0d6efd;
+    box-shadow: 0 0 10px rgba(13, 110, 253, 0.5);
 }
 </style>
 {% endblock %}
