@@ -258,23 +258,8 @@ def create_test_data():
     
     print(f"   ✓ シフト作成: {shift_count}件")
     
-    print("\n" + "="*50)
-    print("テストデータ作成完了！")
-    print("="*50 + "\n")
-    
-    # ログイン情報を表示
-    print("【ログイン情報】")
-    print("\n管理者アカウント:")
-    print("  URL: http://127.0.0.1:8000/admin-login/")
-    print("  ユーザー名: admin")
-    print("  パスワード: admin123")
-    
-    print("\nスタッフアカウント:")
-    print("  URL: http://127.0.0.1:8000/staff-login/")
-    for data in staff_data:
-        print(f"  ユーザー名: {data['username']} / パスワード: {data['password']}")
-    
-    print("\n" + "="*50)
+    # admin_staffとstaff_listを返す
+    return admin_staff, staff_list
 
 
 if __name__ == '__main__':
@@ -285,7 +270,26 @@ if __name__ == '__main__':
         
         if response.lower() in ['yes', 'y']:
             reset_database()
-            create_test_data()
+            admin_staff, staff_list = create_test_data()
+            
+            # ログイン情報を表示
+            print("\n" + "="*50)
+            print("テストデータ作成完了！")
+            print("="*50 + "\n")
+            
+            print("【ログイン情報】")
+            print("\n管理者アカウント:")
+            print("  URL: http://127.0.0.1:8000/admin-login/")
+            print(f"  社員ID: {admin_staff.employee_id}")
+            print(f"  パスワード: 19900101")
+            
+            print("\nスタッフアカウント:")
+            print("  URL: http://127.0.0.1:8000/staff-login/")
+            for staff in staff_list:
+                password = staff.birth_date.strftime('%Y%m%d')
+                print(f"  {staff.user.get_full_name()} - 社員ID: {staff.employee_id} / パスワード: {password}")
+            
+            print("\n" + "="*50)
             print("\n✓ すべての処理が完了しました！")
             print("サーバーを起動してログインしてください。\n")
         else:
