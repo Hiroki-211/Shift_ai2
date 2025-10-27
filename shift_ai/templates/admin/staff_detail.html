@@ -1,0 +1,139 @@
+{% extends 'admin/base.html' %}
+
+{% block page_title %}スタッフ編集{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user-edit"></i> スタッフ情報編集
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.employment_type.id_for_label }}" class="form-label">雇用形態</label>
+                            {{ form.employment_type }}
+                            {% if form.employment_type.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.employment_type.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.hourly_wage.id_for_label }}" class="form-label">時給（円）</label>
+                            {{ form.hourly_wage }}
+                            {% if form.hourly_wage.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.hourly_wage.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.hall_skill_level.id_for_label }}" class="form-label">ホールスキル（1-5）</label>
+                            {{ form.hall_skill_level }}
+                            {% if form.hall_skill_level.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.hall_skill_level.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.kitchen_skill_level.id_for_label }}" class="form-label">キッチンスキル（1-5）</label>
+                            {{ form.kitchen_skill_level }}
+                            {% if form.kitchen_skill_level.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.kitchen_skill_level.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.max_weekly_hours.id_for_label }}" class="form-label">週最大労働時間</label>
+                            {{ form.max_weekly_hours }}
+                            {% if form.max_weekly_hours.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.max_weekly_hours.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check mt-4">
+                                {{ form.is_manager }}
+                                <label class="form-check-label" for="{{ form.is_manager.id_for_label }}">
+                                    責任者フラグ
+                                </label>
+                                {% if form.is_manager.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.is_manager.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'admin_accounts:staff_management' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> 戻る
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user"></i> スタッフ情報
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>{{ staff.user.get_full_name|default:staff.user.username }}</h6>
+                <p class="text-muted">{{ staff.user.email }}</p>
+                
+                <hr>
+                
+                <h6>現在の設定</h6>
+                <ul class="list-unstyled">
+                    <li><strong>雇用形態:</strong> {{ staff.get_employment_type_display }}</li>
+                    <li><strong>時給:</strong> ¥{{ staff.hourly_wage }}</li>
+                    <li><strong>ホールスキル:</strong> {{ staff.hall_skill_level }}/5</li>
+                    <li><strong>キッチンスキル:</strong> {{ staff.kitchen_skill_level }}/5</li>
+                    <li><strong>週最大労働時間:</strong> {{ staff.max_weekly_hours }}時間</li>
+                    <li><strong>責任者:</strong> {% if staff.is_manager %}はい{% else %}いいえ{% endif %}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

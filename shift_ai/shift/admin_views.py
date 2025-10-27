@@ -73,7 +73,7 @@ def admin_shift_creation(request):
         'shift_requests': shift_requests,
     }
     
-    return render(request, 'shift/shift_creation.html', context)
+    return render(request, 'admin/shift_creation.html', context)
 
 
 @login_required

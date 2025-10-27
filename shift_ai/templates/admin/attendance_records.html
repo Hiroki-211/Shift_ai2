@@ -1,0 +1,199 @@
+{% extends 'admin/base.html' %}
+
+{% block page_title %}勤怠記録管理{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock"></i> 勤怠記録管理
+                </h5>
+                <p class="text-muted mb-0">期間: {{ month_start|date:"Y年m月d日" }} ～ {{ month_end|date:"Y年m月d日" }}</p>
+            </div>
+            <div class="card-body">
+                {% if attendance_records %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>スタッフ</th>
+                                <th>日付</th>
+                                <th>出勤</th>
+                                <th>退勤</th>
+                                <th>勤務時間</th>
+                                <th>状態</th>
+                                <th>備考</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance_records %}
+                            <tr>
+                                <td>
+                                    <strong>{{ record.staff.user.get_full_name|default:record.staff.user.username }}</strong>
+                                </td>
+                                <td>{{ record.date|date:"m/d (D)" }}</td>
+                                <td>{{ record.clock_in|date:"H:i" }}</td>
+                                <td>
+                                    {% if record.clock_out %}
+                                        {{ record.clock_out|date:"H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ record.work_hours|floatformat:1 }}時間</td>
+                                <td>
+                                    {% if record.is_absent %}
+                                        <span class="badge bg-danger">欠勤</span>
+                                    {% elif record.is_late %}
+                                        <span class="badge bg-warning">遅刻</span>
+                                    {% elif record.is_early_leave %}
+                                        <span class="badge bg-warning">早退</span>
+                                    {% else %}
+                                        <span class="badge bg-success">正常</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.notes %}
+                                        <small class="text-muted">{{ record.notes|truncatechars:20 }}</small>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'admin_eval:attendance_detail' record.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 統計情報 -->
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">総勤怠記録数</h6>
+                                <h4 class="text-primary">{{ attendance_records|length }}件</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">正常出勤</h6>
+                                <h4 class="text-success">
+                                    {% with normal_count=attendance_records|rejectattr:"is_absent"|rejectattr:"is_late"|rejectattr:"is_early_leave"|list|length %}
+                                        {{ normal_count }}件
+                                    {% endwith %}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">遅刻・早退</h6>
+                                <h4 class="text-warning">
+                                    {% with late_count=attendance_records|selectattr:"is_late"|list|length %}
+                                    {% with early_count=attendance_records|selectattr:"is_early_leave"|list|length %}
+                                        {{ late_count|add:early_count }}件
+                                    {% endwith %}
+                                    {% endwith %}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">欠勤</h6>
+                                <h4 class="text-danger">
+                                    {% with absent_count=attendance_records|selectattr:"is_absent"|list|length %}
+                                        {{ absent_count }}件
+                                    {% endwith %}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- スタッフ別勤務時間 -->
+                {% if staff_work_hours %}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">スタッフ別勤務時間</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>スタッフ名</th>
+                                        <th>勤務時間</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for staff_name, hours in staff_work_hours.items %}
+                                    <tr>
+                                        <td>{{ staff_name }}</td>
+                                        <td>{{ hours|floatformat:1 }}時間</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">勤怠記録がありません</h5>
+                    <p class="text-muted">今月の勤怠記録がまだありません。</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> 勤怠記録の管理
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>記録の確認・修正</h6>
+                <p class="text-muted">
+                    スタッフの出退勤時刻や勤務状態を確認・修正できます。
+                    各レコードの「編集」ボタンから詳細を表示し、必要に応じて修正してください。
+                </p>
+                
+                <h6>評価への影響</h6>
+                <p class="text-muted">
+                    勤怠記録は評価システムの勤怠関連スコアに自動的に反映されます。
+                    出勤率、遅刻・早退の回数、欠勤の有無などが評価の対象となります。
+                </p>
+                
+                <h6>注意事項</h6>
+                <ul class="text-muted">
+                    <li>勤務時間は出勤時刻と退勤時刻から自動計算されます</li>
+                    <li>遅刻・早退・欠勤のフラグは評価に直接影響します</li>
+                    <li>備考欄には遅刻・早退・欠勤の理由を記入してください</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

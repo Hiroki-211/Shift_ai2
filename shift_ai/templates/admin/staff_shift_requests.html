@@ -1,0 +1,133 @@
+{% extends 'admin/base.html' %}
+
+{% block page_title %}スタッフ希望シフト確認{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-check"></i> スタッフ希望シフト一覧
+                </h5>
+                <p class="text-muted mb-0">期間: {{ month_start|date:"Y年m月d日" }} ～ {{ month_end|date:"Y年m月d日" }}</p>
+            </div>
+            <div class="card-body">
+                {% if shift_requests %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>スタッフ</th>
+                                <th>日付</th>
+                                <th>種別</th>
+                                <th>希望時間</th>
+                                <th>提出日時</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for request in shift_requests %}
+                            <tr>
+                                <td>
+                                    <strong>{{ request.staff.user.get_full_name|default:request.staff.user.username }}</strong>
+                                    {% if request.staff.is_manager %}
+                                        <span class="badge bg-success ms-1">責任者</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ request.date|date:"m/d (D)" }}</td>
+                                <td>
+                                    {% if request.request_type == 'off' %}
+                                        <span class="badge bg-danger">休み希望</span>
+                                    {% elif request.request_type == 'work' %}
+                                        <span class="badge bg-success">勤務希望</span>
+                                    {% else %}
+                                        <span class="badge bg-info">{{ request.request_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if request.start_time and request.end_time %}
+                                        {{ request.start_time }} ～ {{ request.end_time }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ request.submitted_at|date:"m/d H:i" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- スタッフ別の集計情報 -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">休み希望数</h6>
+                                <h4 class="text-danger">
+                                    {% with off_count=shift_requests|selectattr:"request_type", "equalto", "off"|list|length %}
+                                        {{ off_count }}件
+                                    {% endwith %}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">勤務希望数</h6>
+                                <h4 class="text-success">
+                                    {% with work_count=shift_requests|selectattr:"request_type", "equalto", "work"|list|length %}
+                                        {{ work_count }}件
+                                    {% endwith %}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">希望シフトの提出がありません</h5>
+                    <p class="text-muted">スタッフからの希望シフトがまだ提出されていません。</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> 希望シフトの活用
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>AIシフト生成への反映</h6>
+                <p class="text-muted">
+                    提出された希望シフトは、AIシフト生成時に自動的に考慮されます。
+                    休み希望はできる限り尊重し、勤務希望は人員配置の参考として活用されます。
+                </p>
+                
+                <h6>注意事項</h6>
+                <ul class="text-muted">
+                    <li>すべての希望を反映できるとは限りません</li>
+                    <li>店舗の運営に必要な人員配置を最優先します</li>
+                    <li>責任者の配置など、制約条件も考慮されます</li>
+                </ul>
+                
+                <div class="mt-3">
+                    <a href="{% url 'admin_shift:shift_creation' %}" class="btn btn-primary">
+                        <i class="fas fa-robot"></i> AIシフト生成へ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

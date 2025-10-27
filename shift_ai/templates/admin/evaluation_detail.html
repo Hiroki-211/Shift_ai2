@@ -1,0 +1,189 @@
+{% extends 'admin/base.html' %}
+
+{% block page_title %}評価詳細{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-star"></i> 評価詳細・編集
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">スタッフ</label>
+                            <input type="text" class="form-control" value="{{ evaluation.staff.user.get_full_name|default:evaluation.staff.user.username }}" readonly>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">評価期間</label>
+                            <input type="text" class="form-control" value="{{ evaluation.evaluation_period }}" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">評価項目</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.attendance_score.id_for_label }}" class="form-label">
+                                        勤怠関連（30点満点）
+                                    </label>
+                                    {{ form.attendance_score }}
+                                    {% if form.attendance_score.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.attendance_score.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.skill_score.id_for_label }}" class="form-label">
+                                        業務スキル（40点満点）
+                                    </label>
+                                    {{ form.skill_score }}
+                                    {% if form.skill_score.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.skill_score.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.teamwork_score.id_for_label }}" class="form-label">
+                                        チームワーク・態度（20点満点）
+                                    </label>
+                                    {{ form.teamwork_score }}
+                                    {% if form.teamwork_score.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.teamwork_score.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.customer_service_score.id_for_label }}" class="form-label">
+                                        顧客対応（10点満点）
+                                    </label>
+                                    {{ form.customer_service_score }}
+                                    {% if form.customer_service_score.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.customer_service_score.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.comment.id_for_label }}" class="form-label">コメント</label>
+                                {{ form.comment }}
+                                {% if form.comment.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.comment.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 合計スコア表示 -->
+                            <div class="alert alert-info">
+                                <strong>合計スコア: <span id="totalScore">{{ evaluation.total_score }}</span>点</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'admin_eval:evaluation_input' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> 戻る
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 更新
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user"></i> スタッフ情報
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>{{ evaluation.staff.user.get_full_name|default:evaluation.staff.user.username }}</h6>
+                <p class="text-muted">{{ evaluation.staff.user.email }}</p>
+                
+                <hr>
+                
+                <h6>評価情報</h6>
+                <ul class="list-unstyled">
+                    <li><strong>評価期間:</strong> {{ evaluation.evaluation_period }}</li>
+                    <li><strong>評価者:</strong> {{ evaluation.evaluator.user.get_full_name|default:evaluation.evaluator.user.username }}</li>
+                    <li><strong>評価日:</strong> {{ evaluation.created_at|date:"Y年m月d日" }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // スコア入力時の合計計算
+    const scoreInputs = document.querySelectorAll('input[type="number"]');
+    scoreInputs.forEach(input => {
+        input.addEventListener('input', calculateTotalScore);
+    });
+    
+    function calculateTotalScore() {
+        const attendance = parseInt(document.getElementById('{{ form.attendance_score.id_for_label }}')?.value) || 0;
+        const skill = parseInt(document.getElementById('{{ form.skill_score.id_for_label }}')?.value) || 0;
+        const teamwork = parseInt(document.getElementById('{{ form.teamwork_score.id_for_label }}')?.value) || 0;
+        const customerService = parseInt(document.getElementById('{{ form.customer_service_score.id_for_label }}')?.value) || 0;
+        
+        const total = attendance + skill + teamwork + customerService;
+        const totalElement = document.getElementById('totalScore');
+        if (totalElement) {
+            totalElement.textContent = total;
+            
+            // 合計スコアの色分け
+            totalElement.classList.remove('text-success', 'text-warning', 'text-danger');
+            if (total >= 90) {
+                totalElement.classList.add('text-success');
+            } else if (total >= 70) {
+                totalElement.classList.add('text-warning');
+            } else {
+                totalElement.classList.add('text-danger');
+            }
+        }
+    }
+    
+    // 初期合計スコア計算
+    calculateTotalScore();
+});
+</script>
+{% endblock %}
+

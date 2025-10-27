@@ -1,0 +1,163 @@
+{% extends 'admin/base.html' %}
+
+{% block page_title %}勤怠記録詳細{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock"></i> 勤怠記録詳細・編集
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">スタッフ</label>
+                            <input type="text" class="form-control" value="{{ record.staff.user.get_full_name|default:record.staff.user.username }}" readonly>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="{{ form.date.id_for_label }}" class="form-label">勤務日</label>
+                            {{ form.date }}
+                            {% if form.date.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.date.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.clock_in.id_for_label }}" class="form-label">出勤時刻</label>
+                            {{ form.clock_in }}
+                            {% if form.clock_in.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.clock_in.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="{{ form.clock_out.id_for_label }}" class="form-label">退勤時刻</label>
+                            {{ form.clock_out }}
+                            {% if form.clock_out.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.clock_out.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                {{ form.is_absent }}
+                                <label class="form-check-label" for="{{ form.is_absent.id_for_label }}">
+                                    欠勤
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                {{ form.is_late }}
+                                <label class="form-check-label" for="{{ form.is_late.id_for_label }}">
+                                    遅刻
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                {{ form.is_early_leave }}
+                                <label class="form-check-label" for="{{ form.is_early_leave.id_for_label }}">
+                                    早退
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">備考</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger">
+                                {% for error in form.notes.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'admin_eval:attendance_records' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> 戻る
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 更新
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> 記録情報
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>スタッフ情報</h6>
+                <ul class="list-unstyled">
+                    <li><strong>名前:</strong> {{ record.staff.user.get_full_name|default:record.staff.user.username }}</li>
+                    <li><strong>雇用形態:</strong> {{ record.staff.get_employment_type_display }}</li>
+                    <li><strong>時給:</strong> ¥{{ record.staff.hourly_wage }}</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>勤怠詳細</h6>
+                <ul class="list-unstyled">
+                    <li><strong>日付:</strong> {{ record.date|date:"Y年m月d日 (D)" }}</li>
+                    <li><strong>出勤:</strong> {{ record.clock_in|date:"H:i" }}</li>
+                    <li><strong>退勤:</strong> 
+                        {% if record.clock_out %}
+                            {{ record.clock_out|date:"H:i" }}
+                        {% else %}
+                            <span class="text-muted">未入力</span>
+                        {% endif %}
+                    </li>
+                    <li><strong>勤務時間:</strong> {{ record.work_hours|floatformat:1 }}時間</li>
+                    <li><strong>状態:</strong>
+                        {% if record.is_absent %}
+                            <span class="badge bg-danger">欠勤</span>
+                        {% elif record.is_late %}
+                            <span class="badge bg-warning">遅刻</span>
+                        {% elif record.is_early_leave %}
+                            <span class="badge bg-warning">早退</span>
+                        {% else %}
+                            <span class="badge bg-success">正常</span>
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

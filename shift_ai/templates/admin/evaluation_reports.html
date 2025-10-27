@@ -1,0 +1,143 @@
+{% extends 'admin/base.html' %}
+
+{% block page_title %}評価レポート{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar"></i> 評価レポート
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">店舗全体のスタッフ評価統計を確認できます。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 期間別評価統計 -->
+{% if period_stats %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt"></i> 期間別評価統計
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>評価期間</th>
+                                <th>評価人数</th>
+                                <th>平均スコア</th>
+                                <th>勤怠</th>
+                                <th>スキル</th>
+                                <th>チームワーク</th>
+                                <th>顧客対応</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for period, stats in period_stats.items %}
+                            <tr>
+                                <td><strong>{{ period }}</strong></td>
+                                <td>{{ stats.total_evaluations }}人</td>
+                                <td>
+                                    <strong class="text-primary">{{ stats.avg_total_score|floatformat:1 }}点</strong>
+                                </td>
+                                <td>{{ stats.avg_attendance_score|floatformat:1 }}</td>
+                                <td>{{ stats.avg_skill_score|floatformat:1 }}</td>
+                                <td>{{ stats.avg_teamwork_score|floatformat:1 }}</td>
+                                <td>{{ stats.avg_customer_service_score|floatformat:1 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- スタッフ別評価統計 -->
+{% if staff_evaluations %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users"></i> スタッフ別評価履歴
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for staff_name, evaluations in staff_evaluations.items %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">{{ staff_name }}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>評価期間</th>
+                                        <th>勤怠</th>
+                                        <th>スキル</th>
+                                        <th>チームワーク</th>
+                                        <th>顧客対応</th>
+                                        <th>合計</th>
+                                        <th>コメント</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for evaluation in evaluations %}
+                                    <tr>
+                                        <td>{{ evaluation.evaluation_period }}</td>
+                                        <td>{{ evaluation.attendance_score }}</td>
+                                        <td>{{ evaluation.skill_score }}</td>
+                                        <td>{{ evaluation.teamwork_score }}</td>
+                                        <td>{{ evaluation.customer_service_score }}</td>
+                                        <td><strong>{{ evaluation.total_score }}</strong></td>
+                                        <td>
+                                            {% if evaluation.comment %}
+                                                <small class="text-muted">{{ evaluation.comment|truncatechars:30 }}</small>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">評価データがありません</h5>
+                <p class="text-muted">スタッフの評価を入力すると、ここにレポートが表示されます。</p>
+                <a href="{% url 'admin_eval:evaluation_input' %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-star"></i> 評価を入力
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

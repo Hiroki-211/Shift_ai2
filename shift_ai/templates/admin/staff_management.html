@@ -1,0 +1,119 @@
+{% extends 'admin/base.html' %}
+
+{% block page_title %}スタッフ管理{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <h5><i class="fas fa-users"></i> スタッフ一覧</h5>
+    </div>
+    <div class="col-md-6">
+        <form method="get" class="d-flex">
+            <input type="text" class="form-control me-2" name="search" 
+                   placeholder="名前またはメールで検索..." value="{{ search_query }}">
+            <button type="submit" class="btn btn-outline-primary">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if page_obj %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>名前</th>
+                        <th>メール</th>
+                        <th>雇用形態</th>
+                        <th>時給</th>
+                        <th>スキル</th>
+                        <th>責任者</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for staff in page_obj %}
+                    <tr>
+                        <td>
+                            <strong>{{ staff.user.get_full_name|default:staff.user.username }}</strong>
+                        </td>
+                        <td>{{ staff.user.email }}</td>
+                        <td>
+                            <span class="badge bg-{% if staff.employment_type == 'fixed' %}primary{% else %}info{% endif %}">
+                                {{ staff.get_employment_type_display }}
+                            </span>
+                        </td>
+                        <td>¥{{ staff.hourly_wage }}</td>
+                        <td>
+                            <small class="text-muted">
+                                ホール: {{ staff.hall_skill_level }}/5<br>
+                                キッチン: {{ staff.kitchen_skill_level }}/5
+                            </small>
+                        </td>
+                        <td>
+                            {% if staff.is_manager %}
+                                <span class="badge bg-success">責任者</span>
+                            {% else %}
+                                <span class="badge bg-secondary">一般</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'admin_accounts:staff_detail' staff.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i> 編集
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- ページネーション -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="ページネーション">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">最初</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">前へ</a>
+                    </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">次へ</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">最後</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">スタッフが見つかりません</h5>
+            <p class="text-muted">
+                {% if search_query %}
+                    検索条件に一致するスタッフがいません。
+                {% else %}
+                    まだスタッフが登録されていません。
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
