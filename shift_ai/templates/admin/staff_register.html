@@ -1,0 +1,191 @@
+{% extends "admin/base.html" %}
+
+{% block title %}スタッフ登録 - {{ store.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2>
+                <i class="fas fa-user-plus me-2"></i>
+                新規スタッフ登録
+            </h2>
+            <p class="text-muted">
+                新しいスタッフを登録します。社員IDは自動的に発行され、初回パスワードは生年月日（YYYYMMDD形式）となります。
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- ユーザー情報 -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-user me-2"></i>
+                            基本情報
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                    姓 <span class="text-danger">*</span>
+                                </label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.last_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                    名 <span class="text-danger">*</span>
+                                </label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.first_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            社員ID（ログインID）は自動的に発行されます。
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                メールアドレス <span class="text-danger">*</span>
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.email.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.birth_date.id_for_label }}" class="form-label">
+                                生年月日 <span class="text-danger">*</span>
+                            </label>
+                            {{ form.birth_date }}
+                            <small class="form-text text-muted">{{ form.birth_date.help_text }}</small>
+                            {% if form.birth_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.birth_date.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="alert alert-info mt-2">
+                                <i class="fas fa-info-circle me-2"></i>
+                                初回パスワードは生年月日（YYYYMMDD形式）で自動設定されます。
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- スタッフ情報 -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-briefcase me-2"></i>
+                            雇用情報
+                        </h5>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.employment_type.id_for_label }}" class="form-label">
+                                    雇用形態 <span class="text-danger">*</span>
+                                </label>
+                                {{ form.employment_type }}
+                                {% if form.employment_type.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.employment_type.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.hourly_wage.id_for_label }}" class="form-label">
+                                    時給（円） <span class="text-danger">*</span>
+                                </label>
+                                {{ form.hourly_wage }}
+                                {% if form.hourly_wage.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.hourly_wage.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.hall_skill_level.id_for_label }}" class="form-label">
+                                    ホールスキル <span class="text-danger">*</span>
+                                </label>
+                                {{ form.hall_skill_level }}
+                                {% if form.hall_skill_level.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.hall_skill_level.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.kitchen_skill_level.id_for_label }}" class="form-label">
+                                    キッチンスキル <span class="text-danger">*</span>
+                                </label>
+                                {{ form.kitchen_skill_level }}
+                                {% if form.kitchen_skill_level.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.kitchen_skill_level.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.max_weekly_hours.id_for_label }}" class="form-label">
+                                    週最大労働時間 <span class="text-danger">*</span>
+                                </label>
+                                {{ form.max_weekly_hours }}
+                                {% if form.max_weekly_hours.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.max_weekly_hours.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.is_manager }}
+                                <label class="form-check-label" for="{{ form.is_manager.id_for_label }}">
+                                    責任者権限を付与
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">
+                                責任者権限を付与すると、管理画面へのアクセスが可能になります。
+                            </small>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'admin_accounts:staff_management' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                キャンセル
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>
+                                登録する
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

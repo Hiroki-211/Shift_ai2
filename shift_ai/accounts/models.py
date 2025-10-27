@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+import random
 
 
 class Store(models.Model):
@@ -31,6 +32,7 @@ class Staff(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="ユーザー")
     employee_id = models.CharField(max_length=20, unique=True, verbose_name="社員ID", blank=True)
     store = models.ForeignKey(Store, on_delete=models.CASCADE, verbose_name="店舗")
+    birth_date = models.DateField(verbose_name="生年月日", null=True, blank=True)
     employment_type = models.CharField(
         max_length=20, 
         choices=EMPLOYMENT_TYPE_CHOICES, 
@@ -59,27 +61,24 @@ class Staff(models.Model):
     def __str__(self):
         return f"{self.employee_id} - {self.user.get_full_name()} ({self.store.name})"
     
+    @staticmethod
+    def generate_employee_id():
+        """重複しない6桁のランダムな社員番号を生成"""
+        max_attempts = 100
+        for _ in range(max_attempts):
+            # 100000 から 999999 の範囲でランダムな番号を生成
+            new_id = str(random.randint(100000, 999999))
+            # 重複チェック（User.usernameとしても使用されるため、両方をチェック）
+            from django.contrib.auth.models import User
+            if not Staff.objects.filter(employee_id=new_id).exists() and not User.objects.filter(username=new_id).exists():
+                return new_id
+        # 100回試行しても重複しない番号が見つからない場合
+        raise ValueError("社員番号の生成に失敗しました。既存の社員番号が多すぎます。")
+    
     def save(self, *args, **kwargs):
-        """社員IDを自動生成"""
+        """社員IDを自動生成（6桁のランダムな数字）"""
         if not self.employee_id:
-            # 店舗コード（3桁）+ 連番（4桁）の形式
-            store_code = str(self.store.id).zfill(3)
-            # 同じ店舗の最大連番を取得
-            last_staff = Staff.objects.filter(
-                store=self.store,
-                employee_id__startswith=store_code
-            ).order_by('-employee_id').first()
-            
-            if last_staff and last_staff.employee_id:
-                try:
-                    last_number = int(last_staff.employee_id[-4:])
-                    new_number = last_number + 1
-                except (ValueError, IndexError):
-                    new_number = 1
-            else:
-                new_number = 1
-            
-            self.employee_id = f"{store_code}{str(new_number).zfill(4)}"
+            self.employee_id = Staff.generate_employee_id()
         
         super().save(*args, **kwargs)
 

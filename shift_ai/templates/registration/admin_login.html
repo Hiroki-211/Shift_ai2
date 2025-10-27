@@ -84,7 +84,7 @@
 
                         {% if form.errors %}
                             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                <i class="fas fa-exclamation-circle"></i> ユーザー名またはパスワードが正しくありません。
+                                <i class="fas fa-exclamation-circle"></i> 社員IDまたはパスワードが正しくありません。
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                         {% endif %}
@@ -93,10 +93,10 @@
                             {% csrf_token %}
                             <div class="mb-3">
                                 <label for="id_username" class="form-label">
-                                    <i class="fas fa-user"></i> ユーザー名
+                                    <i class="fas fa-id-card"></i> 社員ID
                                 </label>
-                                <input type="text" class="form-control" id="id_username" name="username" required autofocus>
-                                <small class="form-text text-muted">管理者アカウントのユーザー名を入力してください</small>
+                                <input type="text" class="form-control" id="id_username" name="username" required autofocus placeholder="6桁の社員ID">
+                                <small class="form-text text-muted">管理者の社員IDを入力してください</small>
                             </div>
                             
                             <div class="mb-3">

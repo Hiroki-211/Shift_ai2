@@ -12,6 +12,7 @@ urlpatterns = [
     
     # スタッフ管理
     path('staff-management/', admin_views.admin_staff_management, name='staff_management'),
+    path('staff-register/', admin_views.admin_staff_register, name='staff_register'),
     path('staff/<int:staff_id>/', admin_views.admin_staff_detail, name='staff_detail'),
     path('staff-requirements/', admin_views.admin_staff_requirements, name='staff_requirements'),
     path('staff-requirements/<int:requirement_id>/delete/', admin_views.admin_delete_requirement, name='delete_requirement'),

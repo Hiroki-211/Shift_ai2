@@ -4,10 +4,10 @@
 
 {% block content %}
 <div class="row mb-3">
-    <div class="col-md-6">
+    <div class="col-md-4">
         <h5><i class="fas fa-users"></i> スタッフ一覧</h5>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-4">
         <form method="get" class="d-flex">
             <input type="text" class="form-control me-2" name="search" 
                    placeholder="名前またはメールで検索..." value="{{ search_query }}">
@@ -15,6 +15,12 @@
                 <i class="fas fa-search"></i>
             </button>
         </form>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'admin_accounts:staff_register' %}" class="btn btn-success">
+            <i class="fas fa-user-plus me-2"></i>
+            新規スタッフ登録
+        </a>
     </div>
 </div>
 
@@ -25,6 +31,7 @@
             <table class="table table-hover">
                 <thead class="table-light">
                     <tr>
+                        <th>社員ID</th>
                         <th>名前</th>
                         <th>メール</th>
                         <th>雇用形態</th>
@@ -37,6 +44,9 @@
                 <tbody>
                     {% for staff in page_obj %}
                     <tr>
+                        <td>
+                            <code>{{ staff.employee_id }}</code>
+                        </td>
                         <td>
                             <strong>{{ staff.user.get_full_name|default:staff.user.username }}</strong>
                         </td>

@@ -6,8 +6,9 @@ from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.db import transaction
+from django.contrib.auth.models import User
 from .models import Store, Staff, StaffRequirement
-from .forms import StoreForm, StaffForm, StaffRequirementForm, UserRegistrationForm
+from .forms import StoreForm, StaffForm, StaffRequirementForm, UserRegistrationForm, StaffRegistrationForm
 
 
 def admin_required(view_func):
@@ -220,3 +221,63 @@ def admin_delete_requirement(request, requirement_id):
         messages.success(request, "必要人数設定を削除しました。")
     
     return redirect('admin_accounts:staff_requirements')
+
+
+@login_required
+@admin_required
+def admin_staff_register(request):
+    """管理者用スタッフ登録"""
+    try:
+        current_staff = request.user.staff
+        store = current_staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    if request.method == 'POST':
+        form = StaffRegistrationForm(request.POST)
+        if form.is_valid():
+            with transaction.atomic():
+                # 社員IDを先に生成（ユーザー名として使用するため）
+                employee_id = Staff.generate_employee_id()
+                
+                # 生年月日から初回パスワードを生成（YYYYMMDD形式）
+                birth_date = form.cleaned_data['birth_date']
+                initial_password = birth_date.strftime('%Y%m%d')
+                
+                # ユーザーを作成（社員IDをusernameとして使用）
+                user = User.objects.create_user(
+                    username=employee_id,
+                    email=form.cleaned_data['email'],
+                    first_name=form.cleaned_data['first_name'],
+                    last_name=form.cleaned_data['last_name'],
+                    password=initial_password
+                )
+                
+                # スタッフ情報を作成（事前に生成した社員IDを使用）
+                staff = Staff.objects.create(
+                    user=user,
+                    store=store,
+                    employee_id=employee_id,
+                    birth_date=birth_date,
+                    employment_type=form.cleaned_data['employment_type'],
+                    hourly_wage=form.cleaned_data['hourly_wage'],
+                    hall_skill_level=form.cleaned_data['hall_skill_level'],
+                    kitchen_skill_level=form.cleaned_data['kitchen_skill_level'],
+                    is_manager=form.cleaned_data['is_manager'],
+                    max_weekly_hours=form.cleaned_data['max_weekly_hours']
+                )
+                
+                messages.success(
+                    request,
+                    f"スタッフを登録しました。\n社員ID（ログインID）: {staff.employee_id}\n初回パスワード: {initial_password}"
+                )
+                return redirect('admin_accounts:staff_management')
+    else:
+        form = StaffRegistrationForm()
+    
+    context = {
+        'form': form,
+        'store': store,
+    }
+    return render(request, 'admin/staff_register.html', context)
