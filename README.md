@@ -71,8 +71,6 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
-python manage.py shell -c "from django.contrib.auth.models import User; from accounts.models import Store, Staff; user = User.objects.create_user('admin', 'admin@example.com', 'admin123'); store = Store.objects.create(name='テスト店舗', opening_time='09:00', closing_time='22:00', preparation_minutes=30, cleanup_minutes=30); staff = Staff.objects.create(user=user, store=store, employment_type='fixed', hourly_wage=1500, is_manager=True, hall_skill_level=5, kitchen_skill_level=5, max_weekly_hours=40); print('管理者ユーザーを作成しました: username=admin, password=admin123')"
-
 ### 5. 開発サーバーの起動
 
 ```bash
