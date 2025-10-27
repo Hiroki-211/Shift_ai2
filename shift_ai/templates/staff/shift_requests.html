@@ -3,55 +3,6 @@
 {% block page_title %}シフト提出{% endblock %}
 
 {% block content %}
-<!-- メモリー時間設定 -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card shadow">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-clock me-2"></i>よく使う時間をメモリー
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">メモリー1</label>
-                        <div class="input-group">
-                            <input type="time" class="form-control" id="memory1_start" placeholder="開始時間">
-                            <span class="input-group-text">-</span>
-                            <input type="time" class="form-control" id="memory1_end" placeholder="終了時間">
-                            <button class="btn btn-outline-primary" onclick="setMemory(1)">
-                                <i class="fas fa-save"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">メモリー2</label>
-                        <div class="input-group">
-                            <input type="time" class="form-control" id="memory2_start" placeholder="開始時間">
-                            <span class="input-group-text">-</span>
-                            <input type="time" class="form-control" id="memory2_end" placeholder="終了時間">
-                            <button class="btn btn-outline-primary" onclick="setMemory(2)">
-                                <i class="fas fa-save"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">メモリー3</label>
-                        <div class="input-group">
-                            <input type="time" class="form-control" id="memory3_start" placeholder="開始時間">
-                            <span class="input-group-text">-</span>
-                            <input type="time" class="form-control" id="memory3_end" placeholder="終了時間">
-                            <button class="btn btn-outline-primary" onclick="setMemory(3)">
-                                <i class="fas fa-save"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- シフト提出カレンダー -->
 <div class="row">
@@ -105,6 +56,7 @@
                 
                 <!-- 編集モード用のフォーム -->
                 <div id="edit-mode-form" style="display: none;">
+                    {% csrf_token %}
                     <div class="alert alert-warning mb-3">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         編集モード：カレンダー上の提出済み日付をクリックすると、その日のシフトが削除されます。時間を設定してからクリックすると新しいシフトが追加されます。
@@ -237,7 +189,6 @@
 {% block extra_js %}
 <script>
 let selectedDates = [];
-let memories = {};
 let isEditMode = false;
 let pendingChanges = {}; // 編集モードでの変更を追跡
 
@@ -254,54 +205,14 @@ let submittedShifts = {
 
 // ページ読み込み時の初期化
 document.addEventListener('DOMContentLoaded', function() {
-    loadMemories();
     loadExistingRequests();
     highlightToday();
     displaySubmittedShifts();
     // 時間選択は編集モードに入ってから初期化
 });
 
-// メモリー機能
-function setMemory(memoryNum) {
-    const startTime = document.getElementById(`memory${memoryNum}_start`).value;
-    const endTime = document.getElementById(`memory${memoryNum}_end`).value;
-    
-    if (startTime && endTime) {
-        memories[memoryNum] = { start: startTime, end: endTime };
-        localStorage.setItem('shift_memories', JSON.stringify(memories));
-        updateMemoryButtons();
-        alert(`メモリー${memoryNum}を保存しました！`);
-    } else {
-        alert('開始時間と終了時間を両方入力してください。');
-    }
-}
+// メモリーの時間選択を初期化
 
-function useMemory(memoryNum) {
-    if (memories[memoryNum]) {
-        document.getElementById('start_time').value = memories[memoryNum].start;
-        document.getElementById('end_time').value = memories[memoryNum].end;
-    }
-}
-
-function loadMemories() {
-    const saved = localStorage.getItem('shift_memories');
-    if (saved) {
-        memories = JSON.parse(saved);
-    }
-}
-
-function updateMemoryButtons() {
-    for (let i = 1; i <= 3; i++) {
-        const btn = document.getElementById(`memory${i}_btn`);
-        if (memories[i]) {
-            btn.disabled = false;
-            btn.textContent = `メモリー${i} (${memories[i].start}-${memories[i].end})`;
-        } else {
-            btn.disabled = true;
-            btn.textContent = `メモリー${i}`;
-        }
-    }
-}
 
 // 時間選択機能の初期化
 function initializeTimePickers() {
@@ -538,11 +449,17 @@ function editSubmittedShift(cell, date) {
 
 // 右クリックでシフトを削除
 function deleteShiftOnRightClick(cell, event) {
-    if (!isEditMode) return;
+    console.log('deleteShiftOnRightClick called, isEditMode:', isEditMode);
+    
+    if (!isEditMode) {
+        console.log('Not in edit mode, returning');
+        return;
+    }
     
     event.preventDefault(); // コンテキストメニューを無効化
     
     const date = cell.dataset.date;
+    console.log('Date to delete:', date);
     
     if (!confirm(`${date}のシフトを削除しますか？`)) {
         return;
@@ -613,8 +530,16 @@ function saveAllChanges() {
     
     // フォームデータを作成
     const formData = new FormData();
-    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfToken) {
+        console.error('CSRF token not found!');
+        alert('セキュリティエラーが発生しました。ページを更新してください。');
+        return;
+    }
+    formData.append('csrfmiddlewaretoken', csrfToken.value);
     formData.append('action', 'update_existing');
+    
+    console.log('FormData created, action:', 'update_existing');
     
     // 削除と更新を分けて処理
     const deleteDates = [];
@@ -658,16 +583,21 @@ function saveAllChanges() {
     });
     
     // 送信
+    console.log('Sending request to:', window.location.href);
+    console.log('FormData keys:', Array.from(formData.keys()));
+    
     fetch(window.location.href, {
         method: 'POST',
         body: formData
     })
     .then(response => {
+        console.log('Response status:', response.status);
         if (response.ok) {
             alert('シフトの変更が完了しました！');
             location.reload();
         } else {
-            alert('エラーが発生しました。');
+            console.error('Response not OK:', response.status);
+            alert('エラーが発生しました。ステータス: ' + response.status);
         }
     })
     .catch(error => {
@@ -952,14 +882,6 @@ function deleteRequest(requestId) {
 }
 
 /* メモリーセクション */
-.memory-section {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    border: 1px solid #dee2e6;
-}
-
 /* ボタンスタイル */
 .btn-group .btn-check:checked + .btn {
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);

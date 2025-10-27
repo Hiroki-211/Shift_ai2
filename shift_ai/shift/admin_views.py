@@ -312,13 +312,13 @@ def admin_shift_submission_status(request):
     today = date.today()
     if today.month == 12:
         next_month_start = date(today.year + 1, 1, 1)
+        next_month_end = date(today.year + 1, 2, 1) - timedelta(days=1)
     else:
         next_month_start = date(today.year, today.month + 1, 1)
-    
-    if next_month_start.month == 12:
-        next_month_end = date(next_month_start.year + 1, 1, 1) - timedelta(days=1)
-    else:
-        next_month_end = date(next_month_start.year, next_month_start.month + 1, 1) - timedelta(days=1)
+        if today.month == 11:
+            next_month_end = date(today.year + 1, 1, 1) - timedelta(days=1)
+        else:
+            next_month_end = date(today.year, today.month + 2, 1) - timedelta(days=1)
     
     # スタッフリストを取得
     all_staff = Staff.objects.filter(store=store).select_related('user')
@@ -367,3 +367,63 @@ def admin_shift_submission_status(request):
     }
     
     return render(request, 'admin/shift_submission_status.html', context)
+
+
+@login_required
+@admin_required
+def admin_submission_detail_api(request, staff_id):
+    """スタッフのシフト提出詳細を取得（API）"""
+    try:
+        staff = request.user.staff
+        target_staff = Staff.objects.get(id=staff_id)
+        
+        # スタッフのストアが一致するか確認
+        if staff.store != target_staff.store:
+            return JsonResponse({'error': '権限がありません。'}, status=403)
+    except Staff.DoesNotExist:
+        return JsonResponse({'error': 'スタッフが見つかりません。'}, status=404)
+    
+    # 対象月を取得（リクエストパラメータまたは今月）
+    target_month = request.GET.get('month')
+    if target_month:
+        year, month = map(int, target_month.split('-'))
+        month_start = date(year, month, 1)
+        if month == 12:
+            month_end = date(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            month_end = date(year, month + 1, 1) - timedelta(days=1)
+    else:
+        # 今月
+        today = date.today()
+        if today.month == 12:
+            month_start = date(today.year + 1, 1, 1)
+            month_end = date(today.year + 1, 2, 1) - timedelta(days=1)
+        else:
+            month_start = date(today.year, today.month + 1, 1)
+            if today.month == 11:
+                month_end = date(today.year + 1, 1, 1) - timedelta(days=1)
+            else:
+                month_end = date(today.year, today.month + 2, 1) - timedelta(days=1)
+    
+    # シフトリクエストを取得
+    requests = ShiftRequest.objects.filter(
+        staff=target_staff,
+        date__range=[month_start, month_end]
+    ).order_by('date')
+    
+    # JSON形式で返す
+    request_list = []
+    for req in requests:
+        request_list.append({
+            'date': req.date.strftime('%Y-%m-%d'),
+            'weekday': req.date.strftime('%a'),
+            'request_type': req.get_request_type_display(),
+            'start_time': req.start_time.strftime('%H:%M') if req.start_time else '',
+            'end_time': req.end_time.strftime('%H:%M') if req.end_time else '',
+        })
+    
+    return JsonResponse({
+        'staff_name': target_staff.user.get_full_name(),
+        'requests': request_list,
+        'period': f"{month_start.strftime('%Y年%m月%d日')} 〜 {month_end.strftime('%Y年%m月%d日')}"
+    })
