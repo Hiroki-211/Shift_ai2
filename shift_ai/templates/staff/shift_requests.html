@@ -269,9 +269,10 @@ function initializeTimePickers() {
     
     // 分オプションを追加（0, 15, 30, 45分）
     const minutes = ['00', '15', '30', '45'];
-    minutes.forEach(min => {
-        const option1 = new Option(min, min, false, false);
-        const option2 = new Option(min, min, false, false);
+    minutes.forEach((min, index) => {
+        // 最初のオプション（00）をデフォルトで選択
+        const option1 = new Option(min, min, index === 0, index === 0);
+        const option2 = new Option(min, min, index === 0, index === 0);
         minuteSelect.appendChild(option1);
         minuteSelectEnd.appendChild(option2);
     });
@@ -334,6 +335,10 @@ function toggleEditMode() {
             // 編集モードに入ったら時間選択を初期化
             initializeTimePickers();
             setupTimePickerEvents();
+            
+            // 分のデフォルト値を「00」に設定
+            document.getElementById('edit_start_minute').value = '00';
+            document.getElementById('edit_end_minute').value = '00';
         } else {
             console.error('Edit form not found!');
         }
