@@ -8,9 +8,12 @@ class Store(models.Model):
     """店舗モデル"""
     name = models.CharField(max_length=100, verbose_name="店舗名")
     opening_time = models.TimeField(verbose_name="開店時刻")
+    service_start_time = models.TimeField(verbose_name="営業開始時刻", null=True, blank=True)
     closing_time = models.TimeField(verbose_name="閉店時刻")
-    preparation_minutes = models.IntegerField(default=60, verbose_name="準備時間（分）")
-    cleanup_minutes = models.IntegerField(default=60, verbose_name="片付け時間（分）")
+    last_order_time = models.TimeField(verbose_name="ラストオーダー時刻", null=True, blank=True)
+    has_break_time = models.BooleanField(default=False, verbose_name="中休憩の有無")
+    lunch_end_time = models.TimeField(verbose_name="ランチタイム終了時刻", null=True, blank=True)
+    dinner_start_time = models.TimeField(verbose_name="ディナー営業開始時刻", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

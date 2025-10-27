@@ -42,6 +42,20 @@
                         </div>
                         
                         <div class="col-md-6 mb-3">
+                            <label for="{{ form.service_start_time.id_for_label }}" class="form-label">営業開始時刻</label>
+                            {{ form.service_start_time }}
+                            {% if form.service_start_time.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.service_start_time.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
                             <label for="{{ form.closing_time.id_for_label }}" class="form-label">閉店時刻</label>
                             {{ form.closing_time }}
                             {% if form.closing_time.errors %}
@@ -52,31 +66,64 @@
                                 </div>
                             {% endif %}
                         </div>
-                    </div>
-                    
-                    <div class="row">
+                        
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.preparation_minutes.id_for_label }}" class="form-label">準備時間（分）</label>
-                            {{ form.preparation_minutes }}
-                            {% if form.preparation_minutes.errors %}
+                            <label for="{{ form.last_order_time.id_for_label }}" class="form-label">ラストオーダー時刻</label>
+                            {{ form.last_order_time }}
+                            {% if form.last_order_time.errors %}
                                 <div class="text-danger">
-                                    {% for error in form.preparation_minutes.errors %}
+                                    {% for error in form.last_order_time.errors %}
                                         <small>{{ error }}</small>
                                     {% endfor %}
                                 </div>
                             {% endif %}
                         </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.cleanup_minutes.id_for_label }}" class="form-label">片付け時間（分）</label>
-                            {{ form.cleanup_minutes }}
-                            {% if form.cleanup_minutes.errors %}
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                {{ form.has_break_time }}
+                                <label class="form-check-label" for="{{ form.has_break_time.id_for_label }}">
+                                    中休憩を設定する
+                                </label>
+                            </div>
+                            {% if form.has_break_time.errors %}
                                 <div class="text-danger">
-                                    {% for error in form.cleanup_minutes.errors %}
+                                    {% for error in form.has_break_time.errors %}
                                         <small>{{ error }}</small>
                                     {% endfor %}
                                 </div>
                             {% endif %}
+                            <small class="text-muted">ランチタイムからディナーまで休憩時間がある場合にチェックを入れてください</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row" id="break-time-settings" style="display: none;">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.lunch_end_time.id_for_label }}" class="form-label">ランチタイム終了時刻</label>
+                            {{ form.lunch_end_time }}
+                            {% if form.lunch_end_time.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.lunch_end_time.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">（休憩時間の開始）</small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.dinner_start_time.id_for_label }}" class="form-label">ディナー営業開始時刻</label>
+                            {{ form.dinner_start_time }}
+                            {% if form.dinner_start_time.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.dinner_start_time.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">（休憩時間の終了）</small>
                         </div>
                     </div>
                     
@@ -98,17 +145,41 @@
                 </h5>
             </div>
             <div class="card-body">
-                <h6>営業時間</h6>
+                <h6>営業時間設定</h6>
                 <p class="text-muted">店舗の開店・閉店時刻を設定します。シフト作成時の基準となります。</p>
                 
-                <h6>準備時間</h6>
-                <p class="text-muted">開店前の準備作業に必要な時間です。</p>
+                <h6>営業開始時刻</h6>
+                <p class="text-muted">実際にサービス開始する時刻です。</p>
                 
-                <h6>片付け時間</h6>
-                <p class="text-muted">閉店後の片付け作業に必要な時間です。</p>
+                <h6>ラストオーダー</h6>
+                <p class="text-muted">最後の注文を受け付ける時刻です。</p>
+                
+                <h6>休憩時間</h6>
+                <p class="text-muted">ランチタイム終了からディナー営業開始までの休憩時間を設定します。</p>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const breakTimeCheckbox = document.getElementById('id_has_break_time');
+    const breakTimeSettings = document.getElementById('break-time-settings');
+    
+    // 初期状態を設定
+    if (breakTimeCheckbox.checked) {
+        breakTimeSettings.style.display = 'block';
+    }
+    
+    // チェックボックスの変更時に表示/非表示を切り替え
+    breakTimeCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            breakTimeSettings.style.display = 'block';
+        } else {
+            breakTimeSettings.style.display = 'none';
+        }
+    });
+});
+</script>
 {% endblock %}
 
