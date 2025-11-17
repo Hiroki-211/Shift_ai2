@@ -24,7 +24,7 @@
             <div class="card-body">
                 <label class="form-label">提出期限</label>
                 <div class="d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0" id="submission-deadline">毎月20日</h4>
+                    <h4 class="mb-0" id="submission-deadline">毎月{{ submission_deadline.day }}日</h4>
                     <button class="btn btn-outline-primary btn-sm" onclick="sendReminderAll()">
                         <i class="fas fa-bell"></i> 全員に催促
                     </button>
@@ -201,7 +201,7 @@
                     <label class="form-label">メッセージ</label>
                     <textarea class="form-control" id="reminder-message" rows="4">【シフト提出のお願い】
 来月のシフト希望をまだ提出されていません。
-提出期限は今月20日です。
+提出期限は今月{{ submission_deadline.day }}日です。
 お早めにご提出をお願いいたします。</textarea>
                 </div>
                 

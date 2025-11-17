@@ -13,5 +13,6 @@ urlpatterns = [
     path('shift/<int:shift_id>/delete/', admin_views.admin_delete_shift, name='delete_shift'),
     path('confirm-shifts/', admin_views.admin_confirm_shifts, name='confirm_shifts'),
     path('staff-requests/', admin_views.admin_staff_shift_requests, name='staff_shift_requests'),
+    path('shift-settings/', admin_views.admin_shift_settings, name='shift_settings'),
     path('api/submission-detail/<int:staff_id>/', admin_views.admin_submission_detail_api, name='submission_detail_api'),
 ]

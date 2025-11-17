@@ -68,8 +68,17 @@
                     {% csrf_token %}
                     <div class="alert alert-warning mb-3">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        編集モード：カレンダー上の提出済み日付をクリックすると、その日のシフトが削除されます。時間を設定してからクリックすると新しいシフトが追加されます。
+                        編集モード：カレンダー上の日付をクリックして、時間を入力してください。
                     </div>
+                    
+                    <!-- 選択された日付表示 -->
+                    <div class="mb-3" id="selected-date-display" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            <strong>選択日：</strong><span id="selected-date-text">-</span>
+                        </div>
+                    </div>
+                    
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">希望種別</label>
@@ -89,6 +98,9 @@
                             <div class="time-picker-group">
                                 <div class="time-picker">
                                     <span class="time-label">開始</span>
+                                    <div class="date-display">
+                                        <small class="text-muted" id="start-date-label">開始日</small>
+                                    </div>
                                     <div class="time-selector">
                                         <select id="edit_start_hour" class="hour-select">
                                             <option value="">--</option>
@@ -102,6 +114,12 @@
                                 <span class="time-separator">-</span>
                                 <div class="time-picker">
                                     <span class="time-label">終了</span>
+                                    <div class="date-display">
+                                        <small class="text-muted" id="end-date-label">終了日</small>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="toggle-end-date" onclick="toggleEndDate()">
+                                            <i class="fas fa-arrow-down"></i> 翌日に
+                                        </button>
+                                    </div>
                                     <div class="time-selector">
                                         <select id="edit_end_hour" class="hour-select">
                                             <option value="">--</option>
@@ -112,10 +130,14 @@
                                         </select>
                                     </div>
                                 </div>
+                                <button type="button" class="btn btn-primary" id="complete-button" onclick="addShiftFromTimeInput()" style="margin-left: 15px; align-self: flex-end;">
+                                    <i class="fas fa-check"></i> 完了
+                                </button>
                             </div>
                             <!-- 隠しフィールド -->
                             <input type="hidden" id="edit_start_time" name="edit_start_time">
                             <input type="hidden" id="edit_end_time" name="edit_end_time">
+                            <input type="hidden" id="edit_end_date_offset" name="edit_end_date_offset" value="0">
                             <small class="text-muted">右クリックでシフトを削除できます</small>
                         </div>
                     </div>
@@ -374,6 +396,8 @@ function toggleEditMode() {
 let selectedShiftDate = null;
 
 // カレンダー機能
+let currentSelectedDate = null;
+
 function selectDate(cell) {
     if (!cell.classList.contains('current-month')) return;
     
@@ -389,10 +413,26 @@ function selectDate(cell) {
     const date = cell.dataset.date;
     
     if (isEditMode) {
-        console.log('Edit mode: calling editSubmittedShift for date:', date);
-        // 編集モード：提出済みシフトを編集
-        // 既に削除済みの場合は、そのまま編集処理を進める
-        editSubmittedShift(cell, date);
+        // 日付を選択
+        currentSelectedDate = date;
+        
+        // 既存の選択を解除
+        document.querySelectorAll('.calendar-day.selected-edit').forEach(c => {
+            c.classList.remove('selected-edit');
+        });
+        
+        // 選択された日付をハイライト
+        cell.classList.add('selected-edit');
+        
+        // 選択された日付を表示
+        displaySelectedDate(date);
+        
+        // 既存のシフトがあれば削除
+        if (date in submittedShifts) {
+            delete submittedShifts[date];
+        }
+        
+        console.log('Date selected:', date);
     } else {
         // 通常モード：編集モードでのみシフト追加可能
         if (date in submittedShifts) {
@@ -404,53 +444,217 @@ function selectDate(cell) {
     }
 }
 
-// 提出済みシフトの編集
-function editSubmittedShift(cell, date) {
+// 時間を分に変換
+function parseTimeToMinutes(timeStr) {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+}
+
+// 日付を1日加算
+function addDays(date, days) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+}
+
+// 日付をフォーマット
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// 時間が重複しているかチェック
+function isTimeOverlap(start1, end1, start2, end2) {
+    // 重複判定: (start1 < end2) && (start2 < end1)
+    return (start1 < end2) && (start2 < end1);
+}
+
+// 日付が隣接しているかチェック（1日差以内）
+function isAdjacentDates(date1, date2) {
+    const diffTime = Math.abs(date1 - date2);
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    return diffDays <= 1;
+}
+
+// 選択された日付を表示
+function displaySelectedDate(dateStr) {
+    const dateObj = new Date(dateStr + 'T00:00:00');
+    const year = dateObj.getFullYear();
+    const month = dateObj.getMonth() + 1;
+    const day = dateObj.getDate();
+    const weekday = ['日', '月', '火', '水', '木', '金', '土'][dateObj.getDay()];
+    
+    document.getElementById('selected-date-text').textContent = `${year}年${month}月${day}日(${weekday})`;
+    document.getElementById('selected-date-display').style.display = 'block';
+    
+    // 開始日・終了日を表示
+    document.getElementById('start-date-label').textContent = `${month}月${day}日`;
+    document.getElementById('end-date-label').textContent = `${month}月${day}日`;
+    
+    // 終了日のオフセットをリセット
+    document.getElementById('edit_end_date_offset').value = '0';
+}
+
+// 日付をまたぐかどうかを切り替え
+function toggleEndDate() {
+    const offsetField = document.getElementById('edit_end_date_offset');
+    const endDateLabel = document.getElementById('end-date-label');
+    const toggleBtn = document.getElementById('toggle-end-date');
+    
+    if (currentSelectedDate === null) {
+        alert('先に日付を選択してください。');
+        return;
+    }
+    
+    const currentOffset = parseInt(offsetField.value);
+    const newOffset = currentOffset === 0 ? 1 : 0;
+    offsetField.value = newOffset;
+    
+    const dateObj = new Date(currentSelectedDate + 'T00:00:00');
+    const nextDateObj = new Date(dateObj);
+    nextDateObj.setDate(nextDateObj.getDate() + newOffset);
+    
+    const month = nextDateObj.getMonth() + 1;
+    const day = nextDateObj.getDate();
+    
+    endDateLabel.textContent = `${month}月${day}日`;
+    toggleBtn.innerHTML = newOffset === 0 ? '<i class="fas fa-arrow-down"></i> 翌日に' : '<i class="fas fa-arrow-up"></i> 同じ日に';
+}
+
+// 時間入力後にシフトを追加
+function addShiftFromTimeInput() {
+    if (currentSelectedDate === null) {
+        alert('先に日付を選択してください。');
+        return;
+    }
+    
     const requestTypeRadio = document.querySelector('input[name="edit_request_type"]:checked');
     const requestType = requestTypeRadio ? requestTypeRadio.value : 'work';
     const startTimeInput = document.getElementById('edit_start_time');
     const endTimeInput = document.getElementById('edit_end_time');
+    const endDateOffset = document.getElementById('edit_end_date_offset').value;
     const startTime = startTimeInput ? startTimeInput.value : '';
     const endTime = endTimeInput ? endTimeInput.value : '';
     
-    console.log('editSubmittedShift called:', {date, requestType, startTime, endTime, isEditMode});
-    console.log('Start time element:', startTimeInput, 'value:', startTime);
-    console.log('End time element:', endTimeInput, 'value:', endTime);
-    
     // 時間が入力されている場合のみ処理を進める
     if (!(requestType === 'off' || (startTime && endTime))) {
-        alert('開始時間と終了時間を入力してください。現在の入力値: ' + startTime + ' - ' + endTime);
+        alert('開始時間と終了時間を入力してください。');
         return;
     }
     
-    const isExistingShift = date in submittedShifts || (date in pendingChanges && pendingChanges[date].action === 'update');
-    
-    // 既存のシフトを削除（一度だけ）
-    if (date in submittedShifts) {
-        delete submittedShifts[date];
+    // 時間の検証
+    if (requestType !== 'off') {
+        const startHour = parseInt(startTime.split(':')[0]);
+        const endHour = parseInt(endTime.split(':')[0]);
+        
+        // 終了時間が開始時間より後であるか確認
+        const totalEndHour = endHour + (parseInt(endDateOffset) * 24);
+        if (totalEndHour <= startHour) {
+            alert('終了時間は開始時間より後である必要があります。');
+            return;
+        }
+        
+        // 24時間を超える場合は警告
+        const duration = (totalEndHour - startHour) + (parseInt(endTime.split(':')[1]) - parseInt(startTime.split(':')[1])) / 60;
+        if (duration > 24) {
+            if (!confirm('24時間を超えるシフトですが、よろしいですか？')) {
+                return;
+            }
+        }
+        
+        // シフトの重複チェック
+        const currentDate = new Date(currentSelectedDate + 'T00:00:00');
+        const currentEndDate = new Date(currentDate);
+        currentEndDate.setDate(currentEndDate.getDate() + parseInt(endDateOffset));
+        
+        // 既存のシフトをチェック
+        for (const [dateKey, shiftData] of Object.entries(submittedShifts)) {
+            const existingDate = new Date(dateKey + 'T00:00:00');
+            const existingStartTime = shiftData.start_time;
+            const existingEndTime = shiftData.end_time;
+            
+            if (existingStartTime && existingEndTime) {
+                // 既存シフトの時間を分に変換
+                const existingStart = parseTimeToMinutes(existingStartTime);
+                let existingEnd = parseTimeToMinutes(existingEndTime);
+                
+                // 新規シフトの時間を分に変換
+                const newStart = parseTimeToMinutes(startTime);
+                let newEnd = parseTimeToMinutes(endTime);
+                
+                // 日付をまたぐ場合は終了時間に1440分（24時間）を加算
+                // 既存シフトが翌日にまたがるかどうかは簡易的にチェック
+                if (existingEnd <= existingStart) {
+                    existingEnd += 1440; // 翌日
+                }
+                
+                // 新規シフトが翌日にまたがる場合
+                if (newEnd <= newStart || parseInt(endDateOffset) > 0) {
+                    newEnd += 1440 * (parseInt(endDateOffset) + 1); // 翌日
+                }
+                
+                // 重複チェック（1日の範囲で）
+                const existingDateStr = dateKey;
+                const newDateStr = currentSelectedDate;
+                const nextDayStr = formatDate(addDays(currentDate, 1));
+                
+                // 同じ日または次の日に重複があるかチェック
+                if (existingDateStr === newDateStr || existingDateStr === nextDayStr) {
+                    if (isTimeOverlap(
+                        existingStart, existingEnd,
+                        newStart, newEnd
+                    )) {
+                        alert('シフトの時間が重複しています。別の時間を指定してください。');
+                        return;
+                    }
+                }
+            }
+        }
+        
+        // pendingChangesもチェック
+        for (const [dateKey, changeData] of Object.entries(pendingChanges)) {
+            if (changeData.action === 'update' && changeData.start_time && changeData.end_time) {
+                const existingDate = new Date(dateKey + 'T00:00:00');
+                const existingStart = parseTimeToMinutes(changeData.start_time);
+                const existingEnd = parseTimeToMinutes(changeData.end_time) + (changeData.end_date_offset || 0) * 1440;
+                const newStart = parseTimeToMinutes(startTime);
+                const newEnd = parseTimeToMinutes(endTime) + parseInt(endDateOffset) * 1440;
+                
+                // 日付が隣接しているかチェック
+                const currentDate = new Date(currentSelectedDate + 'T00:00:00');
+                if (isAdjacentDates(existingDate, currentDate)) {
+                    if (isTimeOverlap(existingStart, existingEnd, newStart, newEnd)) {
+                        alert('シフトの時間が重複しています。別の時間を指定してください。');
+                        return;
+                    }
+                }
+            }
+        }
     }
     
-    // 全てのクラスをクリア
-    cell.classList.remove('deleted', 'modified', 'selected-edit');
+    const cell = document.querySelector(`[data-date="${currentSelectedDate}"]`);
+    const isExistingShift = currentSelectedDate in pendingChanges;
     
     // 新しいシフトを追加
-    pendingChanges[date] = {
+    pendingChanges[currentSelectedDate] = {
         action: 'update',
         request_type: requestType,
         start_time: startTime,
-        end_time: endTime
+        end_time: endTime,
+        end_date_offset: endDateOffset
     };
     
-    console.log('Added to pendingChanges:', pendingChanges);
-    
     // カレンダー表示を更新
+    cell.classList.remove('deleted', 'selected-edit');
     cell.classList.add('modified');
     updateDayStatusForEdit(cell, requestType, startTime, endTime);
     
     if (isExistingShift) {
-        alert(`${date}のシフトを更新しました。`);
+        alert(`${currentSelectedDate}のシフトを更新しました。`);
     } else {
-        alert(`${date}にシフトを追加しました。`);
+        alert(`${currentSelectedDate}にシフトを追加しました。`);
     }
     
     // 保存ボタンを有効化
@@ -458,7 +662,9 @@ function editSubmittedShift(cell, date) {
     saveBtn.disabled = false;
     saveBtn.innerHTML = `<i class="fas fa-save me-1"></i>変更を保存 (${Object.keys(pendingChanges).length}件)`;
     
-    console.log('Save button updated');
+    // 選択をリセット
+    currentSelectedDate = null;
+    document.getElementById('selected-date-display').style.display = 'none';
 }
 
 // 右クリックでシフトを削除
@@ -561,6 +767,7 @@ function saveAllChanges() {
     const requestTypes = [];
     const startTimes = [];
     const endTimes = [];
+    const endDateOffsets = [];
     
     for (const [date, change] of Object.entries(pendingChanges)) {
         console.log('Processing change:', date, change);
@@ -571,6 +778,7 @@ function saveAllChanges() {
             requestTypes.push(change.request_type);
             startTimes.push(change.start_time);
             endTimes.push(change.end_time);
+            endDateOffsets.push(change.end_date_offset || '0');
         }
     }
     
@@ -594,6 +802,9 @@ function saveAllChanges() {
     });
     endTimes.forEach(time => {
         formData.append('end_times', time);
+    });
+    endDateOffsets.forEach(offset => {
+        formData.append('end_date_offsets', offset);
     });
     
     // 送信
@@ -1009,6 +1220,16 @@ function deleteRequest(requestId) {
     display: flex;
     flex-direction: column;
     gap: 5px;
+}
+
+.date-display {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.date-display small {
+    font-size: 11px;
 }
 
 .time-label {

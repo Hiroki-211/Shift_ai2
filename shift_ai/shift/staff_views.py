@@ -99,12 +99,17 @@ def staff_shift_requests(request):
                     continue
             
             # 更新処理
+            end_date_offsets = request.POST.getlist('end_date_offsets')
             for i, date_str in enumerate(update_dates):
                 try:
                     date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
                     request_type = request_types[i] if i < len(request_types) else 'work'
                     start_time = start_times[i] if i < len(start_times) and start_times[i] else None
                     end_time = end_times[i] if i < len(end_times) and end_times[i] else None
+                    end_date_offset = int(end_date_offsets[i]) if i < len(end_date_offsets) else 0
+                    
+                    # 終了日の計算
+                    end_date = date_obj + timedelta(days=end_date_offset) if end_date_offset > 0 else None
                     
                     # 既存のレコードを削除（重複防止）
                     ShiftRequest.objects.filter(
@@ -119,6 +124,7 @@ def staff_shift_requests(request):
                         request_type=request_type,
                         start_time=datetime.strptime(start_time, '%H:%M').time() if start_time else None,
                         end_time=datetime.strptime(end_time, '%H:%M').time() if end_time else None,
+                        end_date=end_date,
                     )
                     updated_count += 1
                     

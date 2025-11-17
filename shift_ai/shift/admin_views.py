@@ -6,7 +6,8 @@ from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.db.models import Q
 from datetime import datetime, date, timedelta
-from .models import Shift, ShiftRequest
+from .models import Shift, ShiftRequest, ShiftSettings
+from .forms import ShiftSettingsForm
 from .ai_shift_generator import AIShiftGenerator
 from accounts.models import Store, Staff
 
@@ -355,6 +356,13 @@ def admin_shift_submission_status(request):
     # 総希望日数計算
     total_requests = sum(s['work_requests'] + s['off_requests'] for s in staff_status_list)
     
+    # 提出期限を店舗設定から取得
+    if next_month_start.month == 1:
+        # 来月が1月の場合、前月（今月）は12月
+        submission_deadline = date(today.year, 12, store.shift_submission_deadline_day)
+    else:
+        submission_deadline = date(today.year, today.month, store.shift_submission_deadline_day)
+    
     context = {
         'store': store,
         'month_start': next_month_start,
@@ -364,6 +372,7 @@ def admin_shift_submission_status(request):
         'not_submitted_count': total_count - submitted_count,
         'submission_rate': submission_rate,
         'total_requests': total_requests,
+        'submission_deadline': submission_deadline,
     }
     
     return render(request, 'admin/shift_submission_status.html', context)
@@ -427,3 +436,37 @@ def admin_submission_detail_api(request, staff_id):
         'requests': request_list,
         'period': f"{month_start.strftime('%Y年%m月%d日')} 〜 {month_end.strftime('%Y年%m月%d日')}"
     })
+
+
+@login_required
+@admin_required
+def admin_shift_settings(request):
+    """管理者用シフト設定"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    # 既存の設定を取得または新規作成
+    shift_settings, created = ShiftSettings.objects.get_or_create(store=store)
+    
+    if request.method == 'POST':
+        form = ShiftSettingsForm(request.POST, instance=shift_settings)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "シフト設定を保存しました。")
+            return redirect('admin_shift:shift_settings')
+        else:
+            messages.error(request, "入力内容にエラーがあります。")
+    else:
+        form = ShiftSettingsForm(instance=shift_settings)
+    
+    context = {
+        'store': store,
+        'form': form,
+        'shift_settings': shift_settings,
+    }
+    
+    return render(request, 'admin/shift_settings.html', context)
