@@ -128,3 +128,35 @@ class StaffRequirement(models.Model):
 
     def __str__(self):
         return f"{self.store.name} - {self.get_day_of_week_display()} {self.start_time}-{self.end_time}"
+
+
+class Announcement(models.Model):
+    """お知らせモデル"""
+    PRIORITY_CHOICES = [
+        ('low', '低'),
+        ('normal', '通常'),
+        ('high', '高'),
+        ('urgent', '緊急'),
+    ]
+    
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, verbose_name="店舗")
+    title = models.CharField(max_length=200, verbose_name="タイトル")
+    content = models.TextField(verbose_name="内容")
+    priority = models.CharField(
+        max_length=20,
+        choices=PRIORITY_CHOICES,
+        default='normal',
+        verbose_name="優先度"
+    )
+    is_published = models.BooleanField(default=True, verbose_name="公開中")
+    created_by = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name="作成者")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
+    
+    class Meta:
+        verbose_name = "お知らせ"
+        verbose_name_plural = "お知らせ"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} ({self.store.name})"

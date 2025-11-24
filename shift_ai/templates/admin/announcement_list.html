@@ -1,0 +1,127 @@
+{% extends 'admin/base.html' %}
+
+{% block page_title %}お知らせ管理{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <h5><i class="fas fa-bullhorn"></i> お知らせ管理</h5>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{% url 'admin_accounts:announcement_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 新規作成
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-list"></i> お知らせ一覧
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if announcements %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>タイトル</th>
+                        <th>優先度</th>
+                        <th>状態</th>
+                        <th>作成者</th>
+                        <th>作成日時</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for announcement in announcements %}
+                    <tr>
+                        <td>
+                            <strong>{{ announcement.title }}</strong>
+                        </td>
+                        <td>
+                            {% if announcement.priority == 'urgent' %}
+                                <span class="badge bg-danger">緊急</span>
+                            {% elif announcement.priority == 'high' %}
+                                <span class="badge bg-warning">高</span>
+                            {% elif announcement.priority == 'normal' %}
+                                <span class="badge bg-info">通常</span>
+                            {% else %}
+                                <span class="badge bg-secondary">低</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if announcement.is_published %}
+                                <span class="badge bg-success">公開中</span>
+                            {% else %}
+                                <span class="badge bg-secondary">非公開</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if announcement.created_by %}
+                                {{ announcement.created_by.user.get_full_name|default:announcement.created_by.user.username }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ announcement.created_at|date:"Y/m/d H:i" }}</td>
+                        <td>
+                            <a href="{% url 'admin_accounts:announcement_edit' announcement.id %}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i> 編集
+                            </a>
+                            <form method="post" action="{% url 'admin_accounts:announcement_delete' announcement.id %}" 
+                                  onsubmit="return confirm('このお知らせを削除しますか？')" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i> 削除
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- ページネーション -->
+        {% if announcements.has_other_pages %}
+        <nav aria-label="ページネーション">
+            <ul class="pagination justify-content-center">
+                {% if announcements.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">最初</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ announcements.previous_page_number }}">前へ</a>
+                    </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">{{ announcements.number }} / {{ announcements.paginator.num_pages }}</span>
+                </li>
+                
+                {% if announcements.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ announcements.next_page_number }}">次へ</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ announcements.paginator.num_pages }}">最後</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-bullhorn fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">お知らせがありません</h5>
+            <p class="text-muted">「新規作成」ボタンからお知らせを作成してください。</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
