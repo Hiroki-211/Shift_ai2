@@ -90,6 +90,14 @@
                             </a>
                         </li>
                         
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'shift_swap' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'staff_shift:shift_swap_list' %}">
+                                <i class="fas fa-exchange-alt me-2"></i>
+                                シフト交代
+                            </a>
+                        </li>
+                        
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="applicationsDropdown" role="button" 
                                data-bs-toggle="dropdown" aria-expanded="false">

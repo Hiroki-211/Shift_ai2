@@ -258,6 +258,8 @@ let staffList = [];
 
 // サーバーから取得したシフトデータ
 const serverShifts = {{ shifts_json|safe|default:"[]" }};
+// 日付ごとの統計情報
+const dateStats = {{ date_stats_json|safe|default:"{}" }};
 
 // 初期化
 document.addEventListener('DOMContentLoaded', function() {
@@ -265,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
     generateCalendar();
     // カレンダー生成後にシフトデータを読み込み
     setTimeout(() => {
-        loadShiftData();
+    loadShiftData();
     }, 100);
 });
 
@@ -373,6 +375,7 @@ function createDayCell(date, isOtherMonth) {
                 </button>
             </div>
         </div>
+        <div class="day-stats" id="stats-${dateStr}"></div>
         <div class="shift-list" id="shifts-${dateStr}">
             <div class="text-muted small">シフトなし</div>
         </div>
@@ -475,7 +478,8 @@ function updateDayShifts(dateStr, cell) {
     }
     
     const shiftList = cell.querySelector('.shift-list');
-    if (!shiftList) return;
+    const statsDiv = cell.querySelector('.day-stats');
+    if (!shiftList || !statsDiv) return;
     
     const dayShifts = serverShifts.filter(shift => shift.date === dateStr);
     
@@ -484,6 +488,21 @@ function updateDayShifts(dateStr, cell) {
     const existingBadge = dayNumber.querySelector('.badge');
     if (existingBadge) {
         existingBadge.remove();
+    }
+    
+    // 統計情報を表示
+    const stats = dateStats[dateStr] || { staff_count: 0, total_cost: 0 };
+    if (dayShifts.length > 0) {
+        statsDiv.innerHTML = `
+            <div class="day-stat-item">
+                <i class="fas fa-users"></i> <span class="stat-value">${stats.staff_count}名</span>
+            </div>
+            <div class="day-stat-item">
+                <i class="fas fa-yen-sign"></i> <span class="stat-value">¥${Math.round(stats.total_cost).toLocaleString()}</span>
+            </div>
+        `;
+    } else {
+        statsDiv.innerHTML = '';
     }
     
     if (dayShifts.length === 0) {
@@ -686,6 +705,33 @@ function confirmDayShift() {
 .shift-item.confirmed {
     background: #e8f5e9;
     border-left-color: #4caf50;
+}
+
+.day-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 4px;
+    font-size: 10px;
+}
+
+.day-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #666;
+    white-space: nowrap;
+}
+
+.day-stat-item i {
+    font-size: 9px;
+    width: 12px;
+    text-align: center;
+}
+
+.day-stat-item .stat-value {
+    font-weight: 600;
+    color: #333;
 }
 </style>
 {% endblock %}

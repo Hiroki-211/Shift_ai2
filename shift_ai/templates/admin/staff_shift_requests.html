@@ -47,8 +47,8 @@
                                                 <h6 class="mb-0">
                                                     <strong>{{ staff_data.staff.user.get_full_name|default:staff_data.staff.user.username }}</strong>
                                                     {% if staff_data.staff.is_manager %}
-                                                        <span class="badge bg-success ms-1">責任者</span>
-                                                    {% endif %}
+                                        <span class="badge bg-success ms-1">責任者</span>
+                                    {% endif %}
                                                 </h6>
                                                 <i class="fas fa-chevron-right text-muted"></i>
                                             </div>
@@ -73,7 +73,7 @@
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
+                            {% endfor %}
                 </div>
                 
                 <!-- スタッフ別の集計情報 -->
@@ -83,7 +83,7 @@
                             <div class="card-body">
                                 <h6 class="card-title">休み希望数</h6>
                                 <h4 class="text-danger">
-                                    {{ off_count }}件
+                                        {{ off_count }}件
                                 </h4>
                             </div>
                         </div>
@@ -93,7 +93,7 @@
                             <div class="card-body">
                                 <h6 class="card-title">勤務希望数</h6>
                                 <h4 class="text-success">
-                                    {{ work_count }}件
+                                        {{ work_count }}件
                                 </h4>
                             </div>
                         </div>
