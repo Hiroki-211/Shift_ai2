@@ -48,6 +48,11 @@
     </div>
 </div>
 
+<!-- CSRFトークン（JavaScriptから参照用） -->
+<form style="display: none;">
+    {% csrf_token %}
+</form>
+
 <!-- シフト一覧 -->
 <div class="card">
     <div class="card-header">
@@ -198,7 +203,7 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 全選択チェックボックス
+    // 全選択チェックボックス（シフト）
     const selectAllCheckbox = document.getElementById('selectAll');
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function() {

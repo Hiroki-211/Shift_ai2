@@ -13,49 +13,67 @@
                 <p class="text-muted mb-0">期間: {{ month_start|date:"Y年m月d日" }} ～ {{ month_end|date:"Y年m月d日" }}</p>
             </div>
             <div class="card-body">
-                {% if shift_requests %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>スタッフ</th>
-                                <th>日付</th>
-                                <th>種別</th>
-                                <th>希望時間</th>
-                                <th>提出日時</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for request in shift_requests %}
-                            <tr>
-                                <td>
-                                    <strong>{{ request.staff.user.get_full_name|default:request.staff.user.username }}</strong>
-                                    {% if request.staff.is_manager %}
-                                        <span class="badge bg-success ms-1">責任者</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ request.date|date:"m/d (D)" }}</td>
-                                <td>
-                                    {% if request.request_type == 'off' %}
-                                        <span class="badge bg-danger">休み希望</span>
-                                    {% elif request.request_type == 'work' %}
-                                        <span class="badge bg-success">勤務希望</span>
-                                    {% else %}
-                                        <span class="badge bg-info">{{ request.request_type }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if request.start_time and request.end_time %}
-                                        {{ request.start_time }} ～ {{ request.end_time }}
-                                    {% else %}
-                                        <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ request.submitted_at|date:"m/d H:i" }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                {% if monthly_list %}
+                <div class="accordion" id="monthlyAccordion">
+                    {% for month_data in monthly_list %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading{{ month_data.month_key }}">
+                            <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" 
+                                    type="button" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#collapse{{ month_data.month_key }}" 
+                                    aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" 
+                                    aria-controls="collapse{{ month_data.month_key }}">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                <strong>{{ month_data.month_label }}分</strong>
+                                <span class="badge bg-primary ms-2">{{ month_data.total_count }}件</span>
+                            </button>
+                        </h2>
+                        <div id="collapse{{ month_data.month_key }}" 
+                             class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
+                             aria-labelledby="heading{{ month_data.month_key }}" 
+                             data-bs-parent="#monthlyAccordion">
+                            <div class="accordion-body">
+                                <div class="row">
+                                    {% for staff_data in month_data.staff_list %}
+                                    <div class="col-md-6 col-lg-4 mb-3">
+                                        <div class="card h-100 staff-request-card" 
+                                             onclick="showStaffDetail('{{ month_data.month_key }}', {{ staff_data.staff.id }})" 
+                                             data-month-key="{{ month_data.month_key }}"
+                                             data-staff-id="{{ staff_data.staff.id }}"
+                                             data-staff-name="{{ staff_data.staff.user.get_full_name|default:staff_data.staff.user.username }}"
+                                             style="cursor: pointer; transition: transform 0.2s;">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <h6 class="mb-0">
+                                                    <strong>{{ staff_data.staff.user.get_full_name|default:staff_data.staff.user.username }}</strong>
+                                                    {% if staff_data.staff.is_manager %}
+                                                        <span class="badge bg-success ms-1">責任者</span>
+                                                    {% endif %}
+                                                </h6>
+                                                <i class="fas fa-chevron-right text-muted"></i>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="text-muted">休み希望:</span>
+                                                    <span class="badge bg-danger">{{ staff_data.off_count }}件</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="text-muted">勤務希望:</span>
+                                                    <span class="badge bg-success">{{ staff_data.work_count }}件</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="text-muted">合計:</span>
+                                                    <strong>{{ staff_data.off_count|add:staff_data.work_count }}件</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
                 
                 <!-- スタッフ別の集計情報 -->
@@ -65,9 +83,7 @@
                             <div class="card-body">
                                 <h6 class="card-title">休み希望数</h6>
                                 <h4 class="text-danger">
-                                    {% with off_count=shift_requests|selectattr:"request_type", "equalto", "off"|list|length %}
-                                        {{ off_count }}件
-                                    {% endwith %}
+                                    {{ off_count }}件
                                 </h4>
                             </div>
                         </div>
@@ -77,9 +93,7 @@
                             <div class="card-body">
                                 <h6 class="card-title">勤務希望数</h6>
                                 <h4 class="text-success">
-                                    {% with work_count=shift_requests|selectattr:"request_type", "equalto", "work"|list|length %}
-                                        {{ work_count }}件
-                                    {% endwith %}
+                                    {{ work_count }}件
                                 </h4>
                             </div>
                         </div>
@@ -93,6 +107,32 @@
                     <p class="text-muted">スタッフからの希望シフトがまだ提出されていません。</p>
                 </div>
                 {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- スタッフ詳細モーダル -->
+<div class="modal fade" id="staffDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user"></i> <span id="modal-staff-name"></span>の希望シフト詳細
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="staff-detail-content">
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">読み込み中...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
             </div>
         </div>
     </div>
@@ -129,5 +169,174 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// カードのホバー効果
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.staff-request-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+    });
+});
+
+// スタッフ詳細を表示
+function showStaffDetail(monthKey, staffId) {
+    const modal = new bootstrap.Modal(document.getElementById('staffDetailModal'));
+    const contentDiv = document.getElementById('staff-detail-content');
+    const nameSpan = document.getElementById('modal-staff-name');
+    
+    // スタッフ名を設定
+    const card = document.querySelector(`[data-month-key="${monthKey}"][data-staff-id="${staffId}"]`);
+    if (card) {
+        const staffName = card.getAttribute('data-staff-name');
+        nameSpan.textContent = staffName || 'スタッフ';
+    }
+    
+    // 詳細データを取得
+    contentDiv.innerHTML = `
+        <div class="text-center py-3">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">読み込み中...</span>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // サーバーからデータを取得（テンプレート内のデータを使用）
+    const monthlyData = {
+        {% for month_data in monthly_list %}
+        "{{ month_data.month_key }}": {
+            month_label: "{{ month_data.month_label }}",
+            staffs: {
+                {% for staff_data in month_data.staff_list %}
+                {{ staff_data.staff.id }}: {
+                    name: "{{ staff_data.staff.user.get_full_name|default:staff_data.staff.user.username }}",
+                    is_manager: {{ staff_data.staff.is_manager|yesno:"true,false" }},
+                    requests: [
+                        {% for req in staff_data.requests %}
+                        {
+                            date: "{{ req.date|date:'Y-m-d' }}",
+                            date_display: "{{ req.date|date:'m/d (D)' }}",
+                            request_type: "{{ req.request_type }}",
+                            start_time: "{{ req.start_time|default:'' }}",
+                            end_time: "{{ req.end_time|default:'' }}",
+                            submitted_at: "{{ req.submitted_at|date:'m/d H:i' }}"
+                        }{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    ],
+                    off_count: {{ staff_data.off_count }},
+                    work_count: {{ staff_data.work_count }}
+                }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            }
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    if (monthlyData[monthKey] && monthlyData[monthKey].staffs[staffId]) {
+        const staffData = monthlyData[monthKey].staffs[staffId];
+        staffData.month_label = monthlyData[monthKey].month_label;
+        displayStaffDetail(staffData);
+    } else {
+        contentDiv.innerHTML = '<div class="alert alert-danger">データが見つかりませんでした。</div>';
+    }
+}
+
+// スタッフ詳細を表示
+function displayStaffDetail(data) {
+    const contentDiv = document.getElementById('staff-detail-content');
+    
+    let html = `
+        <div class="alert alert-info mb-3">
+            <i class="fas fa-calendar"></i> <strong>${data.month_label || ''}</strong>
+        </div>
+        
+        <div class="mb-3">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h6 class="text-muted">休み希望</h6>
+                            <h3 class="text-danger">${data.off_count}件</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h6 class="text-muted">勤務希望</h6>
+                            <h3 class="text-success">${data.work_count}件</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h6 class="text-muted">合計</h6>
+                            <h3 class="text-primary">${data.off_count + data.work_count}件</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <h6 class="mb-3"><i class="fas fa-list"></i> 希望シフト一覧</h6>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>日付</th>
+                        <th>種別</th>
+                        <th>希望時間</th>
+                        <th>提出日時</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    data.requests.forEach(req => {
+        const typeBadge = req.request_type === 'off' 
+            ? '<span class="badge bg-danger">休み希望</span>'
+            : '<span class="badge bg-success">勤務希望</span>';
+        
+        const timeDisplay = req.start_time && req.end_time
+            ? `${req.start_time} ～ ${req.end_time}`
+            : '<span class="text-muted">-</span>';
+        
+        html += `
+            <tr>
+                <td>${req.date_display}</td>
+                <td>${typeBadge}</td>
+                <td>${timeDisplay}</td>
+                <td>${req.submitted_at}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    contentDiv.innerHTML = html;
+}
+</script>
+
+<style>
+.staff-request-card:hover {
+    border-color: #007bff;
+}
+</style>
 {% endblock %}
 

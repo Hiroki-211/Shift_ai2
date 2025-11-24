@@ -6,6 +6,8 @@ from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.db.models import Q
 from datetime import datetime, date, timedelta
+import calendar
+import json
 from .models import Shift, ShiftRequest, ShiftSettings
 from .forms import ShiftSettingsForm
 from .ai_shift_generator import AIShiftGenerator
@@ -42,29 +44,29 @@ def admin_shift_creation(request):
         messages.error(request, "スタッフ情報が見つかりません。")
         return redirect('login')
     
-    # 日付範囲の設定
+    # 日付範囲の設定（デフォルトは今月の1日から月末まで）
     today = date.today()
-    start_date = request.GET.get('start_date', today.strftime('%Y-%m-%d'))
-    end_date = request.GET.get('end_date', (today + timedelta(days=30)).strftime('%Y-%m-%d'))
+    # 今月の最初の日を取得
+    month_start = date(today.year, today.month, 1)
+    # 今月の最後の日を取得
+    _, last_day = calendar.monthrange(today.year, today.month)
+    month_end = date(today.year, today.month, last_day)
+    
+    start_date = request.GET.get('start_date', month_start.strftime('%Y-%m-%d'))
+    end_date = request.GET.get('end_date', month_end.strftime('%Y-%m-%d'))
     
     try:
         start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
         end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
     except ValueError:
-        start_date_obj = today
-        end_date_obj = today + timedelta(days=30)
+        start_date_obj = month_start
+        end_date_obj = month_end
     
     # 既存のシフトを取得
     existing_shifts = Shift.objects.filter(
         store=store,
         date__range=[start_date_obj, end_date_obj]
     ).order_by('date', 'start_time')
-    
-    # 希望シフトを取得
-    shift_requests = ShiftRequest.objects.filter(
-        staff__store=store,
-        date__range=[start_date_obj, end_date_obj]
-    ).order_by('date')
     
     # シフト統計を計算
     total_shifts = existing_shifts.count()
@@ -77,7 +79,6 @@ def admin_shift_creation(request):
         'start_date': start_date_obj,
         'end_date': end_date_obj,
         'existing_shifts': existing_shifts,
-        'shift_requests': shift_requests,
         'total_shifts': total_shifts,
         'confirmed_shifts': confirmed_shifts,
         'unconfirmed_shifts': unconfirmed_shifts,
@@ -200,6 +201,98 @@ def admin_delete_shift(request, shift_id):
 
 @login_required
 @admin_required
+def admin_create_shifts_from_requests(request):
+    """希望シフトからシフトを作成"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        return JsonResponse({'error': 'スタッフ情報が見つかりません。'}, status=400)
+    
+    if request.method == 'POST':
+        request_ids = request.POST.getlist('request_ids')
+        
+        if not request_ids:
+            return JsonResponse({'error': 'シフトを作成する希望を選択してください。'}, status=400)
+        
+        created_shifts = []
+        skipped_shifts = []
+        errors = []
+        
+        for request_id in request_ids:
+            try:
+                shift_request = ShiftRequest.objects.get(id=request_id, staff__store=store)
+                
+                # 勤務希望のみシフトを作成
+                if shift_request.request_type != 'work':
+                    skipped_shifts.append({
+                        'id': shift_request.id,
+                        'reason': '勤務希望ではありません'
+                    })
+                    continue
+                
+                # 開始時刻と終了時刻が設定されているかチェック
+                if not shift_request.start_time or not shift_request.end_time:
+                    skipped_shifts.append({
+                        'id': shift_request.id,
+                        'reason': '希望時間が設定されていません'
+                    })
+                    continue
+                
+                # 既に同じシフトが存在するかチェック
+                existing_shift = Shift.objects.filter(
+                    store=store,
+                    staff=shift_request.staff,
+                    date=shift_request.date,
+                    start_time=shift_request.start_time
+                ).first()
+                
+                if existing_shift:
+                    skipped_shifts.append({
+                        'id': shift_request.id,
+                        'reason': '既にシフトが存在します'
+                    })
+                    continue
+                
+                # シフトを作成
+                shift = Shift.objects.create(
+                    store=store,
+                    staff=shift_request.staff,
+                    date=shift_request.date,
+                    start_time=shift_request.start_time,
+                    end_time=shift_request.end_time,
+                    end_date=shift_request.end_date,
+                    is_confirmed=False
+                )
+                created_shifts.append(shift)
+                
+            except ShiftRequest.DoesNotExist:
+                errors.append(f'ID {request_id}: 希望シフトが見つかりません')
+            except Exception as e:
+                errors.append(f'ID {request_id}: {str(e)}')
+        
+        message_parts = []
+        if created_shifts:
+            message_parts.append(f'{len(created_shifts)}件のシフトを作成しました')
+        if skipped_shifts:
+            message_parts.append(f'{len(skipped_shifts)}件をスキップしました')
+        if errors:
+            message_parts.append(f'{len(errors)}件のエラーが発生しました')
+        
+        return JsonResponse({
+            'success': True,
+            'created_count': len(created_shifts),
+            'skipped_count': len(skipped_shifts),
+            'error_count': len(errors),
+            'message': '。'.join(message_parts) + '。',
+            'skipped_details': skipped_shifts[:5]  # 最初の5件のみ
+        })
+    
+    return JsonResponse({'error': '無効なリクエストです。'}, status=400)
+
+
+@login_required
+@admin_required
 def admin_confirm_shifts(request):
     """管理者用シフト確定"""
     try:
@@ -248,16 +341,72 @@ def admin_staff_shift_requests(request):
     else:
         month_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
     
+    # 過去3ヶ月から未来3ヶ月までの希望シフトを取得
+    start_date = (today - timedelta(days=90)).replace(day=1)
+    end_date = (today + timedelta(days=90))
+    if end_date.month == 12:
+        end_date = end_date.replace(year=end_date.year + 1, month=1, day=1) - timedelta(days=1)
+    else:
+        end_date = end_date.replace(month=end_date.month + 1, day=1) - timedelta(days=1)
+    
     shift_requests = ShiftRequest.objects.filter(
         staff__store=store,
-        date__range=[month_start, month_end]
-    ).order_by('date', 'staff__user__last_name')
+        date__range=[start_date, end_date]
+    ).select_related('staff', 'staff__user').order_by('date', 'staff__user__last_name')
+    
+    # 月ごとにグループ化
+    monthly_data = {}
+    for req in shift_requests:
+        month_key = req.date.strftime('%Y-%m')
+        month_label = req.date.strftime('%Y年%m月')
+        
+        if month_key not in monthly_data:
+            monthly_data[month_key] = {
+                'month_label': month_label,
+                'month_key': month_key,
+                'staffs': {},
+                'total_count': 0,
+            }
+        
+        staff_id = req.staff.id
+        if staff_id not in monthly_data[month_key]['staffs']:
+            monthly_data[month_key]['staffs'][staff_id] = {
+                'staff': req.staff,
+                'requests': [],
+                'off_count': 0,
+                'work_count': 0,
+            }
+        
+        monthly_data[month_key]['staffs'][staff_id]['requests'].append(req)
+        monthly_data[month_key]['total_count'] += 1
+        
+        if req.request_type == 'off':
+            monthly_data[month_key]['staffs'][staff_id]['off_count'] += 1
+        elif req.request_type == 'work':
+            monthly_data[month_key]['staffs'][staff_id]['work_count'] += 1
+    
+    # 月ごとのデータをリストに変換（月の降順でソート）
+    monthly_list = []
+    for month_key in sorted(monthly_data.keys(), reverse=True):
+        month_info = monthly_data[month_key]
+        # 各月の従業員リストをソート
+        staff_list = sorted(month_info['staffs'].values(),
+                          key=lambda x: x['staff'].user.get_full_name() or x['staff'].user.username)
+        month_info['staff_list'] = staff_list
+        monthly_list.append(month_info)
+    
+    # 全体の集計情報を計算
+    off_count = sum(sum(s['off_count'] for s in m['staff_list']) for m in monthly_list)
+    work_count = sum(sum(s['work_count'] for s in m['staff_list']) for m in monthly_list)
     
     context = {
         'store': store,
         'shift_requests': shift_requests,
+        'monthly_list': monthly_list,
         'month_start': month_start,
         'month_end': month_end,
+        'off_count': off_count,
+        'work_count': work_count,
     }
     
     return render(request, 'admin/staff_shift_requests.html', context)
@@ -274,25 +423,59 @@ def admin_shift_calendar(request):
         messages.error(request, "スタッフ情報が見つかりません。")
         return redirect('login')
     
-    # 今月の日付範囲を取得
+    # 表示する月を取得（GETパラメータから、または今月）
     today = date.today()
-    month_start = today.replace(day=1)
-    if today.month == 12:
-        month_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
-    else:
-        month_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+    try:
+        year = int(request.GET.get('year', today.year))
+        month = int(request.GET.get('month', today.month))
+        month_start = date(year, month, 1)
+        if month == 12:
+            month_end = date(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            month_end = date(year, month + 1, 1) - timedelta(days=1)
+    except (ValueError, TypeError):
+        month_start = today.replace(day=1)
+        if today.month == 12:
+            month_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            month_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
     
     # シフトを取得
     shifts = Shift.objects.filter(
         store=store,
         date__range=[month_start, month_end]
-    ).order_by('date', 'start_time')
+    ).select_related('staff', 'staff__user').order_by('date', 'start_time')
+    
+    # シフトデータをJSON形式で準備
+    shifts_json = []
+    for shift in shifts:
+        shifts_json.append({
+            'id': shift.id,
+            'date': shift.date.strftime('%Y-%m-%d'),
+            'start_time': shift.start_time.strftime('%H:%M'),
+            'end_time': shift.end_time.strftime('%H:%M'),
+            'staff_id': shift.staff.id,
+            'staff_name': shift.staff.user.get_full_name() or shift.staff.user.username,
+            'is_confirmed': shift.is_confirmed,
+            'wage_cost': shift.wage_cost,
+        })
+    
+    # 統計情報を計算
+    total_shifts = shifts.count()
+    confirmed_shifts = shifts.filter(is_confirmed=True).count()
+    pending_shifts = total_shifts - confirmed_shifts
+    total_cost = sum(shift.wage_cost for shift in shifts.filter(is_confirmed=True))
     
     context = {
         'store': store,
         'month_start': month_start,
         'month_end': month_end,
         'shifts': shifts,
+        'shifts_json': json.dumps(shifts_json, ensure_ascii=False),
+        'total_shifts': total_shifts,
+        'confirmed_shifts': confirmed_shifts,
+        'pending_shifts': pending_shifts,
+        'total_cost': total_cost,
     }
     
     return render(request, 'admin/shift_calendar.html', context)
