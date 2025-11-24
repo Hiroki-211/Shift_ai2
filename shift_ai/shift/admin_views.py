@@ -44,23 +44,43 @@ def admin_shift_creation(request):
         messages.error(request, "スタッフ情報が見つかりません。")
         return redirect('login')
     
-    # 日付範囲の設定（デフォルトは今月の1日から月末まで）
+    # 月の前半・後半・すべての選択設定（デフォルトは今月すべて）
     today = date.today()
-    # 今月の最初の日を取得
-    month_start = date(today.year, today.month, 1)
-    # 今月の最後の日を取得
-    _, last_day = calendar.monthrange(today.year, today.month)
-    month_end = date(today.year, today.month, last_day)
     
-    start_date = request.GET.get('start_date', month_start.strftime('%Y-%m-%d'))
-    end_date = request.GET.get('end_date', month_end.strftime('%Y-%m-%d'))
+    # 年・月・期間の取得
+    selected_year_str = request.GET.get('year', str(today.year))
+    selected_month_str = request.GET.get('month', str(today.month))
+    period = request.GET.get('period', 'all')  # 'first_half', 'second_half', 'all'
     
     try:
-        start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
-        end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
-    except ValueError:
-        start_date_obj = month_start
-        end_date_obj = month_end
+        selected_year_int = int(selected_year_str)
+        selected_month_int = int(selected_month_str)
+        
+        # 月の日数を取得
+        _, last_day = calendar.monthrange(selected_year_int, selected_month_int)
+        
+        # 期間に応じて開始日と終了日を設定
+        if period == 'first_half':
+            # 前半：1日～15日
+            start_date_obj = date(selected_year_int, selected_month_int, 1)
+            end_date_obj = date(selected_year_int, selected_month_int, min(15, last_day))
+        elif period == 'second_half':
+            # 後半：16日～月末
+            start_date_obj = date(selected_year_int, selected_month_int, 16)
+            end_date_obj = date(selected_year_int, selected_month_int, last_day)
+        else:
+            # すべて：1日～月末
+            start_date_obj = date(selected_year_int, selected_month_int, 1)
+            end_date_obj = date(selected_year_int, selected_month_int, last_day)
+            
+    except (ValueError, calendar.IllegalMonthError):
+        # エラー時は今月すべてを使用
+        _, last_day = calendar.monthrange(today.year, today.month)
+        start_date_obj = date(today.year, today.month, 1)
+        end_date_obj = date(today.year, today.month, last_day)
+        selected_year_int = today.year
+        selected_month_int = today.month
+        period = 'all'
     
     # 既存のシフトを取得
     existing_shifts = Shift.objects.filter(
@@ -74,10 +94,28 @@ def admin_shift_creation(request):
     unconfirmed_shifts = total_shifts - confirmed_shifts
     total_cost = sum(shift.wage_cost for shift in existing_shifts.filter(is_confirmed=True))
     
+    # 年と月の選択肢を準備
+    current_year = today.year
+    years = list(range(current_year - 1, current_year + 3))  # 過去1年から未来2年まで
+    months = list(range(1, 13))
+    
+    # 期間の選択肢
+    period_choices = [
+        ('first_half', '前半'),
+        ('second_half', '後半'),
+        ('all', 'すべて'),
+    ]
+    
     context = {
         'store': store,
         'start_date': start_date_obj,
         'end_date': end_date_obj,
+        'selected_year': selected_year_int,
+        'selected_month': selected_month_int,
+        'period': period,
+        'years': years,
+        'months': months,
+        'period_choices': period_choices,
         'existing_shifts': existing_shifts,
         'total_shifts': total_shifts,
         'confirmed_shifts': confirmed_shifts,

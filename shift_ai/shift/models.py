@@ -106,3 +106,81 @@ class ShiftSettings(models.Model):
 
     def __str__(self):
         return f"{self.store.name} - シフト設定"
+
+
+class ShiftSwapRequest(models.Model):
+    """シフト交代募集モデル"""
+    STATUS_CHOICES = [
+        ('open', '募集中'),
+        ('closed', '締切'),
+        ('completed', '完了'),
+        ('cancelled', 'キャンセル'),
+    ]
+    
+    shift = models.ForeignKey(Shift, on_delete=models.CASCADE, verbose_name="対象シフト")
+    requested_by = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='swap_requests', verbose_name="募集者")
+    date = models.DateField(verbose_name="交代希望日")
+    start_time = models.TimeField(verbose_name="開始時刻")
+    end_time = models.TimeField(verbose_name="終了時刻")
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='open',
+        verbose_name="状態"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
+    
+    class Meta:
+        verbose_name = "シフト交代募集"
+        verbose_name_plural = "シフト交代募集"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.requested_by.user.get_full_name()} - {self.date} {self.start_time}-{self.end_time}"
+    
+    @property
+    def is_available(self):
+        """出勤日の1日前まで使用可能かどうか"""
+        from datetime import date, timedelta
+        deadline = self.date - timedelta(days=1)
+        return date.today() <= deadline and self.status == 'open'
+    
+    @property
+    def deadline(self):
+        """締切日（出勤日の1日前）"""
+        from datetime import timedelta
+        return self.date - timedelta(days=1)
+
+
+class ShiftSwapApplication(models.Model):
+    """シフト交代立候補モデル"""
+    STATUS_CHOICES = [
+        ('pending', '待機中'),
+        ('accepted', '承認済み'),
+        ('rejected', '却下'),
+        ('cancelled', 'キャンセル'),
+    ]
+    
+    swap_request = models.ForeignKey(ShiftSwapRequest, on_delete=models.CASCADE, related_name='applications', verbose_name="シフト交代募集")
+    applicant = models.ForeignKey(Staff, on_delete=models.CASCADE, verbose_name="立候補者")
+    start_time = models.TimeField(verbose_name="希望開始時刻")
+    end_time = models.TimeField(verbose_name="希望終了時刻")
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name="状態"
+    )
+    message = models.TextField(blank=True, verbose_name="メッセージ")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
+    
+    class Meta:
+        verbose_name = "シフト交代立候補"
+        verbose_name_plural = "シフト交代立候補"
+        unique_together = ['swap_request', 'applicant']
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.applicant.user.get_full_name()} - {self.swap_request.date} {self.start_time}-{self.end_time}"

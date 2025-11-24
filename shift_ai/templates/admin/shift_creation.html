@@ -22,27 +22,51 @@
     </div>
 </div>
 
-<!-- 日付範囲選択 -->
+<!-- 月の期間選択 -->
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="row g-3">
             <div class="col-md-4">
-                <label for="start_date" class="form-label">開始日</label>
-                <input type="date" class="form-control" id="start_date" name="start_date" 
-                       value="{{ start_date|date:'Y-m-d' }}">
+                <label for="year" class="form-label">年</label>
+                <select class="form-select" id="year" name="year">
+                    {% for year in years %}
+                        <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}年</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="col-md-4">
-                <label for="end_date" class="form-label">終了日</label>
-                <input type="date" class="form-control" id="end_date" name="end_date" 
-                       value="{{ end_date|date:'Y-m-d' }}">
+                <label for="month" class="form-label">月</label>
+                <select class="form-select" id="month" name="month">
+                    {% for month in months %}
+                        <option value="{{ month }}" {% if month == selected_month %}selected{% endif %}>{{ month }}月</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label">&nbsp;</label>
-                <div>
-                    <button type="submit" class="btn btn-outline-primary">
-                        <i class="fas fa-search"></i> 表示
-                    </button>
+                <label for="period" class="form-label">期間</label>
+                <select class="form-select" id="period" name="period">
+                    {% for value, label in period_choices %}
+                        <option value="{{ value }}" {% if value == period %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle"></i> 
+                    表示期間: {{ selected_year }}年{{ selected_month }}月
+                    {% if period == 'first_half' %}
+                        前半（{{ start_date|date:"m月d日" }} ～ {{ end_date|date:"m月d日" }}）
+                    {% elif period == 'second_half' %}
+                        後半（{{ start_date|date:"m月d日" }} ～ {{ end_date|date:"m月d日" }}）
+                    {% else %}
+                        すべて（{{ start_date|date:"m月d日" }} ～ {{ end_date|date:"m月d日" }}）
+                    {% endif %}
                 </div>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="fas fa-search"></i> 表示
+                </button>
             </div>
         </form>
     </div>

@@ -7,7 +7,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
 from datetime import datetime, date, timedelta
-from .models import Shift, ShiftRequest
+from .models import Shift, ShiftRequest, ShiftSwapRequest, ShiftSwapApplication
 from accounts.models import Staff
 
 
@@ -389,3 +389,271 @@ def paid_leave_requests(request):
     }
     
     return render(request, 'staff/paid_leave_requests.html', context)
+
+
+@login_required
+@staff_required
+def shift_swap_list(request):
+    """シフト交代募集一覧"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    # 期限切れの募集を自動的に締切にする
+    today = date.today()
+    expired_requests = ShiftSwapRequest.objects.filter(
+        shift__store=store,
+        status='open',
+        date__lte=today + timedelta(days=1)
+    )
+    expired_requests.update(status='closed')
+    
+    # 自分の店舗の募集を取得（募集者以外、かつ公開中）
+    swap_requests = ShiftSwapRequest.objects.filter(
+        shift__store=store,
+        status='open'
+    ).exclude(requested_by=staff).select_related('shift', 'requested_by', 'shift__staff').order_by('date', 'start_time')
+    
+    # 自分の立候補状況と各募集の立候補数を取得
+    my_applications = {}
+    for swap_req in swap_requests:
+        try:
+            application = ShiftSwapApplication.objects.get(
+                swap_request=swap_req,
+                applicant=staff
+            )
+            my_applications[swap_req.id] = application
+        except ShiftSwapApplication.DoesNotExist:
+            pass
+        # 立候補数を計算
+        swap_req.application_count = swap_req.applications.filter(status='pending').count()
+    
+    context = {
+        'staff': staff,
+        'store': store,
+        'swap_requests': swap_requests,
+        'my_applications': my_applications,
+    }
+    return render(request, 'staff/shift_swap_list.html', context)
+
+
+@login_required
+@staff_required
+def shift_swap_create(request):
+    """シフト交代募集作成"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    # 自分の確定済みシフトを取得
+    today = date.today()
+    my_shifts = Shift.objects.filter(
+        staff=staff,
+        store=store,
+        is_confirmed=True,
+        date__gte=today
+    ).order_by('date', 'start_time')
+    
+    # 各シフトの期限を計算
+    for shift in my_shifts:
+        shift.deadline = shift.date - timedelta(days=1)
+        shift.is_available_for_swap = shift.deadline >= today
+    
+    if request.method == 'POST':
+        shift_id = request.POST.get('shift_id')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+        
+        try:
+            shift = Shift.objects.get(id=shift_id, staff=staff, store=store)
+            
+            # 期限チェック（出勤日の1日前まで）
+            deadline = shift.date - timedelta(days=1)
+            if date.today() > deadline:
+                messages.error(request, f"このシフトの交代募集は締め切られています。出勤日の1日前までに募集してください。")
+                return redirect('staff_shift:shift_swap_list')
+            
+            # 既に募集が存在するかチェック
+            existing_request = ShiftSwapRequest.objects.filter(
+                shift=shift,
+                status__in=['open', 'pending']
+            ).first()
+            
+            if existing_request:
+                messages.warning(request, "このシフトの交代募集は既に作成されています。")
+                return redirect('staff_shift:shift_swap_list')
+            
+            # シフト交代募集を作成
+            swap_request = ShiftSwapRequest.objects.create(
+                shift=shift,
+                requested_by=staff,
+                date=shift.date,
+                start_time=datetime.strptime(start_time, '%H:%M').time() if start_time else shift.start_time,
+                end_time=datetime.strptime(end_time, '%H:%M').time() if end_time else shift.end_time,
+                status='open'
+            )
+            
+            messages.success(request, "シフト交代募集を作成しました。")
+            return redirect('staff_shift:shift_swap_list')
+            
+        except Shift.DoesNotExist:
+            messages.error(request, "シフトが見つかりません。")
+        except ValueError:
+            messages.error(request, "無効な時間形式です。")
+    
+    context = {
+        'staff': staff,
+        'store': store,
+        'my_shifts': my_shifts,
+        'today': today,
+    }
+    return render(request, 'staff/shift_swap_create.html', context)
+
+
+@login_required
+@staff_required
+def shift_swap_apply(request, swap_request_id):
+    """シフト交代立候補"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    swap_request = get_object_or_404(
+        ShiftSwapRequest,
+        id=swap_request_id,
+        shift__store=store,
+        status='open'
+    )
+    
+    # 募集者本人は立候補できない
+    if swap_request.requested_by == staff:
+        messages.error(request, "自分の募集には立候補できません。")
+        return redirect('staff_shift:shift_swap_list')
+    
+    # 期限チェック
+    if not swap_request.is_available:
+        messages.error(request, "この募集は締め切られています。")
+        return redirect('staff_shift:shift_swap_list')
+    
+    # 既に立候補しているかチェック
+    existing_application = ShiftSwapApplication.objects.filter(
+        swap_request=swap_request,
+        applicant=staff
+    ).first()
+    
+    if request.method == 'POST':
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+        message = request.POST.get('message', '')
+        
+        try:
+            start_time_obj = datetime.strptime(start_time, '%H:%M').time()
+            end_time_obj = datetime.strptime(end_time, '%H:%M').time()
+            
+            if existing_application:
+                # 既存の立候補を更新
+                existing_application.start_time = start_time_obj
+                existing_application.end_time = end_time_obj
+                existing_application.message = message
+                existing_application.status = 'pending'
+                existing_application.save()
+                messages.success(request, "立候補内容を更新しました。")
+            else:
+                # 新しい立候補を作成
+                ShiftSwapApplication.objects.create(
+                    swap_request=swap_request,
+                    applicant=staff,
+                    start_time=start_time_obj,
+                    end_time=end_time_obj,
+                    message=message,
+                    status='pending'
+                )
+                messages.success(request, "立候補しました。")
+            
+            return redirect('staff_shift:shift_swap_list')
+            
+        except ValueError:
+            messages.error(request, "無効な時間形式です。")
+    
+    context = {
+        'staff': staff,
+        'store': store,
+        'swap_request': swap_request,
+        'existing_application': existing_application,
+    }
+    return render(request, 'staff/shift_swap_apply.html', context)
+
+
+@login_required
+@staff_required
+def shift_swap_my_requests(request):
+    """自分のシフト交代募集一覧"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    # 期限切れの募集を自動的に締切にする
+    today = date.today()
+    expired_requests = ShiftSwapRequest.objects.filter(
+        requested_by=staff,
+        status='open',
+        date__lte=today + timedelta(days=1)
+    )
+    expired_requests.update(status='closed')
+    
+    # 自分の募集を取得
+    my_swap_requests = ShiftSwapRequest.objects.filter(
+        requested_by=staff
+    ).select_related('shift').prefetch_related('applications__applicant').order_by('-created_at')
+    
+    # 各募集の立候補者を取得
+    for swap_req in my_swap_requests:
+        swap_req.applications_list = [app for app in swap_req.applications.all() if app.status == 'pending']
+    
+    context = {
+        'staff': staff,
+        'store': store,
+        'my_swap_requests': my_swap_requests,
+    }
+    return render(request, 'staff/shift_swap_my_requests.html', context)
+
+
+@login_required
+@staff_required
+def shift_swap_cancel(request, swap_request_id):
+    """シフト交代募集キャンセル"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    swap_request = get_object_or_404(
+        ShiftSwapRequest,
+        id=swap_request_id,
+        requested_by=staff
+    )
+    
+    if request.method == 'POST':
+        swap_request.status = 'cancelled'
+        swap_request.save()
+        messages.success(request, "シフト交代募集をキャンセルしました。")
+        return redirect('staff_shift:shift_swap_my_requests')
+    
+    context = {
+        'swap_request': swap_request,
+    }
+    return render(request, 'staff/shift_swap_cancel.html', context)
