@@ -1,5 +1,5 @@
 from django import forms
-from .models import Evaluation, AttendanceRecord
+from .models import Evaluation, AttendanceRecord, EvaluationItem, EvaluationScore
 
 
 class EvaluationForm(forms.ModelForm):
@@ -115,3 +115,112 @@ class AttendanceRecordForm(forms.ModelForm):
             raise forms.ValidationError("退勤時刻は出勤時刻より後である必要があります。")
         
         return cleaned_data
+
+
+class EvaluationItemForm(forms.ModelForm):
+    """評価項目フォーム"""
+    
+    class Meta:
+        model = EvaluationItem
+        fields = ['name', 'description', 'max_score', 'order', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '評価項目名を入力してください'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': '評価項目の説明を入力してください（任意）'
+            }),
+            'max_score': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 1,
+                'max': 100,
+                'placeholder': '最大スコア'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'placeholder': '表示順序（小さい順）'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+    
+    def clean_max_score(self):
+        max_score = self.cleaned_data.get('max_score')
+        if max_score < 1 or max_score > 100:
+            raise forms.ValidationError("最大スコアは1から100の間で設定してください。")
+        return max_score
+
+
+class DynamicEvaluationForm(forms.Form):
+    """動的評価フォーム（評価項目に基づいて生成）"""
+    comment = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 4,
+            'placeholder': '評価コメントを入力してください'
+        })
+    )
+    
+    def __init__(self, *args, **kwargs):
+        evaluation_items = kwargs.pop('evaluation_items', [])
+        evaluation = kwargs.pop('evaluation', None)
+        super().__init__(*args, **kwargs)
+        
+        # コメントの初期値を設定
+        if evaluation and evaluation.comment:
+            self.fields['comment'].initial = evaluation.comment
+        
+        # 評価項目に基づいてフィールドを動的に生成
+        for item in evaluation_items:
+            field_name = f'item_{item.id}'
+            initial_value = None
+            
+            # 既存の評価がある場合は、既存のスコアを取得
+            if evaluation:
+                try:
+                    score_obj = EvaluationScore.objects.get(
+                        evaluation=evaluation,
+                        evaluation_item=item
+                    )
+                    initial_value = score_obj.score
+                except EvaluationScore.DoesNotExist:
+                    pass
+            
+            self.fields[field_name] = forms.IntegerField(
+                label=item.name,
+                required=True,
+                min_value=0,
+                max_value=item.max_score,
+                initial=initial_value,
+                widget=forms.NumberInput(attrs={
+                    'class': 'form-control score-input',
+                    'min': 0,
+                    'max': item.max_score,
+                    'placeholder': f'0-{item.max_score}点'
+                }),
+                help_text=item.description or f'最大{item.max_score}点'
+            )
+    
+    def save(self, evaluation, evaluation_items):
+        """評価スコアを保存"""
+        # 評価スコアを保存
+        for item in evaluation_items:
+            field_name = f'item_{item.id}'
+            score = self.cleaned_data.get(field_name, 0)
+            
+            EvaluationScore.objects.update_or_create(
+                evaluation=evaluation,
+                evaluation_item=item,
+                defaults={'score': score}
+            )
+        
+        # コメントを保存
+        comment = self.cleaned_data.get('comment', '')
+        evaluation.comment = comment
+        evaluation.save()

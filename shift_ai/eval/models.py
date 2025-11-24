@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-from accounts.models import Staff
+from accounts.models import Staff, Store
 
 
 class Evaluation(models.Model):
@@ -56,6 +56,60 @@ class Evaluation(models.Model):
             self.customer_service_score
         )
         super().save(*args, **kwargs)
+
+
+class EvaluationItem(models.Model):
+    """評価項目モデル"""
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, verbose_name="店舗")
+    name = models.CharField(max_length=100, verbose_name="評価項目名")
+    description = models.TextField(blank=True, null=True, verbose_name="説明")
+    max_score = models.IntegerField(
+        default=100,
+        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        verbose_name="最大スコア"
+    )
+    order = models.IntegerField(default=0, verbose_name="表示順序")
+    is_active = models.BooleanField(default=True, verbose_name="有効")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "評価項目"
+        verbose_name_plural = "評価項目"
+        ordering = ['order', 'id']
+        unique_together = ['store', 'name']
+
+    def __str__(self):
+        return f"{self.store.name} - {self.name} (最大{self.max_score}点)"
+
+
+class EvaluationScore(models.Model):
+    """評価スコアモデル（評価と評価項目の中間テーブル）"""
+    evaluation = models.ForeignKey(
+        Evaluation, 
+        on_delete=models.CASCADE, 
+        related_name='scores',
+        verbose_name="評価"
+    )
+    evaluation_item = models.ForeignKey(
+        EvaluationItem,
+        on_delete=models.CASCADE,
+        verbose_name="評価項目"
+    )
+    score = models.IntegerField(
+        validators=[MinValueValidator(0)],
+        verbose_name="スコア"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "評価スコア"
+        verbose_name_plural = "評価スコア"
+        unique_together = ['evaluation', 'evaluation_item']
+
+    def __str__(self):
+        return f"{self.evaluation} - {self.evaluation_item.name}: {self.score}点"
 
 
 class AttendanceRecord(models.Model):

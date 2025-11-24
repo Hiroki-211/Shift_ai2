@@ -79,7 +79,7 @@
                         <div class="card text-center">
                             <div class="card-body">
                                 <h6 class="card-title">総勤怠記録数</h6>
-                                <h4 class="text-primary">{{ attendance_records|length }}件</h4>
+                                <h4 class="text-primary">{{ total_count }}件</h4>
                             </div>
                         </div>
                     </div>
@@ -87,11 +87,7 @@
                         <div class="card text-center">
                             <div class="card-body">
                                 <h6 class="card-title">正常出勤</h6>
-                                <h4 class="text-success">
-                                    {% with normal_count=attendance_records|rejectattr:"is_absent"|rejectattr:"is_late"|rejectattr:"is_early_leave"|list|length %}
-                                        {{ normal_count }}件
-                                    {% endwith %}
-                                </h4>
+                                <h4 class="text-success">{{ normal_count }}件</h4>
                             </div>
                         </div>
                     </div>
@@ -99,13 +95,7 @@
                         <div class="card text-center">
                             <div class="card-body">
                                 <h6 class="card-title">遅刻・早退</h6>
-                                <h4 class="text-warning">
-                                    {% with late_count=attendance_records|selectattr:"is_late"|list|length %}
-                                    {% with early_count=attendance_records|selectattr:"is_early_leave"|list|length %}
-                                        {{ late_count|add:early_count }}件
-                                    {% endwith %}
-                                    {% endwith %}
-                                </h4>
+                                <h4 class="text-warning">{{ late_early_count }}件</h4>
                             </div>
                         </div>
                     </div>
@@ -113,11 +103,7 @@
                         <div class="card text-center">
                             <div class="card-body">
                                 <h6 class="card-title">欠勤</h6>
-                                <h4 class="text-danger">
-                                    {% with absent_count=attendance_records|selectattr:"is_absent"|list|length %}
-                                        {{ absent_count }}件
-                                    {% endwith %}
-                                </h4>
+                                <h4 class="text-danger">{{ absent_count }}件</h4>
                             </div>
                         </div>
                     </div>
