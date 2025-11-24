@@ -319,7 +319,7 @@ def leave_requests(request):
         return redirect('login')
     
     # 固定契約者かどうかをチェック
-    if not staff.is_contract_employee:
+    if staff.employment_type != 'fixed':
         messages.warning(request, "希望休提出は固定契約者のみ利用可能です。")
         return redirect('staff_accounts:dashboard')
     
