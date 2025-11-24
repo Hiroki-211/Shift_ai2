@@ -16,4 +16,5 @@ urlpatterns = [
     path('staff-requests/', admin_views.admin_staff_shift_requests, name='staff_shift_requests'),
     path('shift-settings/', admin_views.admin_shift_settings, name='shift_settings'),
     path('api/submission-detail/<int:staff_id>/', admin_views.admin_submission_detail_api, name='submission_detail_api'),
+    path('api/shift-detail-by-date/<str:shift_date>/', admin_views.admin_shift_detail_by_date, name='shift_detail_by_date'),
 ]

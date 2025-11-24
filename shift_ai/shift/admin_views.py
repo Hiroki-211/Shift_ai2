@@ -86,7 +86,33 @@ def admin_shift_creation(request):
     existing_shifts = Shift.objects.filter(
         store=store,
         date__range=[start_date_obj, end_date_obj]
-    ).order_by('date', 'start_time')
+    ).select_related('staff', 'staff__user').order_by('date', 'start_time')
+    
+    # 日付ごとにシフトをグループ化
+    shifts_by_date = {}
+    for shift in existing_shifts:
+        shift_date = shift.date
+        if shift_date not in shifts_by_date:
+            shifts_by_date[shift_date] = []
+        shifts_by_date[shift_date].append(shift)
+    
+    # 日付ごとのスタッフ数を計算
+    date_summary = []
+    for shift_date in sorted(shifts_by_date.keys()):
+        shifts_on_date = shifts_by_date[shift_date]
+        staff_count = len(set(shift.staff.id for shift in shifts_on_date))
+        confirmed_count = sum(1 for shift in shifts_on_date if shift.is_confirmed)
+        total_cost_on_date = sum(shift.wage_cost for shift in shifts_on_date if shift.is_confirmed)
+        
+        date_summary.append({
+            'date': shift_date,
+            'staff_count': staff_count,
+            'total_shifts': len(shifts_on_date),
+            'confirmed_shifts': confirmed_count,
+            'unconfirmed_shifts': len(shifts_on_date) - confirmed_count,
+            'total_cost': total_cost_on_date,
+            'shifts': shifts_on_date,
+        })
     
     # シフト統計を計算
     total_shifts = existing_shifts.count()
@@ -117,6 +143,7 @@ def admin_shift_creation(request):
         'months': months,
         'period_choices': period_choices,
         'existing_shifts': existing_shifts,
+        'date_summary': date_summary,
         'total_shifts': total_shifts,
         'confirmed_shifts': confirmed_shifts,
         'unconfirmed_shifts': unconfirmed_shifts,
@@ -124,6 +151,108 @@ def admin_shift_creation(request):
     }
     
     return render(request, 'admin/shift_creation.html', context)
+
+
+@login_required
+@admin_required
+def admin_shift_detail_by_date(request, shift_date):
+    """指定日のシフト詳細をJSONで返す（ガントチャート用）"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        return JsonResponse({'error': 'スタッフ情報が見つかりません。'}, status=400)
+    
+    try:
+        target_date = datetime.strptime(shift_date, '%Y-%m-%d').date()
+    except ValueError:
+        return JsonResponse({'error': '無効な日付形式です。'}, status=400)
+    
+    # その日のシフトを取得
+    previous_date = target_date - timedelta(days=1)
+    next_date = target_date + timedelta(days=1)
+    
+    # 1. 当日開始のシフト（当日に開始して当日または翌日に終了）
+    shifts_today = Shift.objects.filter(
+        store=store,
+        date=target_date
+    ).select_related('staff', 'staff__user')
+    
+    # 2. 前日から続くシフトの当日部分（前日に開始して当日に終了するシフトの0時〜終了時刻）
+    shifts_from_previous = Shift.objects.filter(
+        store=store,
+        date=previous_date,
+        end_date=target_date
+    ).select_related('staff', 'staff__user')
+    
+    # 3. 当日開始で翌日に終了するシフトの前日部分（当日に開始して翌日に終了するシフトの開始時刻〜23時）
+    # これは前日のガントチャートで表示されるため、ここでは取得しない
+    
+    # シフトを結合
+    shifts = list(shifts_today) + list(shifts_from_previous)
+    shifts.sort(key=lambda s: (s.staff.user.last_name or s.staff.user.username, s.start_time))
+    
+    # ガントチャート用のデータを準備
+    gantt_data = []
+    for shift in shifts:
+        start_hour, start_min = shift.start_time.hour, shift.start_time.minute
+        end_hour, end_min = shift.end_time.hour, shift.end_time.minute
+        
+        # シフトの開始日と終了日を取得
+        shift_start_date = shift.date
+        shift_end_date = shift.end_date if shift.end_date else shift.date
+        
+        # 日をまたぐかどうか
+        spans_midnight = shift_end_date > shift_start_date or (shift_end_date == shift_start_date and end_hour < start_hour)
+        
+        # 前日から続くシフトの場合、当日の部分（0時〜終了時刻）のみを表示
+        if spans_midnight and shift_start_date == previous_date:
+            # 前日から続くシフトの当日部分：0時〜終了時刻
+            gantt_data.append({
+                'staff_id': shift.staff.id,
+                'staff_name': shift.staff.user.get_full_name() or shift.staff.user.username,
+                'start_time': shift.start_time.strftime('%H:%M'),
+                'end_time': shift.end_time.strftime('%H:%M'),
+                'start_minutes': 0,  # 当日の0時から
+                'end_minutes': end_hour * 60 + end_min,  # 当日の終了時刻まで
+                'spans_midnight': False,  # 当日のガントチャートでは日をまたがない
+                'is_from_previous': True,  # 前日から続くシフトの当日部分
+                'duration_hours': shift.duration_hours,
+                'is_confirmed': shift.is_confirmed,
+                'shift_id': shift.id,
+            })
+        elif shift_start_date == target_date:
+            # 当日開始のシフト
+            start_minutes = start_hour * 60 + start_min
+            
+            # 日をまたぐ場合（当日中に開始して翌日に終了）
+            # 当日のガントチャートには開始時刻〜23時59分までしか表示しない
+            if spans_midnight:
+                # 当日の部分のみを表示（開始時刻〜23時59分）
+                end_minutes = 24 * 60  # 23時59分まで
+            else:
+                # 当日中に終了するシフト
+                end_minutes = end_hour * 60 + end_min
+            
+            gantt_data.append({
+                'staff_id': shift.staff.id,
+                'staff_name': shift.staff.user.get_full_name() or shift.staff.user.username,
+                'start_time': shift.start_time.strftime('%H:%M'),
+                'end_time': shift.end_time.strftime('%H:%M'),
+                'start_minutes': start_minutes,
+                'end_minutes': end_minutes,
+                'spans_midnight': False,  # 当日のガントチャートでは日をまたがない
+                'is_from_previous': False,
+                'duration_hours': shift.duration_hours,
+                'is_confirmed': shift.is_confirmed,
+                'shift_id': shift.id,
+            })
+    
+    return JsonResponse({
+        'date': target_date.strftime('%Y-%m-%d'),
+        'date_display': target_date.strftime('%Y年%m月%d日'),
+        'shifts': gantt_data,
+    })
 
 
 @login_required
@@ -478,25 +607,175 @@ def admin_shift_calendar(request):
         else:
             month_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
     
-    # シフトを取得
+    # シフトを取得（当月開始のシフト + 前月から続くシフトの当月部分）
     shifts = Shift.objects.filter(
         store=store,
         date__range=[month_start, month_end]
     ).select_related('staff', 'staff__user').order_by('date', 'start_time')
     
-    # シフトデータをJSON形式で準備
-    shifts_json = []
+    # 前月から続くシフトの当月部分も取得
+    previous_month_end = month_start - timedelta(days=1)
+    shifts_from_previous = Shift.objects.filter(
+        store=store,
+        date__lte=previous_month_end,
+        end_date__gte=month_start
+    ).select_related('staff', 'staff__user')
+    
+    # 日付ごとにシフトをグループ化し、各日の従業員数と人件費を計算
+    shifts_by_date = {}
+    
+    # 当月開始のシフト
     for shift in shifts:
-        shifts_json.append({
-            'id': shift.id,
-            'date': shift.date.strftime('%Y-%m-%d'),
-            'start_time': shift.start_time.strftime('%H:%M'),
-            'end_time': shift.end_time.strftime('%H:%M'),
-            'staff_id': shift.staff.id,
-            'staff_name': shift.staff.user.get_full_name() or shift.staff.user.username,
-            'is_confirmed': shift.is_confirmed,
-            'wage_cost': shift.wage_cost,
-        })
+        shift_date = shift.date
+        shift_end_date = shift.end_date if shift.end_date else shift.date
+        start_hour = shift.start_time.hour
+        end_hour = shift.end_time.hour
+        start_min = shift.start_time.minute
+        end_min = shift.end_time.minute
+        
+        # 日をまたぐかどうか
+        spans_midnight = shift_end_date > shift_date or (shift_end_date == shift_date and end_hour < start_hour)
+        
+        if shift_date not in shifts_by_date:
+            shifts_by_date[shift_date] = {
+                'shifts': [],
+                'staff_ids': set(),
+                'total_cost': 0,
+            }
+        shifts_by_date[shift_date]['shifts'].append(shift)
+        shifts_by_date[shift_date]['staff_ids'].add(shift.staff.id)
+        
+        if shift.is_confirmed:
+            if spans_midnight:
+                # 日をまたぐ場合：当日の部分（開始時刻〜23時59分）の人件費を計算
+                start_datetime = datetime.combine(shift_date, shift.start_time)
+                end_datetime = datetime.combine(shift_date, datetime.max.time().replace(microsecond=0))  # 23:59:59
+                duration_hours = (end_datetime - start_datetime).total_seconds() / 3600
+                if duration_hours < 0:
+                    duration_hours += 24
+                daily_cost = duration_hours * shift.staff.hourly_wage
+                shifts_by_date[shift_date]['total_cost'] += daily_cost
+            else:
+                # 当日中に終了するシフト
+                shifts_by_date[shift_date]['total_cost'] += shift.wage_cost
+        
+        # 日をまたぐ場合、翌日の部分も追加
+        if spans_midnight and shift_end_date <= month_end:
+            if shift_end_date not in shifts_by_date:
+                shifts_by_date[shift_end_date] = {
+                    'shifts': [],
+                    'staff_ids': set(),
+                    'total_cost': 0,
+                }
+            # 翌日の部分としてシフトを追加（表示用）
+            shifts_by_date[shift_end_date]['shifts'].append(shift)
+            shifts_by_date[shift_end_date]['staff_ids'].add(shift.staff.id)
+            if shift.is_confirmed:
+                # 翌日の部分（0時〜終了時刻）の人件費を計算
+                start_datetime = datetime.combine(shift_end_date, datetime.min.time())  # 0時
+                end_datetime = datetime.combine(shift_end_date, shift.end_time)
+                duration_hours = (end_datetime - start_datetime).total_seconds() / 3600
+                if duration_hours < 0:
+                    duration_hours += 24
+                daily_cost = duration_hours * shift.staff.hourly_wage
+                shifts_by_date[shift_end_date]['total_cost'] += daily_cost
+    
+    # 前月から続くシフトの当月部分
+    for shift in shifts_from_previous:
+        shift_start_date = shift.date
+        shift_end_date = shift.end_date if shift.end_date else shift.date
+        
+        # 前日部分が当月内の場合
+        if month_start <= shift_start_date <= month_end:
+            if shift_start_date not in shifts_by_date:
+                shifts_by_date[shift_start_date] = {
+                    'shifts': [],
+                    'staff_ids': set(),
+                    'total_cost': 0,
+                }
+            shifts_by_date[shift_start_date]['shifts'].append(shift)
+            shifts_by_date[shift_start_date]['staff_ids'].add(shift.staff.id)
+            if shift.is_confirmed:
+                # 前日の部分（開始時刻〜23時59分）の人件費を計算
+                start_datetime = datetime.combine(shift_start_date, shift.start_time)
+                end_datetime = datetime.combine(shift_start_date, datetime.max.time().replace(microsecond=0))  # 23:59:59
+                duration_hours = (end_datetime - start_datetime).total_seconds() / 3600
+                if duration_hours < 0:
+                    duration_hours += 24
+                daily_cost = duration_hours * shift.staff.hourly_wage
+                shifts_by_date[shift_start_date]['total_cost'] += daily_cost
+        
+        # 当日部分が当月内の場合
+        if shift_end_date and month_start <= shift_end_date <= month_end:
+            if shift_end_date not in shifts_by_date:
+                shifts_by_date[shift_end_date] = {
+                    'shifts': [],
+                    'staff_ids': set(),
+                    'total_cost': 0,
+                }
+            # 前月から続くシフトの当日部分として追加
+            shifts_by_date[shift_end_date]['shifts'].append(shift)
+            shifts_by_date[shift_end_date]['staff_ids'].add(shift.staff.id)
+            if shift.is_confirmed:
+                # 当日部分（0時〜終了時刻）の人件費を計算
+                end_datetime = datetime.combine(shift_end_date, shift.end_time)
+                start_datetime = datetime.combine(shift_end_date, datetime.min.time())  # 当日の0時
+                duration_hours = (end_datetime - start_datetime).total_seconds() / 3600
+                if duration_hours < 0:
+                    duration_hours += 24
+                daily_cost = duration_hours * shift.staff.hourly_wage
+                shifts_by_date[shift_end_date]['total_cost'] += daily_cost
+    
+    # 前月から続くシフトも含めてJSON形式で準備
+    all_shifts_for_json = list(shifts) + list(shifts_from_previous)
+    
+    # シフトデータをJSON形式で準備（日をまたぐシフトは両方の日に含める）
+    shifts_json = []
+    for shift in all_shifts_for_json:
+        shift_date = shift.date
+        shift_end_date = shift.end_date if shift.end_date else shift.date
+        start_hour = shift.start_time.hour
+        end_hour = shift.end_time.hour
+        
+        # 日をまたぐかどうか
+        spans_midnight = shift_end_date > shift_date or (shift_end_date == shift_date and end_hour < start_hour)
+        
+        # 開始日のシフトデータ
+        if month_start <= shift_date <= month_end:
+            shifts_json.append({
+                'id': shift.id,
+                'date': shift_date.strftime('%Y-%m-%d'),
+                'start_time': shift.start_time.strftime('%H:%M'),
+                'end_time': shift.end_time.strftime('%H:%M'),
+                'staff_id': shift.staff.id,
+                'staff_name': shift.staff.user.get_full_name() or shift.staff.user.username,
+                'is_confirmed': shift.is_confirmed,
+                'wage_cost': shift.wage_cost,
+                'spans_midnight': spans_midnight,
+            })
+        
+        # 日をまたぐ場合、終了日のシフトデータも追加
+        if spans_midnight and month_start <= shift_end_date <= month_end:
+            shifts_json.append({
+                'id': shift.id,
+                'date': shift_end_date.strftime('%Y-%m-%d'),
+                'start_time': shift.start_time.strftime('%H:%M'),
+                'end_time': shift.end_time.strftime('%H:%M'),
+                'staff_id': shift.staff.id,
+                'staff_name': shift.staff.user.get_full_name() or shift.staff.user.username,
+                'is_confirmed': shift.is_confirmed,
+                'wage_cost': shift.wage_cost,
+                'spans_midnight': spans_midnight,
+                'is_continuation': True,  # 前日から続くシフトの当日部分であることを示す
+            })
+    
+    # 日付ごとの統計情報を準備
+    date_stats = {}
+    for shift_date, data in shifts_by_date.items():
+        date_stats[shift_date.strftime('%Y-%m-%d')] = {
+            'staff_count': len(data['staff_ids']),
+            'total_cost': data['total_cost'],
+        }
     
     # 統計情報を計算
     total_shifts = shifts.count()
@@ -510,6 +789,7 @@ def admin_shift_calendar(request):
         'month_end': month_end,
         'shifts': shifts,
         'shifts_json': json.dumps(shifts_json, ensure_ascii=False),
+        'date_stats_json': json.dumps(date_stats, ensure_ascii=False),
         'total_shifts': total_shifts,
         'confirmed_shifts': confirmed_shifts,
         'pending_shifts': pending_shifts,
