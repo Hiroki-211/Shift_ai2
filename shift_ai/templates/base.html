@@ -1,3 +1,4 @@
+{% load account_filters %}
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -112,7 +113,7 @@
                         {% if user.is_authenticated %}
                         <div class="dropdown">
                             <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user"></i> {{ user.get_full_name|default:user.username }}
+{% load account_filters %}<i class="fas fa-user"></i> {{ user|japanese_name }}
                             </button>
                             <ul class="dropdown-menu">
                                 <li>

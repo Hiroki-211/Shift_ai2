@@ -172,6 +172,71 @@
     </div>
 </div>
 
+<!-- ガントチャートモーダル -->
+<div class="modal fade" id="ganttModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-bar"></i> シフト詳細 - <span id="gantt-date-display"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="gantt-loading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">読み込み中...</span>
+                    </div>
+                </div>
+                <div id="gantt-content" style="display: none;">
+                    <div class="gantt-container" style="overflow-x: auto;">
+                        <table class="table table-bordered gantt-table" style="min-width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="min-width: 150px; position: sticky; left: 0; background: white; z-index: 10;">従業員名</th>
+                                    <th colspan="24" class="text-center">時間（0時～23時）</th>
+                                </tr>
+                                <tr>
+                                    <th style="position: sticky; left: 0; background: white; z-index: 10;"></th>
+                                    <th class="text-center" style="width: 50px;">0</th>
+                                    <th class="text-center" style="width: 50px;">1</th>
+                                    <th class="text-center" style="width: 50px;">2</th>
+                                    <th class="text-center" style="width: 50px;">3</th>
+                                    <th class="text-center" style="width: 50px;">4</th>
+                                    <th class="text-center" style="width: 50px;">5</th>
+                                    <th class="text-center" style="width: 50px;">6</th>
+                                    <th class="text-center" style="width: 50px;">7</th>
+                                    <th class="text-center" style="width: 50px;">8</th>
+                                    <th class="text-center" style="width: 50px;">9</th>
+                                    <th class="text-center" style="width: 50px;">10</th>
+                                    <th class="text-center" style="width: 50px;">11</th>
+                                    <th class="text-center" style="width: 50px;">12</th>
+                                    <th class="text-center" style="width: 50px;">13</th>
+                                    <th class="text-center" style="width: 50px;">14</th>
+                                    <th class="text-center" style="width: 50px;">15</th>
+                                    <th class="text-center" style="width: 50px;">16</th>
+                                    <th class="text-center" style="width: 50px;">17</th>
+                                    <th class="text-center" style="width: 50px;">18</th>
+                                    <th class="text-center" style="width: 50px;">19</th>
+                                    <th class="text-center" style="width: 50px;">20</th>
+                                    <th class="text-center" style="width: 50px;">21</th>
+                                    <th class="text-center" style="width: 50px;">22</th>
+                                    <th class="text-center" style="width: 50px;">23</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gantt-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- 一括割当モーダル -->
 <div class="modal fade" id="bulkAssignModal" tabindex="-1">
     <div class="modal-dialog">
@@ -386,12 +451,9 @@ function createDayCell(date, isOtherMonth) {
     return cell;
 }
 
-// 日付モーダル開く
+// 日付モーダル開く（ガントチャート表示）
 function openDayModal(dateStr) {
-    document.getElementById('modal-date').textContent = dateStr;
-    const modal = new bootstrap.Modal(document.getElementById('shiftDetailModal'));
-    modal.show();
-    loadDayShifts(dateStr);
+    showGanttChart(dateStr);
 }
 
 // その日のシフト読み込み
@@ -523,7 +585,7 @@ function updateDayShifts(dateStr, cell) {
         `;
         shiftItem.onclick = function(e) {
             e.stopPropagation();
-            openDayModal(dateStr);
+            showGanttChart(dateStr);
         };
         shiftList.appendChild(shiftItem);
     });
@@ -597,6 +659,188 @@ function exportShiftData() {
 // その日のシフトを確定
 function confirmDayShift() {
     alert('シフトを確定しました！');
+}
+
+// ガントチャート表示
+function showGanttChart(dateStr) {
+    const modal = new bootstrap.Modal(document.getElementById('ganttModal'));
+    const loadingEl = document.getElementById('gantt-loading');
+    const contentEl = document.getElementById('gantt-content');
+    const dateDisplayEl = document.getElementById('gantt-date-display');
+    const ganttBodyEl = document.getElementById('gantt-body');
+    
+    loadingEl.style.display = 'block';
+    contentEl.style.display = 'none';
+    ganttBodyEl.innerHTML = '';
+    
+    // 日付を日本語形式で表示
+    const dateObj = new Date(dateStr + 'T00:00:00');
+    const dateDisplay = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+    dateDisplayEl.textContent = dateDisplay;
+    
+    modal.show();
+    
+    // CSRFトークンを取得
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                      document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+    
+    fetch(`{% url 'admin_shift:shift_detail_by_date' '0000-00-00' %}`.replace('0000-00-00', dateStr), {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrfToken || '',
+        },
+        credentials: 'same-origin'
+    })
+        .then(response => response.json())
+        .then(data => {
+            loadingEl.style.display = 'none';
+            
+            if (data.error) {
+                ganttBodyEl.innerHTML = `<tr><td colspan="25" class="text-center text-danger">エラー: ${data.error}</td></tr>`;
+                contentEl.style.display = 'block';
+                return;
+            }
+            
+            if (!data.shifts || data.shifts.length === 0) {
+                ganttBodyEl.innerHTML = `<tr><td colspan="25" class="text-center text-muted">この日のシフトはありません</td></tr>`;
+                contentEl.style.display = 'block';
+                return;
+            }
+            
+            // 従業員ごとにシフトをグループ化
+            const staffShifts = {};
+            data.shifts.forEach(shift => {
+                if (!staffShifts[shift.staff_id]) {
+                    staffShifts[shift.staff_id] = {
+                        name: shift.staff_name,
+                        shifts: []
+                    };
+                }
+                staffShifts[shift.staff_id].shifts.push(shift);
+            });
+            
+            // 従業員名でソート
+            const sortedStaff = Object.values(staffShifts).sort((a, b) => {
+                return a.name.localeCompare(b.name, 'ja');
+            });
+            
+            // ガントチャートを描画
+            sortedStaff.forEach(staff => {
+                const row = document.createElement('tr');
+                
+                // 従業員名セル
+                const nameCell = document.createElement('td');
+                nameCell.textContent = staff.name;
+                nameCell.style.position = 'sticky';
+                nameCell.style.left = '0';
+                nameCell.style.background = 'white';
+                nameCell.style.zIndex = '5';
+                nameCell.style.fontWeight = '600';
+                nameCell.style.padding = '8px';
+                row.appendChild(nameCell);
+                
+                // 24時間分のセルを作成（0時〜23時）
+                for (let hour = 0; hour < 24; hour++) {
+                    const cell = document.createElement('td');
+                    cell.style.position = 'relative';
+                    cell.style.height = '50px';
+                    cell.style.padding = '0';
+                    cell.style.minWidth = '50px';
+                    cell.style.border = '1px solid #dee2e6';
+                    
+                    // この時間帯にシフトがあるかチェック
+                    staff.shifts.forEach(shift => {
+                        let shouldShowBar = false;
+                        let barLeft = 0;
+                        let barWidth = 100;
+                        
+                        // 前日から続くシフトの当日部分（0時〜終了時刻のみを表示）
+                        if (shift.is_from_previous) {
+                            const startHour = Math.floor(shift.start_minutes / 60);  // 0時
+                            const endHour = Math.floor(shift.end_minutes / 60);
+                            const endMin = shift.end_minutes % 60;
+                            
+                            // 0時〜終了時刻のセルに表示
+                            if (hour >= startHour && hour <= endHour) {
+                                shouldShowBar = true;
+                                if (hour === endHour) {
+                                    barLeft = 0;
+                                    barWidth = (endMin / 60) * 100;
+                                } else {
+                                    barLeft = 0;
+                                    barWidth = 100;
+                                }
+                            }
+                        }
+                        // 当日開始のシフトの場合
+                        else {
+                            const startHour = Math.floor(shift.start_minutes / 60);
+                            const endHour = Math.floor(shift.end_minutes / 60);
+                            const startMin = shift.start_minutes % 60;
+                            const endMin = shift.end_minutes % 60;
+                            
+                            // 当日のガントチャートにはその日のシフトのみを表示
+                            // 日をまたぐシフトでも、当日の部分（開始時刻〜23時59分）のみを表示
+                            if (hour >= startHour && hour < endHour) {
+                                shouldShowBar = true;
+                                if (hour === startHour) {
+                                    barLeft = (startMin / 60) * 100;
+                                    if (hour === endHour - 1) {
+                                        barWidth = ((endMin - startMin) / 60) * 100;
+                                    } else {
+                                        barWidth = ((60 - startMin) / 60) * 100;
+                                    }
+                                } else if (hour === endHour - 1) {
+                                    barLeft = 0;
+                                    barWidth = (endMin / 60) * 100;
+                                } else {
+                                    barLeft = 0;
+                                    barWidth = 100;
+                                }
+                            } else if (hour === startHour && hour === endHour) {
+                                // 1時間以内のシフト
+                                shouldShowBar = true;
+                                barLeft = (startMin / 60) * 100;
+                                barWidth = ((endMin - startMin) / 60) * 100;
+                            }
+                        }
+                        
+                        if (shouldShowBar) {
+                            const bar = document.createElement('div');
+                            bar.style.position = 'absolute';
+                            bar.style.top = '5%';
+                            bar.style.height = '90%';
+                            bar.style.left = `${barLeft}%`;
+                            bar.style.width = `${barWidth}%`;
+                            
+                            bar.style.background = shift.is_confirmed ? '#28a745' : '#ffc107';
+                            bar.style.border = '1px solid ' + (shift.is_confirmed ? '#1e7e34' : '#e0a800');
+                            bar.style.borderRadius = '3px';
+                            bar.style.cursor = 'pointer';
+                            bar.style.zIndex = '3';
+                            
+                            // ツールチップ
+                            const timeRange = shift.start_time + ' - ' + shift.end_time;
+                            bar.title = `${shift.staff_name}: ${timeRange} (${shift.duration_hours.toFixed(1)}時間)`;
+                            
+                            cell.appendChild(bar);
+                        }
+                    });
+                    
+                    row.appendChild(cell);
+                }
+                
+                ganttBodyEl.appendChild(row);
+            });
+            
+            contentEl.style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error loading shift data:', error);
+            loadingEl.style.display = 'none';
+            ganttBodyEl.innerHTML = `<tr><td colspan="25" class="text-center text-danger">データの読み込みに失敗しました</td></tr>`;
+            contentEl.style.display = 'block';
+        });
 }
 </script>
 
@@ -732,6 +976,34 @@ function confirmDayShift() {
 .day-stat-item .stat-value {
     font-weight: 600;
     color: #333;
+}
+
+/* ガントチャートスタイル */
+.gantt-container {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.gantt-table {
+    margin-bottom: 0;
+}
+
+.gantt-table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    text-align: center;
+    padding: 8px 4px;
+    border: 1px solid #dee2e6;
+}
+
+.gantt-table tbody td {
+    border: 1px solid #dee2e6;
+    padding: 0;
+    vertical-align: middle;
+}
+
+.gantt-table tbody tr:hover {
+    background-color: #f8f9fa;
 }
 </style>
 {% endblock %}

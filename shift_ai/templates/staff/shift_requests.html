@@ -30,7 +30,7 @@
                         <button type="button" class="btn btn-sm btn-outline-warning" id="edit-mode-btn" onclick="toggleEditMode()">
                             <i class="fas fa-edit me-1"></i>編集モード
                         </button>
-                        <button type="button" class="btn btn-sm btn-success" id="save-changes-btn" onclick="saveAllChanges()" style="display: none;">
+                        <button type="button" class="btn btn-sm btn-success" id="save-changes-btn" onclick="saveAllChanges()" style="display: none;" disabled>
                             <i class="fas fa-save me-1"></i>変更を保存
                         </button>
                     {% endif %}
@@ -169,6 +169,11 @@
                                     <div class="day-number">{{ day.date|date:"j" }}</div>
                                     <div class="day-status" id="status_{{ day.date|date:'Y-m-d' }}" data-submitted="{{ day.date|date:'Y-m-d' }}">
                                     </div>
+                                    {% if can_edit %}
+                                    <button type="button" class="btn-delete-shift" onclick="deleteShiftFromButton(this, event)" data-date="{{ day.date|date:'Y-m-d' }}" style="display: none; position: absolute; top: 2px; right: 2px; padding: 2px 6px; font-size: 10px; line-height: 1; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;" title="シフトを削除">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% endif %}
                                 </div>
                             </div>
                             {% endfor %}
@@ -378,7 +383,26 @@ function toggleEditMode() {
         document.querySelectorAll('.calendar-day.submitted').forEach(cell => {
             cell.classList.remove('submitted');
             cell.style.cursor = 'pointer';
+            // 削除ボタンを表示（提出済みシフトがある日のみ）
+            const date = cell.dataset.date;
+            if (date in submittedShifts) {
+                const deleteBtn = cell.querySelector('.btn-delete-shift');
+                if (deleteBtn) {
+                    deleteBtn.style.display = 'block';
+                }
+            }
         });
+        
+        // 提出済みシフトがある日のみ削除ボタンを表示
+        for (const date in submittedShifts) {
+            const cell = document.querySelector(`[data-date="${date}"]`);
+            if (cell) {
+                const deleteBtn = cell.querySelector('.btn-delete-shift');
+                if (deleteBtn) {
+                    deleteBtn.style.display = 'block';
+                }
+            }
+        }
     } else {
         editBtn.innerHTML = '<i class="fas fa-edit me-1"></i>編集モード';
         editBtn.classList.remove('btn-warning');
@@ -389,6 +413,11 @@ function toggleEditMode() {
         // 提出済みシフトを元に戻す
         displaySubmittedShifts();
         pendingChanges = {};
+        
+        // 削除ボタンを非表示（編集モード終了時）
+        document.querySelectorAll('.btn-delete-shift').forEach(btn => {
+            btn.style.display = 'none';
+        });
     }
 }
 
@@ -595,13 +624,12 @@ function addShiftFromTimeInput() {
                     newEnd += 1440 * (parseInt(endDateOffset) + 1); // 翌日
                 }
                 
-                // 重複チェック（1日の範囲で）
+                // 重複チェック（同じ日のみ）
                 const existingDateStr = dateKey;
                 const newDateStr = currentSelectedDate;
-                const nextDayStr = formatDate(addDays(currentDate, 1));
                 
-                // 同じ日または次の日に重複があるかチェック
-                if (existingDateStr === newDateStr || existingDateStr === nextDayStr) {
+                // 同じ日の場合のみ重複チェック（2日続けて提出する場合は別の日として扱う）
+                if (existingDateStr === newDateStr) {
                     if (isTimeOverlap(
                         existingStart, existingEnd,
                         newStart, newEnd
@@ -613,18 +641,16 @@ function addShiftFromTimeInput() {
             }
         }
         
-        // pendingChangesもチェック
+        // pendingChangesもチェック（同じ日のみ）
         for (const [dateKey, changeData] of Object.entries(pendingChanges)) {
             if (changeData.action === 'update' && changeData.start_time && changeData.end_time) {
-                const existingDate = new Date(dateKey + 'T00:00:00');
-                const existingStart = parseTimeToMinutes(changeData.start_time);
-                const existingEnd = parseTimeToMinutes(changeData.end_time) + (changeData.end_date_offset || 0) * 1440;
-                const newStart = parseTimeToMinutes(startTime);
-                const newEnd = parseTimeToMinutes(endTime) + parseInt(endDateOffset) * 1440;
-                
-                // 日付が隣接しているかチェック
-                const currentDate = new Date(currentSelectedDate + 'T00:00:00');
-                if (isAdjacentDates(existingDate, currentDate)) {
+                // 同じ日の場合のみ重複チェック
+                if (dateKey === currentSelectedDate) {
+                    const existingStart = parseTimeToMinutes(changeData.start_time);
+                    const existingEnd = parseTimeToMinutes(changeData.end_time) + (changeData.end_date_offset || 0) * 1440;
+                    const newStart = parseTimeToMinutes(startTime);
+                    const newEnd = parseTimeToMinutes(endTime) + parseInt(endDateOffset) * 1440;
+                    
                     if (isTimeOverlap(existingStart, existingEnd, newStart, newEnd)) {
                         alert('シフトの時間が重複しています。別の時間を指定してください。');
                         return;
@@ -659,26 +685,53 @@ function addShiftFromTimeInput() {
     
     // 保存ボタンを有効化
     const saveBtn = document.getElementById('save-changes-btn');
-    saveBtn.disabled = false;
-    saveBtn.innerHTML = `<i class="fas fa-save me-1"></i>変更を保存 (${Object.keys(pendingChanges).length}件)`;
+    if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = `<i class="fas fa-save me-1"></i>変更を保存 (${Object.keys(pendingChanges).length}件)`;
+    }
     
     // 選択をリセット
     currentSelectedDate = null;
     document.getElementById('selected-date-display').style.display = 'none';
 }
 
+// ボタンからシフトを削除
+function deleteShiftFromButton(button, event) {
+    event.stopPropagation(); // 親要素のクリックイベントを防止
+    
+    const cell = button.closest('.calendar-day');
+    deleteShiftOnRightClick(cell, event);
+}
+
 // 右クリックでシフトを削除
 function deleteShiftOnRightClick(cell, event) {
     console.log('deleteShiftOnRightClick called, isEditMode:', isEditMode);
     
+    // 編集モードでない場合は削除不可
     if (!isEditMode) {
-        console.log('Not in edit mode, returning');
+        event.preventDefault();
+        alert('シフトを削除するには「編集モード」ボタンを押してから操作してください。');
+        return;
+    }
+    
+    // 提出期限を過ぎている場合は削除不可
+    const canEdit = {{ can_edit|lower }};
+    if (!canEdit) {
+        event.preventDefault();
+        alert('提出期限を過ぎたため、シフトの削除はできません。');
+        return;
+    }
+    
+    const date = cell.dataset.date;
+    
+    // シフトが存在しない場合は削除できない
+    if (!(date in submittedShifts)) {
+        event.preventDefault();
         return;
     }
     
     event.preventDefault(); // コンテキストメニューを無効化
     
-    const date = cell.dataset.date;
     console.log('Date to delete:', date);
     
     if (!confirm(`${date}のシフトを削除しますか？`)) {
@@ -700,15 +753,17 @@ function deleteShiftOnRightClick(cell, event) {
     if (statusDiv) {
         statusDiv.innerHTML = '';
     }
-    cell.classList.remove('modified', 'selected-edit');
+    cell.classList.remove('modified', 'selected-edit', 'submitted');
     cell.classList.add('deleted');
     
-    alert(`${date}のシフトを削除しました。`);
+    alert(`${date}のシフトを削除しました。変更を保存ボタンを押して確定してください。`);
     
     // 保存ボタンを有効化
     const saveBtn = document.getElementById('save-changes-btn');
-    saveBtn.disabled = false;
-    saveBtn.innerHTML = `<i class="fas fa-save me-1"></i>変更を保存 (${Object.keys(pendingChanges).length}件)`;
+    if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = `<i class="fas fa-save me-1"></i>変更を保存 (${Object.keys(pendingChanges).length}件)`;
+    }
 }
 
 // 編集モード用の日付表示更新
@@ -895,6 +950,14 @@ function displaySubmittedShifts() {
                     statusHtml = `<small class="badge bg-info">残業 ${shift.start_time}-${shift.end_time}</small>`;
                 }
                 statusDiv.innerHTML = statusHtml;
+            }
+            
+            // 削除ボタンは編集モードでのみ表示
+            const deleteBtn = cell.querySelector('.btn-delete-shift');
+            if (deleteBtn && isEditMode) {
+                deleteBtn.style.display = 'block';
+            } else if (deleteBtn) {
+                deleteBtn.style.display = 'none';
             }
         }
     }

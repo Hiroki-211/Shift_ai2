@@ -14,6 +14,18 @@ from .ai_shift_generator import AIShiftGenerator
 from accounts.models import Store, Staff
 
 
+def get_staff_name_japanese(user):
+    """日本語形式の名前を取得（姓 名の順）"""
+    if user.last_name and user.first_name:
+        return f"{user.last_name} {user.first_name}".strip()
+    elif user.last_name:
+        return user.last_name
+    elif user.first_name:
+        return user.first_name
+    else:
+        return user.username
+
+
 def admin_required(view_func):
     """管理者権限が必要なデコレータ"""
     def wrapper(request, *args, **kwargs):
@@ -210,7 +222,7 @@ def admin_shift_detail_by_date(request, shift_date):
             # 前日から続くシフトの当日部分：0時〜終了時刻
             gantt_data.append({
                 'staff_id': shift.staff.id,
-                'staff_name': shift.staff.user.get_full_name() or shift.staff.user.username,
+                'staff_name': get_staff_name_japanese(shift.staff.user),
                 'start_time': shift.start_time.strftime('%H:%M'),
                 'end_time': shift.end_time.strftime('%H:%M'),
                 'start_minutes': 0,  # 当日の0時から
@@ -236,7 +248,7 @@ def admin_shift_detail_by_date(request, shift_date):
             
             gantt_data.append({
                 'staff_id': shift.staff.id,
-                'staff_name': shift.staff.user.get_full_name() or shift.staff.user.username,
+                'staff_name': get_staff_name_japanese(shift.staff.user),
                 'start_time': shift.start_time.strftime('%H:%M'),
                 'end_time': shift.end_time.strftime('%H:%M'),
                 'start_minutes': start_minutes,
@@ -558,7 +570,7 @@ def admin_staff_shift_requests(request):
         month_info = monthly_data[month_key]
         # 各月の従業員リストをソート
         staff_list = sorted(month_info['staffs'].values(),
-                          key=lambda x: x['staff'].user.get_full_name() or x['staff'].user.username)
+                          key=lambda x: get_staff_name_japanese(x['staff'].user))
         month_info['staff_list'] = staff_list
         monthly_list.append(month_info)
     
@@ -748,7 +760,7 @@ def admin_shift_calendar(request):
                 'start_time': shift.start_time.strftime('%H:%M'),
                 'end_time': shift.end_time.strftime('%H:%M'),
                 'staff_id': shift.staff.id,
-                'staff_name': shift.staff.user.get_full_name() or shift.staff.user.username,
+                'staff_name': get_staff_name_japanese(shift.staff.user),
                 'is_confirmed': shift.is_confirmed,
                 'wage_cost': shift.wage_cost,
                 'spans_midnight': spans_midnight,
@@ -762,7 +774,7 @@ def admin_shift_calendar(request):
                 'start_time': shift.start_time.strftime('%H:%M'),
                 'end_time': shift.end_time.strftime('%H:%M'),
                 'staff_id': shift.staff.id,
-                'staff_name': shift.staff.user.get_full_name() or shift.staff.user.username,
+                'staff_name': get_staff_name_japanese(shift.staff.user),
                 'is_confirmed': shift.is_confirmed,
                 'wage_cost': shift.wage_cost,
                 'spans_midnight': spans_midnight,
@@ -841,7 +853,7 @@ def admin_shift_submission_status(request):
         
         staff_status_list.append({
             'id': staff_member.id,
-            'name': staff_member.user.get_full_name() or staff_member.user.username,
+            'name': get_staff_name_japanese(staff_member.user),
             'employment_type': staff_member.get_employment_type_display(),
             'is_submitted': is_submitted,
             'work_requests': work_requests,
@@ -933,7 +945,7 @@ def admin_submission_detail_api(request, staff_id):
         })
     
     return JsonResponse({
-        'staff_name': target_staff.user.get_full_name(),
+        'staff_name': get_staff_name_japanese(target_staff.user),
         'requests': request_list,
         'period': f"{month_start.strftime('%Y年%m月%d日')} 〜 {month_end.strftime('%Y年%m月%d日')}"
     })

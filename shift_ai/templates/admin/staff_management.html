@@ -1,4 +1,5 @@
 {% extends 'admin/base.html' %}
+{% load account_filters %}
 
 {% block page_title %}スタッフ管理{% endblock %}
 
@@ -48,7 +49,7 @@
                             <code>{{ staff.employee_id }}</code>
                         </td>
                         <td>
-                            <strong>{{ staff.user.get_full_name|default:staff.user.username }}</strong>
+                            <strong>{{ staff.user|japanese_name }}</strong>
                         </td>
                         <td>{{ staff.user.email }}</td>
                         <td>

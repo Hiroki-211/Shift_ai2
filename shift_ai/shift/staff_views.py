@@ -238,40 +238,101 @@ def staff_shift_view(request):
         messages.error(request, "スタッフ情報が見つかりません。")
         return redirect('login')
     
-    # 今月の日付範囲を取得
+    # 年・月の取得（デフォルトは今月）
     today = date.today()
-    month_start = today.replace(day=1)
-    if today.month == 12:
-        month_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
-    else:
-        month_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+    selected_year_str = request.GET.get('year', str(today.year))
+    selected_month_str = request.GET.get('month', str(today.month))
     
-    # 今月のシフトを取得
+    try:
+        selected_year = int(selected_year_str)
+        selected_month = int(selected_month_str)
+        
+        # 月の範囲チェック
+        if selected_month < 1 or selected_month > 12:
+            selected_year = today.year
+            selected_month = today.month
+        
+        # 選択された月の日付範囲を取得
+        month_start = date(selected_year, selected_month, 1)
+        if selected_month == 12:
+            month_end = date(selected_year + 1, 1, 1) - timedelta(days=1)
+        else:
+            month_end = date(selected_year, selected_month + 1, 1) - timedelta(days=1)
+            
+    except (ValueError, TypeError):
+        # 無効な値の場合は今月を使用
+        selected_year = today.year
+        selected_month = today.month
+        month_start = today.replace(day=1)
+        if today.month == 12:
+            month_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            month_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+    
+    # 選択月のシフトを取得
+    # 開始日が選択月内、または終了日が選択月内のシフトを取得
     shifts = Shift.objects.filter(
-        staff=staff,
-        date__range=[month_start, month_end]
+        staff=staff
+    ).filter(
+        Q(date__gte=month_start, date__lte=month_end) |  # 開始日が選択月内
+        Q(end_date__gte=month_start, end_date__lte=month_end) |  # 終了日が選択月内
+        Q(date__lt=month_start, end_date__gte=month_start, end_date__lte=month_end)  # 前月から続くシフトの当月部分
     ).order_by('date', 'start_time')
     
-    # 今月の全日付のリストを作成
+    # シフトがある日だけのリストを作成
     monthly_shifts = []
-    current_date = month_start
-    while current_date <= month_end:
-        # 該当日のシフトを検索
-        day_shift = next(
-            (shift for shift in shifts if shift.date == current_date), 
-            None
-        )
+    # シフトを日付ごとにグループ化（選択月内の日付のみ）
+    shifts_by_date = {}
+    for shift in shifts:
+        # シフトの開始日が選択月内の場合
+        if month_start <= shift.date <= month_end:
+            shift_date = shift.date
+            if shift_date not in shifts_by_date:
+                shifts_by_date[shift_date] = []
+            shifts_by_date[shift_date].append(shift)
         
-        monthly_shifts.append({
-            'date': current_date,
-            'shift': day_shift
-        })
-        
-        current_date += timedelta(days=1)
+        # 前月から続くシフトの終了日が選択月内の場合（開始日は選択月外だが終了日が選択月内）
+        if shift.end_date and shift.date < month_start and month_start <= shift.end_date <= month_end:
+            shift_date = shift.end_date
+            if shift_date not in shifts_by_date:
+                shifts_by_date[shift_date] = []
+            shifts_by_date[shift_date].append(shift)
+    
+    # 日付順にソート
+    sorted_dates = sorted(shifts_by_date.keys())
+    
+    # 各日付に対してシフト情報を取得（同じ日に複数のシフトがある場合も含む）
+    for shift_date in sorted_dates:
+        day_shifts = shifts_by_date[shift_date]
+        # 各シフトを個別のエントリとして追加
+        for shift in day_shifts:
+            monthly_shifts.append({
+                'date': shift_date,
+                'shift': shift
+            })
     
     # シフト数の集計
-    shift_count = len([day for day in monthly_shifts if day['shift']])
+    shift_count = len(monthly_shifts)
     confirmed_shift_count = len([day for day in monthly_shifts if day['shift'] and day['shift'].is_confirmed])
+    
+    # 前月・次月の計算
+    if selected_month == 1:
+        prev_year = selected_year - 1
+        prev_month = 12
+    else:
+        prev_year = selected_year
+        prev_month = selected_month - 1
+    
+    if selected_month == 12:
+        next_year = selected_year + 1
+        next_month = 1
+    else:
+        next_year = selected_year
+        next_month = selected_month + 1
+    
+    # 年と月の選択肢を生成
+    years = list(range(2020, 2031))  # 2020年から2030年まで
+    months = list(range(1, 13))  # 1月から12月まで
     
     context = {
         'staff': staff,
@@ -281,6 +342,15 @@ def staff_shift_view(request):
         'confirmed_shift_count': confirmed_shift_count,
         'month_start': month_start,
         'month_end': month_end,
+        'selected_year': selected_year,
+        'selected_month': selected_month,
+        'prev_year': prev_year,
+        'prev_month': prev_month,
+        'next_year': next_year,
+        'next_month': next_month,
+        'today': today,
+        'years': years,
+        'months': months,
     }
     
     return render(request, 'staff/shift_view.html', context)

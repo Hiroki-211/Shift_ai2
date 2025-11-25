@@ -1,4 +1,5 @@
 {% extends 'admin/base.html' %}
+{% load shift_filters %}
 
 {% block page_title %}スタッフ希望シフト確認{% endblock %}
 
@@ -41,11 +42,11 @@
                                              onclick="showStaffDetail('{{ month_data.month_key }}', {{ staff_data.staff.id }})" 
                                              data-month-key="{{ month_data.month_key }}"
                                              data-staff-id="{{ staff_data.staff.id }}"
-                                             data-staff-name="{{ staff_data.staff.user.get_full_name|default:staff_data.staff.user.username }}"
+                                             data-staff-name="{{ staff_data.staff.user|japanese_name }}"
                                              style="cursor: pointer; transition: transform 0.2s;">
                                             <div class="card-header d-flex justify-content-between align-items-center">
                                                 <h6 class="mb-0">
-                                                    <strong>{{ staff_data.staff.user.get_full_name|default:staff_data.staff.user.username }}</strong>
+                                                    <strong>{{ staff_data.staff.user|japanese_name }}</strong>
                                                     {% if staff_data.staff.is_manager %}
                                         <span class="badge bg-success ms-1">責任者</span>
                                     {% endif %}
@@ -220,7 +221,7 @@ function showStaffDetail(monthKey, staffId) {
             staffs: {
                 {% for staff_data in month_data.staff_list %}
                 {{ staff_data.staff.id }}: {
-                    name: "{{ staff_data.staff.user.get_full_name|default:staff_data.staff.user.username }}",
+                    name: "{{ staff_data.staff.user|japanese_name }}",
                     is_manager: {{ staff_data.staff.is_manager|yesno:"true,false" }},
                     requests: [
                         {% for req in staff_data.requests %}

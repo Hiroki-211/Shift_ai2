@@ -1,16 +1,72 @@
 {% extends 'staff/base.html' %}
+{% load account_filters %}
 
 {% block page_title %}シフト確認{% endblock %}
 
 {% block content %}
+<!-- 月選択ナビゲーション -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="?year={{ prev_year }}&month={{ prev_month }}" 
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-chevron-left"></i> 前月
+                    </a>
+                    
+                    <div class="text-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar-alt"></i> 
+                            {{ selected_year }}年{{ selected_month }}月のシフト
+                        </h5>
+                        {% if selected_year == today.year and selected_month == today.month %}
+                            <small class="text-muted">（今月）</small>
+                        {% endif %}
+                    </div>
+                    
+                    <a href="?year={{ next_year }}&month={{ next_month }}" 
+                       class="btn btn-outline-primary">
+                        次月 <i class="fas fa-chevron-right"></i>
+                    </a>
+                </div>
+                
+                <!-- 月選択フォーム -->
+                <div class="mt-3 text-center">
+                    <form method="get" class="d-inline-flex align-items-center gap-2">
+                        <label for="year-select" class="form-label mb-0">年:</label>
+                        <select name="year" id="year-select" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                            {% for year in years %}
+                                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}年</option>
+                            {% endfor %}
+                        </select>
+                        
+                        <label for="month-select" class="form-label mb-0 ms-2">月:</label>
+                        <select name="month" id="month-select" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                            {% for month in months %}
+                                <option value="{{ month }}" {% if month == selected_month %}selected{% endif %}>{{ month }}月</option>
+                            {% endfor %}
+                        </select>
+                        
+                        <a href="?year={{ today.year }}&month={{ today.month }}" 
+                           class="btn btn-sm btn-outline-secondary ms-2">
+                            <i class="fas fa-home"></i> 今月に戻る
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
-    <!-- 今月のシフト統計 -->
+    <!-- 選択月のシフト統計 -->
     <div class="col-xl-6 col-md-6 mb-4">
         <div class="card stat-card">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">今月のシフト数</div>
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">{{ selected_month }}月のシフト数</div>
                         <div class="h5 mb-0 font-weight-bold">{{ shift_count }}</div>
                     </div>
                     <div class="col-auto">
@@ -44,7 +100,7 @@
     <div class="col-12">
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold text-primary">今月のシフト一覧</h6>
+                <h6 class="m-0 font-weight-bold text-primary">{{ selected_year }}年{{ selected_month }}月のシフト一覧</h6>
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-sm btn-outline-primary active" id="all-btn">全て</button>
                     <button type="button" class="btn btn-sm btn-outline-primary" id="confirmed-btn">確定済み</button>
@@ -66,42 +122,41 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for day_data in monthly_shifts %}
-                            <tr class="{% if not day_data.shift %}table-light{% endif %}">
-                                <td>{{ day_data.date|date:"m/d" }}</td>
-                                <td>
-                                    <span class="{% if day_data.date|date:'D' == 'Sun' %}text-danger{% elif day_data.date|date:'D' == 'Sat' %}text-primary{% endif %}">
-                                        {{ day_data.date|date:"D" }}
-                                    </span>
-                                </td>
-                                <td>{{ day_data.shift.start_time|default:"-" }}</td>
-                                <td>{{ day_data.shift.end_time|default:"-" }}</td>
-                                <td>
-                                    {% if day_data.shift %}
-                                        {{ day_data.shift.duration_hours|floatformat:1 }}h
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if day_data.shift and day_data.shift.is_confirmed %}
-                                        <span class="badge bg-success">確定</span>
-                                    {% else %}
-                                        <span class="badge bg-warning">未確定</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if day_data.shift %}
+                            {% if monthly_shifts %}
+                                {% for day_data in monthly_shifts %}
+                                <tr>
+                                    <td>{{ day_data.date|date:"m/d" }}</td>
+                                    <td>
+                                        <span class="{% if day_data.date|date:'D' == 'Sun' %}text-danger{% elif day_data.date|date:'D' == 'Sat' %}text-primary{% endif %}">
+                                            {{ day_data.date|date:"D" }}
+                                        </span>
+                                    </td>
+                                    <td>{{ day_data.shift.start_time }}</td>
+                                    <td>{{ day_data.shift.end_time }}</td>
+                                    <td>{{ day_data.shift.duration_hours|floatformat:1 }}h</td>
+                                    <td>
+                                        {% if day_data.shift.is_confirmed %}
+                                            <span class="badge bg-success">確定</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">未確定</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
                                         <a href="{% url 'staff_shift:shift_detail' day_data.shift.id %}" 
                                            class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-eye"></i> 詳細
                                         </a>
-                                    {% else %}
-                                        <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                                        <p class="mb-0">{{ selected_year }}年{{ selected_month }}月のシフトはありません</p>
+                                    </td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
