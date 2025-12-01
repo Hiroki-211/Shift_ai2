@@ -18,3 +18,5 @@ def japanese_name(user):
         return user.username
 
 
+
+
