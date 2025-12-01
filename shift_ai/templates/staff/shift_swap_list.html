@@ -1,0 +1,89 @@
+{% extends 'staff/base.html' %}
+
+{% block page_title %}シフト交代募集{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <h5><i class="fas fa-exchange-alt"></i> シフト交代募集</h5>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{% url 'staff_shift:shift_swap_create' %}" class="btn btn-primary me-2">
+            <i class="fas fa-plus"></i> 募集を開始
+        </a>
+        <a href="{% url 'staff_shift:shift_swap_my_requests' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-list"></i> 自分の募集
+        </a>
+    </div>
+</div>
+
+{% if swap_requests %}
+<div class="row">
+    {% for swap_req in swap_requests %}
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ swap_req.requested_by.user.get_full_name|default:swap_req.requested_by.user.username }}</strong>
+                    <span class="text-muted ms-2">さんからの募集</span>
+                </div>
+                {% if swap_req.is_available %}
+                    <span class="badge bg-success">募集中</span>
+                {% else %}
+                    <span class="badge bg-secondary">締切</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <i class="fas fa-calendar"></i> <strong>日付:</strong> {{ swap_req.date|date:"Y年m月d日 (D)" }}
+                </div>
+                <div class="mb-2">
+                    <i class="fas fa-clock"></i> <strong>時間:</strong> {{ swap_req.start_time }} - {{ swap_req.end_time }}
+                </div>
+                <div class="mb-2">
+                    <i class="fas fa-hourglass-half"></i> <strong>締切:</strong> {{ swap_req.deadline|date:"m月d日" }}まで
+                </div>
+                
+                {% if swap_req.id in my_applications %}
+                    <div class="alert alert-info mb-2">
+                        <i class="fas fa-check-circle"></i> あなたが立候補済みです
+                    </div>
+                {% endif %}
+                
+                <div class="d-flex justify-content-between">
+                    {% if swap_req.is_available and swap_req.id not in my_applications %}
+                        <a href="{% url 'staff_shift:shift_swap_apply' swap_req.id %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-hand-paper"></i> 立候補する
+                        </a>
+                    {% elif swap_req.id in my_applications %}
+                        <a href="{% url 'staff_shift:shift_swap_apply' swap_req.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit"></i> 立候補内容を変更
+                        </a>
+                    {% else %}
+                        <span class="text-muted small">締切済み</span>
+                    {% endif %}
+                    
+                    <span class="text-muted small">
+                        <i class="fas fa-users"></i> 
+                        {{ swap_req.application_count }}件の立候補
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-exchange-alt fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">シフト交代募集がありません</h5>
+        <p class="text-muted">現在、募集中のシフト交代はありません。</p>
+        <a href="{% url 'staff_shift:shift_swap_create' %}" class="btn btn-primary mt-3">
+            <i class="fas fa-plus"></i> 募集を開始
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

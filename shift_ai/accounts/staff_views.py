@@ -6,7 +6,7 @@ from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.db import transaction
-from .models import Store, Staff, StaffRequirement
+from .models import Store, Staff, StaffRequirement, Announcement
 
 
 def staff_required(view_func):
@@ -109,3 +109,59 @@ def staff_profile(request):
     }
     
     return render(request, 'staff/profile.html', context)
+
+
+@login_required
+@staff_required
+def staff_announcement_list(request):
+    """従業員用お知らせ一覧"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    # 公開中のお知らせのみ取得
+    announcements = Announcement.objects.filter(
+        store=store,
+        is_published=True
+    ).order_by('-created_at')
+    
+    # ページネーション
+    paginator = Paginator(announcements, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'staff': staff,
+        'store': store,
+        'announcements': page_obj,
+    }
+    return render(request, 'staff/announcement_list.html', context)
+
+
+@login_required
+@staff_required
+def staff_announcement_detail(request, announcement_id):
+    """従業員用お知らせ詳細"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    announcement = get_object_or_404(
+        Announcement,
+        id=announcement_id,
+        store=store,
+        is_published=True
+    )
+    
+    context = {
+        'staff': staff,
+        'store': store,
+        'announcement': announcement,
+    }
+    return render(request, 'staff/announcement_detail.html', context)

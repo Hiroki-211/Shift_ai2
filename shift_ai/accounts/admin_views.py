@@ -6,8 +6,9 @@ from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.db import transaction
-from .models import Store, Staff, StaffRequirement
-from .forms import StoreForm, StaffForm, StaffRequirementForm, UserRegistrationForm
+from django.contrib.auth.models import User
+from .models import Store, Staff, StaffRequirement, Announcement
+from .forms import StoreForm, StaffForm, StaffRequirementForm, UserRegistrationForm, StaffRegistrationForm
 
 
 def admin_required(view_func):
@@ -220,3 +221,186 @@ def admin_delete_requirement(request, requirement_id):
         messages.success(request, "必要人数設定を削除しました。")
     
     return redirect('admin_accounts:staff_requirements')
+
+
+@login_required
+@admin_required
+def admin_staff_register(request):
+    """管理者用スタッフ登録"""
+    try:
+        current_staff = request.user.staff
+        store = current_staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    if request.method == 'POST':
+        form = StaffRegistrationForm(request.POST)
+        if form.is_valid():
+            with transaction.atomic():
+                # 社員IDを先に生成（ユーザー名として使用するため）
+                employee_id = Staff.generate_employee_id()
+                
+                # 生年月日から初回パスワードを生成（YYYYMMDD形式）
+                birth_date = form.cleaned_data['birth_date']
+                initial_password = birth_date.strftime('%Y%m%d')
+                
+                # ユーザーを作成（社員IDをusernameとして使用）
+                user = User.objects.create_user(
+                    username=employee_id,
+                    email=form.cleaned_data['email'],
+                    first_name=form.cleaned_data['first_name'],
+                    last_name=form.cleaned_data['last_name'],
+                    password=initial_password
+                )
+                
+                # スタッフ情報を作成（事前に生成した社員IDを使用）
+                staff = Staff.objects.create(
+                    user=user,
+                    store=store,
+                    employee_id=employee_id,
+                    birth_date=birth_date,
+                    employment_type=form.cleaned_data['employment_type'],
+                    hourly_wage=form.cleaned_data['hourly_wage'],
+                    hall_skill_level=form.cleaned_data['hall_skill_level'],
+                    kitchen_skill_level=form.cleaned_data['kitchen_skill_level'],
+                    is_manager=form.cleaned_data['is_manager'],
+                    max_weekly_hours=form.cleaned_data['max_weekly_hours']
+                )
+                
+                messages.success(
+                    request,
+                    f"スタッフを登録しました。\n社員ID（ログインID）: {staff.employee_id}\n初回パスワード: {initial_password}"
+                )
+                return redirect('admin_accounts:staff_management')
+    else:
+        form = StaffRegistrationForm()
+    
+    context = {
+        'form': form,
+        'store': store,
+    }
+    return render(request, 'admin/staff_register.html', context)
+
+
+@login_required
+@admin_required
+def admin_announcement_list(request):
+    """管理者用お知らせ一覧"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    announcements = Announcement.objects.filter(store=store).order_by('-created_at')
+    
+    # ページネーション
+    paginator = Paginator(announcements, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'store': store,
+        'announcements': page_obj,
+    }
+    return render(request, 'admin/announcement_list.html', context)
+
+
+@login_required
+@admin_required
+def admin_announcement_create(request):
+    """管理者用お知らせ作成"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        priority = request.POST.get('priority', 'normal')
+        is_published = request.POST.get('is_published') == 'on'
+        
+        if title and content:
+            Announcement.objects.create(
+                store=store,
+                title=title,
+                content=content,
+                priority=priority,
+                is_published=is_published,
+                created_by=staff
+            )
+            messages.success(request, "お知らせを作成しました。")
+            return redirect('admin_accounts:announcement_list')
+        else:
+            messages.error(request, "タイトルと内容を入力してください。")
+    
+    context = {
+        'store': store,
+    }
+    return render(request, 'admin/announcement_form.html', context)
+
+
+@login_required
+@admin_required
+def admin_announcement_edit(request, announcement_id):
+    """管理者用お知らせ編集"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    announcement = get_object_or_404(Announcement, id=announcement_id, store=store)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        priority = request.POST.get('priority', 'normal')
+        is_published = request.POST.get('is_published') == 'on'
+        
+        if title and content:
+            announcement.title = title
+            announcement.content = content
+            announcement.priority = priority
+            announcement.is_published = is_published
+            announcement.save()
+            messages.success(request, "お知らせを更新しました。")
+            return redirect('admin_accounts:announcement_list')
+        else:
+            messages.error(request, "タイトルと内容を入力してください。")
+    
+    context = {
+        'store': store,
+        'announcement': announcement,
+    }
+    return render(request, 'admin/announcement_form.html', context)
+
+
+@login_required
+@admin_required
+def admin_announcement_delete(request, announcement_id):
+    """管理者用お知らせ削除"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    announcement = get_object_or_404(Announcement, id=announcement_id, store=store)
+    
+    if request.method == 'POST':
+        announcement.delete()
+        messages.success(request, "お知らせを削除しました。")
+        return redirect('admin_accounts:announcement_list')
+    
+    context = {
+        'announcement': announcement,
+    }
+    return render(request, 'admin/announcement_delete.html', context)

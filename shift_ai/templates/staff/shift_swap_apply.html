@@ -1,0 +1,76 @@
+{% extends 'staff/base.html' %}
+
+{% block page_title %}シフト交代に立候補{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <a href="{% url 'staff_shift:shift_swap_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> 一覧に戻る
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-hand-paper"></i> シフト交代に立候補
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-3">
+                    <h6><i class="fas fa-info-circle"></i> 募集内容</h6>
+                    <p class="mb-1"><strong>募集者:</strong> {{ swap_request.requested_by.user.get_full_name|default:swap_request.requested_by.user.username }}</p>
+                    <p class="mb-1"><strong>日付:</strong> {{ swap_request.date|date:"Y年m月d日 (D)" }}</p>
+                    <p class="mb-0"><strong>時間:</strong> {{ swap_request.start_time }} - {{ swap_request.end_time }}</p>
+                </div>
+                
+                {% if not swap_request.is_available %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    この募集は締め切られています。
+                </div>
+                {% else %}
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="start_time" class="form-label">入れる開始時刻 <span class="text-danger">*</span></label>
+                        <input type="time" class="form-control" id="start_time" name="start_time" 
+                               value="{% if existing_application %}{{ existing_application.start_time }}{% else %}{{ swap_request.start_time }}{% endif %}" 
+                               required>
+                        <small class="text-muted">デフォルトは募集されている時間帯です。変更可能です。</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="end_time" class="form-label">入れる終了時刻 <span class="text-danger">*</span></label>
+                        <input type="time" class="form-control" id="end_time" name="end_time" 
+                               value="{% if existing_application %}{{ existing_application.end_time }}{% else %}{{ swap_request.end_time }}{% endif %}" 
+                               required>
+                        <small class="text-muted">デフォルトは募集されている時間帯です。変更可能です。</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="message" class="form-label">メッセージ（任意）</label>
+                        <textarea class="form-control" id="message" name="message" rows="3" 
+                                  placeholder="募集者へのメッセージがあれば入力してください">{% if existing_application %}{{ existing_application.message }}{% endif %}</textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'staff_shift:shift_swap_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> キャンセル
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-hand-paper"></i> {% if existing_application %}立候補内容を更新{% else %}立候補する{% endif %}
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

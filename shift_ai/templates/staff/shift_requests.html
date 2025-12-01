@@ -3,115 +3,146 @@
 {% block page_title %}シフト提出{% endblock %}
 
 {% block content %}
-<!-- メモリー時間設定 -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card shadow">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-clock me-2"></i>よく使う時間をメモリー
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">メモリー1</label>
-                        <div class="input-group">
-                            <input type="time" class="form-control" id="memory1_start" placeholder="開始時間">
-                            <span class="input-group-text">-</span>
-                            <input type="time" class="form-control" id="memory1_end" placeholder="終了時間">
-                            <button class="btn btn-outline-primary" onclick="setMemory(1)">
-                                <i class="fas fa-save"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">メモリー2</label>
-                        <div class="input-group">
-                            <input type="time" class="form-control" id="memory2_start" placeholder="開始時間">
-                            <span class="input-group-text">-</span>
-                            <input type="time" class="form-control" id="memory2_end" placeholder="終了時間">
-                            <button class="btn btn-outline-primary" onclick="setMemory(2)">
-                                <i class="fas fa-save"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">メモリー3</label>
-                        <div class="input-group">
-                            <input type="time" class="form-control" id="memory3_start" placeholder="開始時間">
-                            <span class="input-group-text">-</span>
-                            <input type="time" class="form-control" id="memory3_end" placeholder="終了時間">
-                            <button class="btn btn-outline-primary" onclick="setMemory(3)">
-                                <i class="fas fa-save"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- シフト提出カレンダー -->
 <div class="row">
     <div class="col-12">
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold text-primary">シフト提出カレンダー</h6>
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="previousMonth()">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <span class="btn btn-sm btn-outline-secondary disabled" id="current-month">{{ month_start|date:"Y年m月" }}</span>
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="nextMonth()">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
+                <div>
+                    <h6 class="m-0 font-weight-bold text-primary">シフト提出カレンダー</h6>
+                    {% if today < submission_start %}
+                        <small class="text-warning">
+                            <i class="fas fa-clock me-1"></i>提出開始: {{ submission_start|date:"m月d日" }}
+                        </small>
+                    {% elif not can_edit %}
+                        <small class="text-danger">
+                            <i class="fas fa-lock me-1"></i>提出期限を過ぎました（{{ submission_deadline|date:"m月d日" }}まで）
+                        </small>
+                    {% else %}
+                        <small class="text-info">
+                            <i class="fas fa-info-circle me-1"></i>提出期限: {{ submission_deadline|date:"m月d日" }}
+                        </small>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    {% if can_edit %}
+                        <button type="button" class="btn btn-sm btn-outline-warning" id="edit-mode-btn" onclick="toggleEditMode()">
+                            <i class="fas fa-edit me-1"></i>編集モード
+                        </button>
+                        <button type="button" class="btn btn-sm btn-success" id="save-changes-btn" onclick="saveAllChanges()" style="display: none;">
+                            <i class="fas fa-save me-1"></i>変更を保存
+                        </button>
+                    {% endif %}
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="previousMonth()">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span class="btn btn-sm btn-outline-secondary disabled" id="current-month">{{ month_start|date:"Y年m月" }}</span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="nextMonth()">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
-                <!-- 希望種別選択 -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">希望種別</label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="request_type" id="work_type" value="work" checked>
-                            <label class="btn btn-outline-success" for="work_type">勤務希望</label>
-                            
-                            <input type="radio" class="btn-check" name="request_type" id="off_type" value="off">
-                            <label class="btn btn-outline-warning" for="off_type">休み希望</label>
-                            
-                            <input type="radio" class="btn-check" name="request_type" id="overtime_type" value="overtime">
-                            <label class="btn btn-outline-info" for="overtime_type">残業希望</label>
-                        </div>
+                {% if today < submission_start %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-clock me-2"></i>
+                        シフト提出は{{ submission_start|date:"m月d日" }}から開始されます。
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">時間設定</label>
-                        <div class="input-group">
-                            <input type="time" class="form-control" id="start_time" name="start_time">
-                            <span class="input-group-text">-</span>
-                            <input type="time" class="form-control" id="end_time" name="end_time">
-                        </div>
+                {% elif not can_edit %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        提出期限を過ぎたため、シフトの新規提出・編集はできません。管理者にご連絡ください。
                     </div>
+                {% endif %}
+                
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    カレンダーは{{ month_start|date:"Y年m月" }}の提出用です。カレンダーに表示されている日付を選択してシフトを提出してください。
                 </div>
                 
-                <!-- メモリー時間ボタン -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <label class="form-label">メモリー時間で設定</label>
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-primary" onclick="useMemory(1)" id="memory1_btn" disabled>
-                                メモリー1
-                            </button>
-                            <button type="button" class="btn btn-outline-primary" onclick="useMemory(2)" id="memory2_btn" disabled>
-                                メモリー2
-                            </button>
-                            <button type="button" class="btn btn-outline-primary" onclick="useMemory(3)" id="memory3_btn" disabled>
-                                メモリー3
-                            </button>
+                <!-- 編集モード用のフォーム -->
+                <div id="edit-mode-form" style="display: none;">
+                    {% csrf_token %}
+                    <div class="alert alert-warning mb-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        編集モード：カレンダー上の日付をクリックして、時間を入力してください。
+                    </div>
+                    
+                    <!-- 選択された日付表示 -->
+                    <div class="mb-3" id="selected-date-display" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            <strong>選択日：</strong><span id="selected-date-text">-</span>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">希望種別</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="edit_request_type" id="edit_work_type" value="work" checked>
+                                <label class="btn btn-outline-success" for="edit_work_type">勤務希望</label>
+                                
+                                <input type="radio" class="btn-check" name="edit_request_type" id="edit_off_type" value="off">
+                                <label class="btn btn-outline-warning" for="edit_off_type">休み希望</label>
+                                
+                                <input type="radio" class="btn-check" name="edit_request_type" id="edit_overtime_type" value="overtime">
+                                <label class="btn btn-outline-info" for="edit_overtime_type">残業希望</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">時間設定</label>
+                            <div class="time-picker-group">
+                                <div class="time-picker">
+                                    <span class="time-label">開始</span>
+                                    <div class="date-display">
+                                        <small class="text-muted" id="start-date-label">開始日</small>
+                                    </div>
+                                    <div class="time-selector">
+                                        <select id="edit_start_hour" class="hour-select">
+                                            <option value="">--</option>
+                                        </select>
+                                        <span class="time-separator">:</span>
+                                        <select id="edit_start_minute" class="minute-select">
+                                            <option value="">--</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <span class="time-separator">-</span>
+                                <div class="time-picker">
+                                    <span class="time-label">終了</span>
+                                    <div class="date-display">
+                                        <small class="text-muted" id="end-date-label">終了日</small>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="toggle-end-date" onclick="toggleEndDate()">
+                                            <i class="fas fa-arrow-down"></i> 翌日に
+                                        </button>
+                                    </div>
+                                    <div class="time-selector">
+                                        <select id="edit_end_hour" class="hour-select">
+                                            <option value="">--</option>
+                                        </select>
+                                        <span class="time-separator">:</span>
+                                        <select id="edit_end_minute" class="minute-select">
+                                            <option value="">--</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-primary" id="complete-button" onclick="addShiftFromTimeInput()" style="margin-left: 15px; align-self: flex-end;">
+                                    <i class="fas fa-check"></i> 完了
+                                </button>
+                            </div>
+                            <!-- 隠しフィールド -->
+                            <input type="hidden" id="edit_start_time" name="edit_start_time">
+                            <input type="hidden" id="edit_end_time" name="edit_end_time">
+                            <input type="hidden" id="edit_end_date_offset" name="edit_end_date_offset" value="0">
+                            <small class="text-muted">右クリックでシフトを削除できます</small>
                         </div>
                     </div>
                 </div>
+
                 
                 <!-- カレンダー表示 -->
                 <div class="calendar-container">
@@ -132,11 +163,11 @@
                             {% for day in week %}
                             <div class="calendar-day {% if day.is_current_month %}current-month{% else %}other-month{% endif %} {% if day.date|date:'D' == 'Sun' %}sunday{% elif day.date|date:'D' == 'Sat' %}saturday{% endif %}" 
                                  data-date="{{ day.date|date:'Y-m-d' }}" 
-                                 onclick="selectDate(this)">
+                                 onclick="{% if can_edit %}selectDate(this){% endif %}"
+                                 oncontextmenu="{% if can_edit %}deleteShiftOnRightClick(this, event){% endif %}">
                                 <div class="day-content">
                                     <div class="day-number">{{ day.date|date:"j" }}</div>
-                                    <div class="day-status" id="status_{{ day.date|date:'Y-m-d' }}">
-                                        <!-- 既存の希望シフト表示 -->
+                                    <div class="day-status" id="status_{{ day.date|date:'Y-m-d' }}" data-submitted="{{ day.date|date:'Y-m-d' }}">
                                     </div>
                                 </div>
                             </div>
@@ -145,84 +176,12 @@
                         {% endfor %}
                     </div>
                 </div>
-                
-                <!-- 提出ボタン -->
-                <div class="row mt-3">
-                    <div class="col-12 text-center">
-                        <button type="button" class="btn btn-primary btn-lg" onclick="submitShiftRequests()">
-                            <i class="fas fa-paper-plane me-2"></i>選択した日付でシフト提出
-                        </button>
-                    </div>
-                </div>
+
             </div>
         </div>
     </div>
 </div>
 
-<!-- 提出済み希望シフト一覧 -->
-<div class="row">
-    <div class="col-12">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">提出済み希望シフト</h6>
-            </div>
-            <div class="card-body">
-                {% if shift_requests %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>日付</th>
-                                    <th>曜日</th>
-                                    <th>希望種別</th>
-                                    <th>時間</th>
-                                    <th>提出日時</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for request in shift_requests %}
-                                <tr>
-                                    <td>{{ request.date|date:"m/d" }}</td>
-                                    <td>{{ request.date|date:"D" }}</td>
-                                    <td>
-                                        {% if request.request_type == 'work' %}
-                                            <span class="badge bg-success">勤務希望</span>
-                                        {% elif request.request_type == 'off' %}
-                                            <span class="badge bg-warning">休み希望</span>
-                                        {% elif request.request_type == 'overtime' %}
-                                            <span class="badge bg-info">残業希望</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if request.start_time and request.end_time %}
-                                            {{ request.start_time }} - {{ request.end_time }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ request.created_at|date:"m/d H:i" }}</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-danger" 
-                                                onclick="deleteRequest({{ request.id }})">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-calendar-plus fa-3x mb-3"></i>
-                        <p>まだ希望シフトが提出されていません</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- 希望シフト提出ルール -->
 <div class="row">
@@ -261,91 +220,501 @@
 {% block extra_js %}
 <script>
 let selectedDates = [];
-let memories = {};
+let isEditMode = false;
+let pendingChanges = {}; // 編集モードでの変更を追跡
+
+// 提出済みシフトのデータ
+let submittedShifts = {
+    {% for date, shift in submitted_shifts.items %}
+    '{{ date|date:"Y-m-d" }}': {
+        request_type: '{{ shift.request_type }}',
+        start_time: '{{ shift.start_time|time:"H:i" }}',
+        end_time: '{{ shift.end_time|time:"H:i" }}'
+    },
+    {% endfor %}
+};
 
 // ページ読み込み時の初期化
 document.addEventListener('DOMContentLoaded', function() {
-    loadMemories();
     loadExistingRequests();
-    updateMemoryButtons();
     highlightToday();
+    displaySubmittedShifts();
+    // 時間選択は編集モードに入ってから初期化
 });
 
-// メモリー機能
-function setMemory(memoryNum) {
-    const startTime = document.getElementById(`memory${memoryNum}_start`).value;
-    const endTime = document.getElementById(`memory${memoryNum}_end`).value;
+// メモリーの時間選択を初期化
+
+
+// 時間選択機能の初期化
+function initializeTimePickers() {
+    // 時間オプション（0-23時）
+    const hourSelect = document.getElementById('edit_start_hour');
+    const hourSelectEnd = document.getElementById('edit_end_hour');
     
-    if (startTime && endTime) {
-        memories[memoryNum] = { start: startTime, end: endTime };
-        localStorage.setItem('shift_memories', JSON.stringify(memories));
-        updateMemoryButtons();
-        alert(`メモリー${memoryNum}を保存しました！`);
+    console.log('hourSelect:', hourSelect);
+    console.log('hourSelectEnd:', hourSelectEnd);
+    
+    if (!hourSelect || !hourSelectEnd) {
+        console.error('Time picker elements not found!');
+        return;
+    }
+    
+    // 既存のオプションをクリア（"--"を除く）
+    while (hourSelect.options.length > 1) {
+        hourSelect.remove(1);
+    }
+    while (hourSelectEnd.options.length > 1) {
+        hourSelectEnd.remove(1);
+    }
+    
+    // 時間オプションを追加
+    for (let i = 0; i <= 23; i++) {
+        const hour = String(i).padStart(2, '0');
+        const option1 = new Option(hour, hour, false, false);
+        const option2 = new Option(hour, hour, false, false);
+        hourSelect.appendChild(option1);
+        hourSelectEnd.appendChild(option2);
+    }
+    
+    console.log('Hour options added. Count:', hourSelect.options.length);
+    
+    // 分オプション（0-45分、15分間隔）
+    const minuteSelect = document.getElementById('edit_start_minute');
+    const minuteSelectEnd = document.getElementById('edit_end_minute');
+    
+    console.log('minuteSelect:', minuteSelect);
+    console.log('minuteSelectEnd:', minuteSelectEnd);
+    
+    if (!minuteSelect || !minuteSelectEnd) {
+        console.error('Minute picker elements not found!');
+        return;
+    }
+    
+    // 既存のオプションをクリア（"--"を除く）
+    while (minuteSelect.options.length > 1) {
+        minuteSelect.remove(1);
+    }
+    while (minuteSelectEnd.options.length > 1) {
+        minuteSelectEnd.remove(1);
+    }
+    
+    // 分オプションを追加（0, 15, 30, 45分）
+    const minutes = ['00', '15', '30', '45'];
+    minutes.forEach((min, index) => {
+        // 最初のオプション（00）をデフォルトで選択
+        const option1 = new Option(min, min, index === 0, index === 0);
+        const option2 = new Option(min, min, index === 0, index === 0);
+        minuteSelect.appendChild(option1);
+        minuteSelectEnd.appendChild(option2);
+    });
+    
+    console.log('Minute options added. Count:', minuteSelect.options.length);
+}
+
+// 時間選択のイベント設定
+function setupTimePickerEvents() {
+    const startHour = document.getElementById('edit_start_hour');
+    const startMinute = document.getElementById('edit_start_minute');
+    const endHour = document.getElementById('edit_end_hour');
+    const endMinute = document.getElementById('edit_end_minute');
+    
+    if (startHour && startMinute && endHour && endMinute) {
+        // 開始時間
+        startHour.addEventListener('change', updateHiddenTimeField);
+        startMinute.addEventListener('change', updateHiddenTimeField);
+        
+        // 終了時間
+        endHour.addEventListener('change', updateHiddenTimeField);
+        endMinute.addEventListener('change', updateHiddenTimeField);
     } else {
-        alert('開始時間と終了時間を両方入力してください。');
+        console.error('Time picker elements not found for event setup');
     }
 }
 
-function useMemory(memoryNum) {
-    if (memories[memoryNum]) {
-        document.getElementById('start_time').value = memories[memoryNum].start;
-        document.getElementById('end_time').value = memories[memoryNum].end;
-    }
+// 隠しフィールドを更新
+function updateHiddenTimeField() {
+    const startHour = document.getElementById('edit_start_hour').value;
+    const startMinute = document.getElementById('edit_start_minute').value;
+    const endHour = document.getElementById('edit_end_hour').value;
+    const endMinute = document.getElementById('edit_end_minute').value;
+    
+    const startTime = (startHour && startMinute) ? `${startHour}:${startMinute}` : '';
+    const endTime = (endHour && endMinute) ? `${endHour}:${endMinute}` : '';
+    
+    document.getElementById('edit_start_time').value = startTime;
+    document.getElementById('edit_end_time').value = endTime;
 }
 
-function loadMemories() {
-    const saved = localStorage.getItem('shift_memories');
-    if (saved) {
-        memories = JSON.parse(saved);
-    }
-}
-
-function updateMemoryButtons() {
-    for (let i = 1; i <= 3; i++) {
-        const btn = document.getElementById(`memory${i}_btn`);
-        if (memories[i]) {
-            btn.disabled = false;
-            btn.textContent = `メモリー${i} (${memories[i].start}-${memories[i].end})`;
+// 編集モード切り替え
+function toggleEditMode() {
+    isEditMode = !isEditMode;
+    const editBtn = document.getElementById('edit-mode-btn');
+    const saveBtn = document.getElementById('save-changes-btn');
+    const editForm = document.getElementById('edit-mode-form');
+    
+    console.log('toggleEditMode:', isEditMode, editForm);
+    
+    if (isEditMode) {
+        editBtn.innerHTML = '<i class="fas fa-times me-1"></i>編集終了';
+        editBtn.classList.remove('btn-outline-warning');
+        editBtn.classList.add('btn-warning');
+        saveBtn.style.display = 'inline-block';
+        if (editForm) {
+            editForm.style.display = 'block';
+            console.log('Edit form displayed');
+            
+            // 編集モードに入ったら時間選択を初期化
+            initializeTimePickers();
+            setupTimePickerEvents();
+            
+            // 分のデフォルト値を「00」に設定
+            document.getElementById('edit_start_minute').value = '00';
+            document.getElementById('edit_end_minute').value = '00';
         } else {
-            btn.disabled = true;
-            btn.textContent = `メモリー${i}`;
+            console.error('Edit form not found!');
         }
+        
+        // 提出済みシフトを編集可能にする
+        document.querySelectorAll('.calendar-day.submitted').forEach(cell => {
+            cell.classList.remove('submitted');
+            cell.style.cursor = 'pointer';
+        });
+    } else {
+        editBtn.innerHTML = '<i class="fas fa-edit me-1"></i>編集モード';
+        editBtn.classList.remove('btn-warning');
+        editBtn.classList.add('btn-outline-warning');
+        saveBtn.style.display = 'none';
+        if (editForm) editForm.style.display = 'none';
+        
+        // 提出済みシフトを元に戻す
+        displaySubmittedShifts();
+        pendingChanges = {};
     }
 }
+
+// 選択したシフトを削除
+let selectedShiftDate = null;
 
 // カレンダー機能
+let currentSelectedDate = null;
+
 function selectDate(cell) {
     if (!cell.classList.contains('current-month')) return;
     
-    const date = cell.dataset.date;
-    const isSelected = selectedDates.includes(date);
+    console.log('selectDate called, isEditMode:', isEditMode);
     
-    if (isSelected) {
-        // 選択解除
-        selectedDates = selectedDates.filter(d => d !== date);
-        cell.classList.remove('selected');
-        updateDayStatus(cell, '');
-    } else {
-        // 選択
-        selectedDates.push(date);
-        cell.classList.add('selected');
-        updateDayStatus(cell, getSelectedType());
+    // 提出期限を過ぎている場合は選択不可
+    const canEdit = {{ can_edit|lower }};
+    if (!canEdit) {
+        alert('提出期限を過ぎたため、シフトの変更はできません。');
+        return;
     }
     
-    updateSubmitButton();
+    const date = cell.dataset.date;
+    
+    if (isEditMode) {
+        // 日付を選択
+        currentSelectedDate = date;
+        
+        // 既存の選択を解除
+        document.querySelectorAll('.calendar-day.selected-edit').forEach(c => {
+            c.classList.remove('selected-edit');
+        });
+        
+        // 選択された日付をハイライト
+        cell.classList.add('selected-edit');
+        
+        // 選択された日付を表示
+        displaySelectedDate(date);
+        
+        // 既存のシフトがあれば削除
+        if (date in submittedShifts) {
+            delete submittedShifts[date];
+        }
+        
+        console.log('Date selected:', date);
+    } else {
+        // 通常モード：編集モードでのみシフト追加可能
+        if (date in submittedShifts) {
+            alert('この日は既にシフトが提出されています。編集する場合は「編集モード」ボタンを押してください。');
+        } else {
+            alert('シフトを追加するには「編集モード」ボタンを押してから操作してください。');
+        }
+        return;
+    }
 }
 
-function getSelectedType() {
-    const selectedType = document.querySelector('input[name="request_type"]:checked');
-    return selectedType ? selectedType.value : 'work';
+// 時間を分に変換
+function parseTimeToMinutes(timeStr) {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
 }
 
-function updateDayStatus(cell, type) {
+// 日付を1日加算
+function addDays(date, days) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+}
+
+// 日付をフォーマット
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// 時間が重複しているかチェック
+function isTimeOverlap(start1, end1, start2, end2) {
+    // 重複判定: (start1 < end2) && (start2 < end1)
+    return (start1 < end2) && (start2 < end1);
+}
+
+// 日付が隣接しているかチェック（1日差以内）
+function isAdjacentDates(date1, date2) {
+    const diffTime = Math.abs(date1 - date2);
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    return diffDays <= 1;
+}
+
+// 選択された日付を表示
+function displaySelectedDate(dateStr) {
+    const dateObj = new Date(dateStr + 'T00:00:00');
+    const year = dateObj.getFullYear();
+    const month = dateObj.getMonth() + 1;
+    const day = dateObj.getDate();
+    const weekday = ['日', '月', '火', '水', '木', '金', '土'][dateObj.getDay()];
+    
+    document.getElementById('selected-date-text').textContent = `${year}年${month}月${day}日(${weekday})`;
+    document.getElementById('selected-date-display').style.display = 'block';
+    
+    // 開始日・終了日を表示
+    document.getElementById('start-date-label').textContent = `${month}月${day}日`;
+    document.getElementById('end-date-label').textContent = `${month}月${day}日`;
+    
+    // 終了日のオフセットをリセット
+    document.getElementById('edit_end_date_offset').value = '0';
+}
+
+// 日付をまたぐかどうかを切り替え
+function toggleEndDate() {
+    const offsetField = document.getElementById('edit_end_date_offset');
+    const endDateLabel = document.getElementById('end-date-label');
+    const toggleBtn = document.getElementById('toggle-end-date');
+    
+    if (currentSelectedDate === null) {
+        alert('先に日付を選択してください。');
+        return;
+    }
+    
+    const currentOffset = parseInt(offsetField.value);
+    const newOffset = currentOffset === 0 ? 1 : 0;
+    offsetField.value = newOffset;
+    
+    const dateObj = new Date(currentSelectedDate + 'T00:00:00');
+    const nextDateObj = new Date(dateObj);
+    nextDateObj.setDate(nextDateObj.getDate() + newOffset);
+    
+    const month = nextDateObj.getMonth() + 1;
+    const day = nextDateObj.getDate();
+    
+    endDateLabel.textContent = `${month}月${day}日`;
+    toggleBtn.innerHTML = newOffset === 0 ? '<i class="fas fa-arrow-down"></i> 翌日に' : '<i class="fas fa-arrow-up"></i> 同じ日に';
+}
+
+// 時間入力後にシフトを追加
+function addShiftFromTimeInput() {
+    if (currentSelectedDate === null) {
+        alert('先に日付を選択してください。');
+        return;
+    }
+    
+    const requestTypeRadio = document.querySelector('input[name="edit_request_type"]:checked');
+    const requestType = requestTypeRadio ? requestTypeRadio.value : 'work';
+    const startTimeInput = document.getElementById('edit_start_time');
+    const endTimeInput = document.getElementById('edit_end_time');
+    const endDateOffset = document.getElementById('edit_end_date_offset').value;
+    const startTime = startTimeInput ? startTimeInput.value : '';
+    const endTime = endTimeInput ? endTimeInput.value : '';
+    
+    // 時間が入力されている場合のみ処理を進める
+    if (!(requestType === 'off' || (startTime && endTime))) {
+        alert('開始時間と終了時間を入力してください。');
+        return;
+    }
+    
+    // 時間の検証
+    if (requestType !== 'off') {
+        const startHour = parseInt(startTime.split(':')[0]);
+        const endHour = parseInt(endTime.split(':')[0]);
+        
+        // 終了時間が開始時間より後であるか確認
+        const totalEndHour = endHour + (parseInt(endDateOffset) * 24);
+        if (totalEndHour <= startHour) {
+            alert('終了時間は開始時間より後である必要があります。');
+            return;
+        }
+        
+        // 24時間を超える場合は警告
+        const duration = (totalEndHour - startHour) + (parseInt(endTime.split(':')[1]) - parseInt(startTime.split(':')[1])) / 60;
+        if (duration > 24) {
+            if (!confirm('24時間を超えるシフトですが、よろしいですか？')) {
+                return;
+            }
+        }
+        
+        // シフトの重複チェック
+        const currentDate = new Date(currentSelectedDate + 'T00:00:00');
+        const currentEndDate = new Date(currentDate);
+        currentEndDate.setDate(currentEndDate.getDate() + parseInt(endDateOffset));
+        
+        // 既存のシフトをチェック
+        for (const [dateKey, shiftData] of Object.entries(submittedShifts)) {
+            const existingDate = new Date(dateKey + 'T00:00:00');
+            const existingStartTime = shiftData.start_time;
+            const existingEndTime = shiftData.end_time;
+            
+            if (existingStartTime && existingEndTime) {
+                // 既存シフトの時間を分に変換
+                const existingStart = parseTimeToMinutes(existingStartTime);
+                let existingEnd = parseTimeToMinutes(existingEndTime);
+                
+                // 新規シフトの時間を分に変換
+                const newStart = parseTimeToMinutes(startTime);
+                let newEnd = parseTimeToMinutes(endTime);
+                
+                // 日付をまたぐ場合は終了時間に1440分（24時間）を加算
+                // 既存シフトが翌日にまたがるかどうかは簡易的にチェック
+                if (existingEnd <= existingStart) {
+                    existingEnd += 1440; // 翌日
+                }
+                
+                // 新規シフトが翌日にまたがる場合
+                if (newEnd <= newStart || parseInt(endDateOffset) > 0) {
+                    newEnd += 1440 * (parseInt(endDateOffset) + 1); // 翌日
+                }
+                
+                // 重複チェック（1日の範囲で）
+                const existingDateStr = dateKey;
+                const newDateStr = currentSelectedDate;
+                const nextDayStr = formatDate(addDays(currentDate, 1));
+                
+                // 同じ日または次の日に重複があるかチェック
+                if (existingDateStr === newDateStr || existingDateStr === nextDayStr) {
+                    if (isTimeOverlap(
+                        existingStart, existingEnd,
+                        newStart, newEnd
+                    )) {
+                        alert('シフトの時間が重複しています。別の時間を指定してください。');
+                        return;
+                    }
+                }
+            }
+        }
+        
+        // pendingChangesもチェック
+        for (const [dateKey, changeData] of Object.entries(pendingChanges)) {
+            if (changeData.action === 'update' && changeData.start_time && changeData.end_time) {
+                const existingDate = new Date(dateKey + 'T00:00:00');
+                const existingStart = parseTimeToMinutes(changeData.start_time);
+                const existingEnd = parseTimeToMinutes(changeData.end_time) + (changeData.end_date_offset || 0) * 1440;
+                const newStart = parseTimeToMinutes(startTime);
+                const newEnd = parseTimeToMinutes(endTime) + parseInt(endDateOffset) * 1440;
+                
+                // 日付が隣接しているかチェック
+                const currentDate = new Date(currentSelectedDate + 'T00:00:00');
+                if (isAdjacentDates(existingDate, currentDate)) {
+                    if (isTimeOverlap(existingStart, existingEnd, newStart, newEnd)) {
+                        alert('シフトの時間が重複しています。別の時間を指定してください。');
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    
+    const cell = document.querySelector(`[data-date="${currentSelectedDate}"]`);
+    const isExistingShift = currentSelectedDate in pendingChanges;
+    
+    // 新しいシフトを追加
+    pendingChanges[currentSelectedDate] = {
+        action: 'update',
+        request_type: requestType,
+        start_time: startTime,
+        end_time: endTime,
+        end_date_offset: endDateOffset
+    };
+    
+    // カレンダー表示を更新
+    cell.classList.remove('deleted', 'selected-edit');
+    cell.classList.add('modified');
+    updateDayStatusForEdit(cell, requestType, startTime, endTime);
+    
+    if (isExistingShift) {
+        alert(`${currentSelectedDate}のシフトを更新しました。`);
+    } else {
+        alert(`${currentSelectedDate}にシフトを追加しました。`);
+    }
+    
+    // 保存ボタンを有効化
+    const saveBtn = document.getElementById('save-changes-btn');
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = `<i class="fas fa-save me-1"></i>変更を保存 (${Object.keys(pendingChanges).length}件)`;
+    
+    // 選択をリセット
+    currentSelectedDate = null;
+    document.getElementById('selected-date-display').style.display = 'none';
+}
+
+// 右クリックでシフトを削除
+function deleteShiftOnRightClick(cell, event) {
+    console.log('deleteShiftOnRightClick called, isEditMode:', isEditMode);
+    
+    if (!isEditMode) {
+        console.log('Not in edit mode, returning');
+        return;
+    }
+    
+    event.preventDefault(); // コンテキストメニューを無効化
+    
+    const date = cell.dataset.date;
+    console.log('Date to delete:', date);
+    
+    if (!confirm(`${date}のシフトを削除しますか？`)) {
+        return;
+    }
+    
+    // 既存のシフトを削除
+    if (date in submittedShifts) {
+        delete submittedShifts[date];
+    }
+    
+    // 削除を記録
+    pendingChanges[date] = {
+        action: 'delete'
+    };
+    
+    // カレンダー表示をクリア
+    const statusDiv = cell.querySelector('.day-status');
+    if (statusDiv) {
+        statusDiv.innerHTML = '';
+    }
+    cell.classList.remove('modified', 'selected-edit');
+    cell.classList.add('deleted');
+    
+    alert(`${date}のシフトを削除しました。`);
+    
+    // 保存ボタンを有効化
+    const saveBtn = document.getElementById('save-changes-btn');
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = `<i class="fas fa-save me-1"></i>変更を保存 (${Object.keys(pendingChanges).length}件)`;
+}
+
+// 編集モード用の日付表示更新
+function updateDayStatusForEdit(cell, type, startTime, endTime) {
     const statusDiv = cell.querySelector('.day-status');
     if (!statusDiv) return;
-    
-    const startTime = document.getElementById('start_time').value;
-    const endTime = document.getElementById('end_time').value;
     
     let statusHtml = '';
     if (type === 'work' && startTime && endTime) {
@@ -357,42 +726,108 @@ function updateDayStatus(cell, type) {
     }
     
     statusDiv.innerHTML = statusHtml;
+    cell.classList.add('modified');
 }
 
-function updateSubmitButton() {
-    const submitBtn = document.querySelector('button[onclick="submitShiftRequests()"]');
-    if (selectedDates.length > 0) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = `選択した日付でシフト提出 (${selectedDates.length}日)`;
-    } else {
-        submitBtn.disabled = true;
-        submitBtn.textContent = '日付を選択してください';
+
+
+
+
+
+
+// 変更を保存
+function saveAllChanges() {
+    console.log('saveAllChanges called, pendingChanges:', pendingChanges);
+    
+    if (Object.keys(pendingChanges).length === 0) {
+        alert('変更がありません。');
+        return;
     }
-}
-
-// 希望種別変更時の処理
-document.querySelectorAll('input[name="request_type"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        selectedDates.forEach(date => {
-            const cell = document.querySelector(`[data-date="${date}"]`);
-            if (cell) {
-                updateDayStatus(cell, this.value);
-            }
-        });
-    });
-});
-
-// 時間変更時の処理
-document.getElementById('start_time').addEventListener('change', updateAllSelectedDays);
-document.getElementById('end_time').addEventListener('change', updateAllSelectedDays);
-
-function updateAllSelectedDays() {
-    const type = getSelectedType();
-    selectedDates.forEach(date => {
-        const cell = document.querySelector(`[data-date="${date}"]`);
-        if (cell) {
-            updateDayStatus(cell, type);
+    
+    if (!confirm(`${Object.keys(pendingChanges).length}件の変更を保存しますか？`)) {
+        return;
+    }
+    
+    // フォームデータを作成
+    const formData = new FormData();
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfToken) {
+        console.error('CSRF token not found!');
+        alert('セキュリティエラーが発生しました。ページを更新してください。');
+        return;
+    }
+    formData.append('csrfmiddlewaretoken', csrfToken.value);
+    formData.append('action', 'update_existing');
+    
+    console.log('FormData created, action:', 'update_existing');
+    
+    // 削除と更新を分けて処理
+    const deleteDates = [];
+    const updateDates = [];
+    const requestTypes = [];
+    const startTimes = [];
+    const endTimes = [];
+    const endDateOffsets = [];
+    
+    for (const [date, change] of Object.entries(pendingChanges)) {
+        console.log('Processing change:', date, change);
+        if (change.action === 'delete') {
+            deleteDates.push(date);
+        } else if (change.action === 'update') {
+            updateDates.push(date);
+            requestTypes.push(change.request_type);
+            startTimes.push(change.start_time);
+            endTimes.push(change.end_time);
+            endDateOffsets.push(change.end_date_offset || '0');
         }
+    }
+    
+    console.log('Delete dates:', deleteDates);
+    console.log('Update dates:', updateDates);
+    
+    // 削除データを追加
+    deleteDates.forEach(date => {
+        formData.append('delete_dates', date);
+    });
+    
+    // 更新データを追加
+    updateDates.forEach(date => {
+        formData.append('update_dates', date);
+    });
+    requestTypes.forEach(type => {
+        formData.append('request_types', type);
+    });
+    startTimes.forEach(time => {
+        formData.append('start_times', time);
+    });
+    endTimes.forEach(time => {
+        formData.append('end_times', time);
+    });
+    endDateOffsets.forEach(offset => {
+        formData.append('end_date_offsets', offset);
+    });
+    
+    // 送信
+    console.log('Sending request to:', window.location.href);
+    console.log('FormData keys:', Array.from(formData.keys()));
+    
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (response.ok) {
+            alert('シフトの変更が完了しました！');
+            location.reload();
+        } else {
+            console.error('Response not OK:', response.status);
+            alert('エラーが発生しました。ステータス: ' + response.status);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('エラーが発生しました。');
     });
 }
 
@@ -442,10 +877,33 @@ function submitShiftRequests() {
     });
 }
 
+// 提出済みシフトを表示
+function displaySubmittedShifts() {
+    for (const [date, shift] of Object.entries(submittedShifts)) {
+        const cell = document.querySelector(`[data-date="${date}"]`);
+        if (cell) {
+            // 提出済みマークを追加
+            cell.classList.add('submitted');
+            const statusDiv = cell.querySelector('.day-status');
+            if (statusDiv) {
+                let statusHtml = '';
+                if (shift.request_type === 'work') {
+                    statusHtml = `<small class="badge bg-success">${shift.start_time}-${shift.end_time}</small>`;
+                } else if (shift.request_type === 'off') {
+                    statusHtml = `<small class="badge bg-warning">休み</small>`;
+                } else if (shift.request_type === 'overtime') {
+                    statusHtml = `<small class="badge bg-info">残業 ${shift.start_time}-${shift.end_time}</small>`;
+                }
+                statusDiv.innerHTML = statusHtml;
+            }
+        }
+    }
+}
+
 // 既存の希望シフトを読み込み
 function loadExistingRequests() {
-    // サーバーから既存の希望シフトを取得して表示
-    // 実装は省略（実際のプロジェクトでは実装が必要）
+    // 提出済みシフトをカレンダーに表示
+    displaySubmittedShifts();
 }
 
 // 今日の日付をハイライト
@@ -649,14 +1107,6 @@ function deleteRequest(requestId) {
 }
 
 /* メモリーセクション */
-.memory-section {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    border: 1px solid #dee2e6;
-}
-
 /* ボタンスタイル */
 .btn-group .btn-check:checked + .btn {
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
@@ -708,6 +1158,151 @@ function deleteRequest(requestId) {
 .calendar-day.selected .day-number {
     font-weight: 700;
     color: #1976d2;
+}
+
+/* 提出済みの日付のスタイル */
+.calendar-day.submitted {
+    background: #f8f9fa !important;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.calendar-day.submitted:hover {
+    background: #f8f9fa !important;
+}
+
+.calendar-day.submitted .day-number {
+    color: #6c757d;
+}
+
+.calendar-day.submitted .day-status .badge {
+    cursor: default;
+}
+
+/* 編集された日付のスタイル */
+.calendar-day.modified {
+    background: #fff3cd !important;
+    border: 2px solid #ffc107;
+}
+
+.calendar-day.modified .day-number {
+    color: #856404;
+    font-weight: 700;
+}
+
+/* 削除された日付のスタイル */
+.calendar-day.deleted {
+    background: #f8d7da !important;
+    border: 2px solid #dc3545;
+    opacity: 0.7;
+}
+
+.calendar-day.deleted .day-number {
+    color: #721c24;
+    text-decoration: line-through;
+}
+
+/* 編集モードで選択された日付のスタイル */
+.calendar-day.selected-edit {
+    background: #e7f3ff !important;
+    border: 2px solid #0d6efd;
+    box-shadow: 0 0 10px rgba(13, 110, 253, 0.5);
+}
+
+/* 時間選択UI */
+.time-picker-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.time-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.date-display {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.date-display small {
+    font-size: 11px;
+}
+
+.time-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    text-align: center;
+}
+
+.time-selector {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.time-selector select {
+    padding: 8px 12px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 16px 12px;
+    padding-right: 35px;
+}
+
+.time-selector select:hover {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.time-selector select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.hour-select {
+    min-width: 70px;
+}
+
+.minute-select {
+    min-width: 70px;
+}
+
+.time-separator {
+    font-size: 20px;
+    font-weight: 600;
+    color: #6c757d;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .time-picker-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .time-selector {
+        justify-content: center;
+    }
+    
+    .hour-select,
+    .minute-select {
+        min-width: 60px;
+    }
 }
 </style>
 {% endblock %}

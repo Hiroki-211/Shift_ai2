@@ -124,10 +124,16 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# 認証バックエンド
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.EmployeeIDBackend',  # 社員ID認証
+    'django.contrib.auth.backends.ModelBackend',  # デフォルト認証
+]
+
 # ログイン設定
-LOGIN_URL = '/login/'
+LOGIN_URL = '/admin-login/'
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/login/'
+LOGOUT_REDIRECT_URL = '/'
 
 # セキュリティ設定
 SECURE_BROWSER_XSS_FILTER = True

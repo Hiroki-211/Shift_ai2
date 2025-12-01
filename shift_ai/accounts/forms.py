@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Store, Staff, StaffRequirement
+from datetime import datetime
 
 
 class StoreForm(forms.ModelForm):
@@ -9,13 +10,18 @@ class StoreForm(forms.ModelForm):
     
     class Meta:
         model = Store
-        fields = ['name', 'opening_time', 'closing_time', 'preparation_minutes', 'cleanup_minutes']
+        fields = ['name', 'opening_time', 'service_start_time', 'closing_time', 'last_order_time', 'has_break_time', 'lunch_end_time', 'dinner_start_time', 'shift_submission_start_day', 'shift_submission_deadline_day']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'opening_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'service_start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
             'closing_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'preparation_minutes': forms.NumberInput(attrs={'class': 'form-control'}),
-            'cleanup_minutes': forms.NumberInput(attrs={'class': 'form-control'}),
+            'last_order_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'has_break_time': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'lunch_end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'dinner_start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'shift_submission_start_day': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 28}),
+            'shift_submission_deadline_day': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 28}),
         }
 
 
@@ -81,3 +87,74 @@ class UserRegistrationForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
+
+class StaffRegistrationForm(forms.Form):
+    """スタッフ登録フォーム（管理者用）"""
+    # ユーザー情報
+    email = forms.EmailField(
+        required=True,
+        label="メールアドレス",
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
+    )
+    first_name = forms.CharField(
+        max_length=30,
+        required=True,
+        label="名",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    last_name = forms.CharField(
+        max_length=30,
+        required=True,
+        label="姓",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    birth_date = forms.DateField(
+        required=True,
+        label="生年月日",
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        help_text="YYYY-MM-DD形式で入力してください。初回パスワードに使用されます（YYYYMMDD）。"
+    )
+    
+    # スタッフ情報
+    employment_type = forms.ChoiceField(
+        choices=Staff.EMPLOYMENT_TYPE_CHOICES,
+        required=True,
+        label="雇用形態",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    hourly_wage = forms.IntegerField(
+        required=True,
+        label="時給（円）",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'min': 0})
+    )
+    hall_skill_level = forms.IntegerField(
+        required=True,
+        initial=1,
+        label="ホールスキル（1-5）",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 5})
+    )
+    kitchen_skill_level = forms.IntegerField(
+        required=True,
+        initial=1,
+        label="キッチンスキル（1-5）",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 5})
+    )
+    is_manager = forms.BooleanField(
+        required=False,
+        label="責任者権限",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    max_weekly_hours = forms.IntegerField(
+        required=True,
+        initial=40,
+        label="週最大労働時間",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'min': 0})
+    )
+    
+    def clean_email(self):
+        """メールアドレスの重複チェック"""
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("このメールアドレスは既に使用されています。")
+        return email

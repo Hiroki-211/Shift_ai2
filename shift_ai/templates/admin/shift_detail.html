@@ -1,0 +1,106 @@
+{% extends 'admin/base.html' %}
+
+{% block page_title %}シフト詳細{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar"></i> シフト詳細・編集
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">スタッフ</label>
+                            <input type="text" class="form-control" value="{{ shift.staff.user.get_full_name|default:shift.staff.user.username }}" readonly>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">日付</label>
+                            <input type="date" class="form-control" value="{{ shift.date|date:'Y-m-d' }}" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="start_time" class="form-label">開始時刻</label>
+                            <input type="time" class="form-control" id="start_time" name="start_time" 
+                                   value="{{ shift.start_time|date:'H:i' }}" required>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="end_time" class="form-label">終了時刻</label>
+                            <input type="time" class="form-control" id="end_time" name="end_time" 
+                                   value="{{ shift.end_time|date:'H:i' }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_confirmed" name="is_confirmed" 
+                                   {% if shift.is_confirmed %}checked{% endif %}>
+                            <label class="form-check-label" for="is_confirmed">
+                                シフトを確定する
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'admin_shift:shift_creation' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> 戻る
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> シフト情報
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>スタッフ情報</h6>
+                <ul class="list-unstyled">
+                    <li><strong>名前:</strong> {{ shift.staff.user.get_full_name|default:shift.staff.user.username }}</li>
+                    <li><strong>時給:</strong> ¥{{ shift.staff.hourly_wage }}</li>
+                    <li><strong>雇用形態:</strong> {{ shift.staff.get_employment_type_display }}</li>
+                    {% if shift.staff.is_manager %}
+                        <li><span class="badge bg-success">責任者</span></li>
+                    {% endif %}
+                </ul>
+                
+                <hr>
+                
+                <h6>シフト詳細</h6>
+                <ul class="list-unstyled">
+                    <li><strong>日付:</strong> {{ shift.date|date:"Y年m月d日 (D)" }}</li>
+                    <li><strong>時間:</strong> {{ shift.start_time }} ～ {{ shift.end_time }}</li>
+                    <li><strong>勤務時間:</strong> {{ shift.duration_hours|floatformat:1 }}時間</li>
+                    <li><strong>人件費:</strong> ¥{{ shift.wage_cost|floatformat:0 }}</li>
+                    <li><strong>状態:</strong> 
+                        {% if shift.is_confirmed %}
+                            <span class="badge bg-success">確定</span>
+                        {% else %}
+                            <span class="badge bg-warning">未確定</span>
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

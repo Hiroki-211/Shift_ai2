@@ -1,14 +1,39 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import never_cache
+from django.utils.decorators import method_decorator
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.db import transaction
+from django.views import View
+from django.contrib.auth.views import LoginView
 from .models import Store, Staff, StaffRequirement
 from .forms import StoreForm, StaffForm, StaffRequirementForm, UserRegistrationForm
+
+
+@never_cache
+def home(request):
+    """ホームページ（ログイン選択画面）"""
+    if request.user.is_authenticated:
+        # ログイン済みの場合は適切なダッシュボードにリダイレクト
+        try:
+            staff = request.user.staff
+            if staff.is_manager:
+                return redirect('admin_accounts:dashboard')
+            else:
+                return redirect('staff_accounts:dashboard')
+        except Staff.DoesNotExist:
+            messages.error(request, "スタッフ情報が見つかりません。")
+            return redirect('admin_login')
+    response = render(request, 'home.html')
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 
 @login_required
@@ -22,7 +47,7 @@ def dashboard(request):
             return redirect('staff_accounts:dashboard')
     except Staff.DoesNotExist:
         messages.error(request, "スタッフ情報が見つかりません。")
-        return redirect('login')
+        return redirect('admin_login')
 
 
 @login_required
@@ -155,6 +180,74 @@ def delete_requirement(request, requirement_id):
     return redirect('staff_requirements')
 
 
+class AdminLoginView(LoginView):
+    """管理者用ログインビュー"""
+    template_name = 'registration/admin_login.html'
+    
+    def dispatch(self, *args, **kwargs):
+        """キャッシュを無効化"""
+        response = super().dispatch(*args, **kwargs)
+        # すべてのレスポンスにキャッシュ無効化ヘッダーを設定
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
+    
+    def form_valid(self, form):
+        """ログイン成功時の処理"""
+        user = form.get_user()
+        
+        # スタッフ情報を確認
+        try:
+            staff = user.staff
+            if not staff.is_manager:
+                messages.error(self.request, "このアカウントは管理者権限がありません。スタッフログインをご利用ください。")
+                return self.form_invalid(form)
+        except Staff.DoesNotExist:
+            messages.error(self.request, "スタッフ情報が見つかりません。")
+            return self.form_invalid(form)
+        
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        """ログイン成功時のリダイレクト先"""
+        return '/admin-panel/'
+
+
+class StaffLoginView(LoginView):
+    """スタッフ用ログインビュー"""
+    template_name = 'registration/staff_login.html'
+    
+    def dispatch(self, *args, **kwargs):
+        """キャッシュを無効化"""
+        response = super().dispatch(*args, **kwargs)
+        # すべてのレスポンスにキャッシュ無効化ヘッダーを設定
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
+    
+    def form_valid(self, form):
+        """ログイン成功時の処理"""
+        user = form.get_user()
+        
+        # スタッフ情報を確認
+        try:
+            staff = user.staff
+            if staff.is_manager:
+                messages.error(self.request, "このアカウントは管理者アカウントです。管理者ログインをご利用ください。")
+                return self.form_invalid(form)
+        except Staff.DoesNotExist:
+            messages.error(self.request, "スタッフ情報が見つかりません。")
+            return self.form_invalid(form)
+        
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        """ログイン成功時のリダイレクト先"""
+        return '/staff/'
+
+
 def register(request):
     """ユーザー登録"""
     if request.method == 'POST':
@@ -184,8 +277,23 @@ def register(request):
                 )
                 
                 messages.success(request, "アカウントが作成されました。ログインしてください。")
-                return redirect('login')
+                return redirect('admin_login')
     else:
         form = UserRegistrationForm()
     
     return render(request, 'registration/register.html', {'form': form})
+
+
+@never_cache
+def custom_logout(request):
+    """カスタムログアウトビュー（キャッシュを無効化）"""
+    if request.user.is_authenticated:
+        logout(request)
+        messages.success(request, "ログアウトしました。")
+    
+    # キャッシュを無効化するヘッダーを設定
+    response = redirect('home')
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response

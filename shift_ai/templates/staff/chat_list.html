@@ -1,0 +1,108 @@
+{% extends 'staff/base.html' %}
+
+{% block page_title %}チャット{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-comments"></i> チャット
+                </h5>
+                <div>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newChatModal">
+                        <i class="fas fa-plus"></i> 新しいチャット
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if chat_rooms %}
+                <div class="list-group">
+                    {% for room in chat_rooms %}
+                    <a href="{% url 'staff_shift:chat_detail' room.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-user-circle fa-2x text-primary"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">
+                                        {{ room.other_participant.user.get_full_name|default:room.other_participant.user.username }}
+                                        {% if room.other_participant.is_manager %}
+                                            <span class="badge bg-warning">管理者</span>
+                                        {% endif %}
+                                    </h6>
+                                    {% if room.last_message %}
+                                        <p class="mb-0 text-muted small">
+                                            {{ room.last_message.message|truncatechars:50 }}
+                                        </p>
+                                    {% else %}
+                                        <p class="mb-0 text-muted small">まだメッセージがありません</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                {% if room.unread_count > 0 %}
+                                    <span class="badge bg-danger rounded-pill">{{ room.unread_count }}</span>
+                                {% endif %}
+                                {% if room.last_message %}
+                                    <small class="text-muted d-block">{{ room.last_message.created_at|date:"m/d H:i" }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">チャットがありません</h5>
+                    <p class="text-muted">新しいチャットを開始して、スタッフや管理者と連絡を取りましょう。</p>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newChatModal">
+                        <i class="fas fa-plus"></i> 新しいチャットを開始
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新しいチャット作成モーダル -->
+<div class="modal fade" id="newChatModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新しいチャットを開始</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">チャットを開始するスタッフを選択してください：</p>
+                <div class="list-group">
+                    {% for other in other_staff %}
+                    <a href="{% url 'staff_shift:chat_create' other.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-circle fa-2x text-primary me-3"></i>
+                            <div>
+                                <h6 class="mb-0">{{ other.user.get_full_name|default:other.user.username }}</h6>
+                                {% if other.is_manager %}
+                                    <small class="text-muted">管理者</small>
+                                {% else %}
+                                    <small class="text-muted">スタッフ</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item">
+                        <p class="text-muted mb-0">チャットできるスタッフがいません</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

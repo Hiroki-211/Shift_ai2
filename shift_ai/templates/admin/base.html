@@ -79,12 +79,42 @@
                             </a>
                         </li>
                         
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'shift' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'admin_shift:shift_creation' %}">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {% if 'shift' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="#" id="shiftDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-calendar-alt me-2"></i>
                                 シフト管理
                             </a>
+                            <ul class="dropdown-menu" aria-labelledby="shiftDropdown">
+                                <li>
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'shift_creation' %}active{% endif %}" 
+                                       href="{% url 'admin_shift:shift_creation' %}">
+                                        <i class="fas fa-calendar-plus me-2"></i>
+                                        シフト作成
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'shift_calendar' %}active{% endif %}" 
+                                       href="{% url 'admin_shift:shift_calendar' %}">
+                                        <i class="fas fa-calendar me-2"></i>
+                                        シフトカレンダー
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'submission_status' %}active{% endif %}" 
+                                       href="{% url 'admin_shift:submission_status' %}">
+                                        <i class="fas fa-clipboard-list me-2"></i>
+                                        提出状況
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'staff_shift_requests' %}active{% endif %}" 
+                                       href="{% url 'admin_shift:staff_shift_requests' %}">
+                                        <i class="fas fa-list-alt me-2"></i>
+                                        希望シフト一覧
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         
                         <li class="nav-item">
@@ -102,23 +132,35 @@
                                 勤怠管理
                             </a>
                         </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'chat' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'admin_shift:chat_list' %}">
+                                <i class="fas fa-comments me-2"></i>
+                                チャット
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'announcement' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'admin_accounts:announcement_list' %}">
+                                <i class="fas fa-bullhorn me-2"></i>
+                                お知らせ
+                            </a>
+                        </li>
                     </ul>
                     
                     <hr class="text-white">
                     
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'staff_accounts:dashboard' %}">
-                                <i class="fas fa-user me-2"></i>
-                                スタッフ画面へ
-                            </a>
-                        </li>
-                        
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'logout' %}">
-                                <i class="fas fa-sign-out-alt me-2"></i>
-                                ログアウト
-                            </a>
+                            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="nav-link" style="border: none; background: none; width: 100%; text-align: left; color: rgba(255,255,255,.75);">
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    ログアウト
+                                </button>
+                            </form>
                         </li>
                     </ul>
                 </div>

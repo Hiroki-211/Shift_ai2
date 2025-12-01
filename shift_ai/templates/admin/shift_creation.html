@@ -1,0 +1,521 @@
+{% extends 'admin/base.html' %}
+
+{% block page_title %}シフト作成{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <h5><i class="fas fa-calendar-plus"></i> シフト作成・管理</h5>
+    </div>
+    <div class="col-md-6 text-end">
+        <div class="btn-group" role="group">
+            <a href="{% url 'admin_shift:shift_settings' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-cog"></i> シフト設定
+            </a>
+            <button type="button" class="btn btn-primary" id="generateAiBtn">
+                <i class="fas fa-robot"></i> AIシフト生成
+            </button>
+            <button type="button" class="btn btn-success" id="confirmShiftsBtn">
+                <i class="fas fa-check"></i> シフト確定
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 月の期間選択 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="year" class="form-label">年</label>
+                <select class="form-select" id="year" name="year">
+                    {% for year in years %}
+                        <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}年</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="month" class="form-label">月</label>
+                <select class="form-select" id="month" name="month">
+                    {% for month in months %}
+                        <option value="{{ month }}" {% if month == selected_month %}selected{% endif %}>{{ month }}月</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="period" class="form-label">期間</label>
+                <select class="form-select" id="period" name="period">
+                    {% for value, label in period_choices %}
+                        <option value="{{ value }}" {% if value == period %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle"></i> 
+                    表示期間: {{ selected_year }}年{{ selected_month }}月
+                    {% if period == 'first_half' %}
+                        前半（{{ start_date|date:"m月d日" }} ～ {{ end_date|date:"m月d日" }}）
+                    {% elif period == 'second_half' %}
+                        後半（{{ start_date|date:"m月d日" }} ～ {{ end_date|date:"m月d日" }}）
+                    {% else %}
+                        すべて（{{ start_date|date:"m月d日" }} ～ {{ end_date|date:"m月d日" }}）
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="fas fa-search"></i> 表示
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CSRFトークン（JavaScriptから参照用） -->
+<form style="display: none;">
+    {% csrf_token %}
+</form>
+
+<!-- シフト一覧 -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-calendar"></i> シフト一覧
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if date_summary %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>日付</th>
+                        <th>スタッフ数</th>
+                        <th>シフト数</th>
+                        <th>確定/未確定</th>
+                        <th>人件費</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for date_info in date_summary %}
+                    <tr>
+                        <td>
+                            <a href="#" class="date-link text-primary fw-bold" 
+                               data-date="{{ date_info.date|date:'Y-m-d' }}"
+                               style="cursor: pointer; text-decoration: none;">
+                                {{ date_info.date|date:"m/d (D)" }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ date_info.staff_count }}名</span>
+                        </td>
+                        <td>{{ date_info.total_shifts }}件</td>
+                        <td>
+                            <span class="badge bg-success">{{ date_info.confirmed_shifts }}</span>
+                            {% if date_info.unconfirmed_shifts > 0 %}
+                                <span class="badge bg-warning">{{ date_info.unconfirmed_shifts }}</span>
+                            {% endif %}
+                        </td>
+                        <td>¥{{ date_info.total_cost|floatformat:0 }}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-primary view-gantt-btn" 
+                                    data-date="{{ date_info.date|date:'Y-m-d' }}">
+                                <i class="fas fa-chart-bar"></i> 詳細
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+                <!-- 統計情報 -->
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">総シフト数</h6>
+                                <h4 class="text-primary">{{ total_shifts }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">確定シフト</h6>
+                                <h4 class="text-success">
+                                    {{ confirmed_shifts }}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">未確定シフト</h6>
+                                <h4 class="text-warning">
+                                    {{ unconfirmed_shifts }}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">総人件費</h6>
+                                <h4 class="text-info">
+                                    ¥{{ total_cost|floatformat:0 }}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-calendar fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">シフトがありません</h5>
+            <p class="text-muted">AIシフト生成ボタンからシフトを作成してください。</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- AIシフト生成モーダル -->
+<div class="modal fade" id="aiGenerateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-robot"></i> AIシフト生成
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>指定した期間のシフトをAIが自動生成します。</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    スタッフの希望シフトと必要人数設定を考慮して最適なシフトを作成します。
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" id="confirmGenerateBtn">
+                    <i class="fas fa-robot"></i> 生成開始
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ガントチャートモーダル -->
+<div class="modal fade" id="ganttModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-bar"></i> シフト詳細 - <span id="gantt-date-display"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="gantt-loading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">読み込み中...</span>
+                    </div>
+                </div>
+                <div id="gantt-content" style="display: none;">
+                    <div class="gantt-container" style="overflow-x: auto;">
+                        <table class="table table-bordered gantt-table" style="min-width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="min-width: 150px; position: sticky; left: 0; background: white; z-index: 10;">従業員名</th>
+                                    <th colspan="24" class="text-center">時間（0時～23時）</th>
+                                </tr>
+                                <tr>
+                                    <th style="position: sticky; left: 0; background: white; z-index: 10;"></th>
+                                    <th class="text-center" style="width: 50px;">0</th>
+                                    <th class="text-center" style="width: 50px;">1</th>
+                                    <th class="text-center" style="width: 50px;">2</th>
+                                    <th class="text-center" style="width: 50px;">3</th>
+                                    <th class="text-center" style="width: 50px;">4</th>
+                                    <th class="text-center" style="width: 50px;">5</th>
+                                    <th class="text-center" style="width: 50px;">6</th>
+                                    <th class="text-center" style="width: 50px;">7</th>
+                                    <th class="text-center" style="width: 50px;">8</th>
+                                    <th class="text-center" style="width: 50px;">9</th>
+                                    <th class="text-center" style="width: 50px;">10</th>
+                                    <th class="text-center" style="width: 50px;">11</th>
+                                    <th class="text-center" style="width: 50px;">12</th>
+                                    <th class="text-center" style="width: 50px;">13</th>
+                                    <th class="text-center" style="width: 50px;">14</th>
+                                    <th class="text-center" style="width: 50px;">15</th>
+                                    <th class="text-center" style="width: 50px;">16</th>
+                                    <th class="text-center" style="width: 50px;">17</th>
+                                    <th class="text-center" style="width: 50px;">18</th>
+                                    <th class="text-center" style="width: 50px;">19</th>
+                                    <th class="text-center" style="width: 50px;">20</th>
+                                    <th class="text-center" style="width: 50px;">21</th>
+                                    <th class="text-center" style="width: 50px;">22</th>
+                                    <th class="text-center" style="width: 50px;">23</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gantt-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ガントチャート表示
+    function showGanttChart(dateStr) {
+        const modal = new bootstrap.Modal(document.getElementById('ganttModal'));
+        const loadingEl = document.getElementById('gantt-loading');
+        const contentEl = document.getElementById('gantt-content');
+        const dateDisplayEl = document.getElementById('gantt-date-display');
+        const ganttBodyEl = document.getElementById('gantt-body');
+        
+        loadingEl.style.display = 'block';
+        contentEl.style.display = 'none';
+        ganttBodyEl.innerHTML = '';
+        
+        fetch(`{% url 'admin_shift:shift_detail_by_date' '0000-00-00' %}`.replace('0000-00-00', dateStr))
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('エラー: ' + data.error);
+                    return;
+                }
+                
+                dateDisplayEl.textContent = data.date_display;
+                
+                // 従業員ごとにシフトをグループ化
+                const staffShifts = {};
+                data.shifts.forEach(shift => {
+                    if (!staffShifts[shift.staff_id]) {
+                        staffShifts[shift.staff_id] = {
+                            name: shift.staff_name,
+                            shifts: []
+                        };
+                    }
+                    staffShifts[shift.staff_id].shifts.push(shift);
+                });
+                
+                // ガントチャートを描画
+                Object.values(staffShifts).forEach(staff => {
+                    const row = document.createElement('tr');
+                    
+                    // 従業員名セル
+                    const nameCell = document.createElement('td');
+                    nameCell.textContent = staff.name;
+                    nameCell.style.position = 'sticky';
+                    nameCell.style.left = '0';
+                    nameCell.style.background = 'white';
+                    nameCell.style.zIndex = '5';
+                    row.appendChild(nameCell);
+                    
+                    // 24時間分のセルを作成（0時〜23時）
+                    for (let hour = 0; hour < 24; hour++) {
+                        const cell = document.createElement('td');
+                        cell.style.position = 'relative';
+                        cell.style.height = '50px';
+                        cell.style.padding = '0';
+                        cell.style.minWidth = '50px';
+                        
+                        // この時間帯にシフトがあるかチェック
+                        staff.shifts.forEach(shift => {
+                            let shouldShowBar = false;
+                            let barLeft = 0;
+                            let barWidth = 100;
+                            let isStartHour = false;
+                            
+                            // 前日から続くシフトの当日部分（0時〜終了時刻のみを表示）
+                            if (shift.is_from_previous) {
+                                const startHour = Math.floor(shift.start_minutes / 60);  // 0時
+                                const endHour = Math.floor(shift.end_minutes / 60);
+                                const endMin = shift.end_minutes % 60;
+                                
+                                // 0時〜終了時刻のセルに表示
+                                if (hour >= startHour && hour <= endHour) {
+                                    shouldShowBar = true;
+                                    if (hour === endHour) {
+                                        barLeft = 0;
+                                        barWidth = (endMin / 60) * 100;
+                                    } else {
+                                        barLeft = 0;
+                                        barWidth = 100;
+                                    }
+                                }
+                            }
+                            // 当日開始のシフトの場合
+                            else {
+                                const startHour = Math.floor(shift.start_minutes / 60);
+                                const endHour = Math.floor(shift.end_minutes / 60);
+                                const startMin = shift.start_minutes % 60;
+                                const endMin = shift.end_minutes % 60;
+                                
+                                // 当日のガントチャートにはその日のシフトのみを表示
+                                // 日をまたぐシフトでも、当日の部分（開始時刻〜23時59分）のみを表示
+                                if (hour >= startHour && hour < endHour) {
+                                    shouldShowBar = true;
+                                    if (hour === startHour) {
+                                        barLeft = (startMin / 60) * 100;
+                                        if (hour === endHour - 1) {
+                                            barWidth = ((endMin - startMin) / 60) * 100;
+                                        } else {
+                                            barWidth = ((60 - startMin) / 60) * 100;
+                                        }
+                                        isStartHour = true;
+                                    } else if (hour === endHour - 1) {
+                                        barLeft = 0;
+                                        barWidth = (endMin / 60) * 100;
+                                    } else {
+                                        barLeft = 0;
+                                        barWidth = 100;
+                                    }
+                                }
+                            }
+                            
+                            if (shouldShowBar) {
+                                const bar = document.createElement('div');
+                                bar.style.position = 'absolute';
+                                bar.style.top = '5%';
+                                bar.style.height = '90%';
+                                bar.style.left = `${barLeft}%`;
+                                bar.style.width = `${barWidth}%`;
+                                
+                                bar.style.background = shift.is_confirmed ? '#28a745' : '#ffc107';
+                                bar.style.border = '1px solid #333';
+                                bar.style.borderRadius = '3px';
+                                bar.style.display = 'flex';
+                                bar.style.alignItems = 'center';
+                                bar.style.justifyContent = 'center';
+                                bar.style.fontSize = '9px';
+                                bar.style.color = '#000';
+                                bar.style.cursor = 'pointer';
+                                bar.style.fontWeight = 'bold';
+                                bar.title = `${shift.start_time} - ${shift.end_time} (${shift.duration_hours.toFixed(1)}時間)`;
+                                
+                                // 開始時間のラベル（前日から続くシフトの場合は前日の開始時刻、当日開始の場合は当日の開始時刻）
+                                if (isStartHour && (shift.is_from_previous ? hour >= 20 : true)) {
+                                    const timeLabel = document.createElement('span');
+                                    timeLabel.textContent = shift.start_time;
+                                    timeLabel.style.fontSize = '8px';
+                                    timeLabel.style.padding = '1px 2px';
+                                    timeLabel.style.background = 'rgba(255,255,255,0.7)';
+                                    timeLabel.style.borderRadius = '2px';
+                                    bar.appendChild(timeLabel);
+                                }
+                                
+                                cell.appendChild(bar);
+                            }
+                        });
+                        
+                        row.appendChild(cell);
+                    }
+                    
+                    ganttBodyEl.appendChild(row);
+                });
+                
+                loadingEl.style.display = 'none';
+                contentEl.style.display = 'block';
+                modal.show();
+            })
+            .catch(error => {
+                alert('エラーが発生しました。');
+                console.error('Error:', error);
+                loadingEl.style.display = 'none';
+            });
+    }
+    
+    // 日付リンクのクリックイベント
+    document.querySelectorAll('.date-link, .view-gantt-btn').forEach(element => {
+        element.addEventListener('click', function(e) {
+            e.preventDefault();
+            const dateStr = this.getAttribute('data-date') || this.closest('tr').querySelector('.date-link').getAttribute('data-date');
+            showGanttChart(dateStr);
+        });
+    });
+    
+    // AIシフト生成
+    const generateAiBtn = document.getElementById('generateAiBtn');
+    const confirmGenerateBtn = document.getElementById('confirmGenerateBtn');
+    
+    if (generateAiBtn) {
+        generateAiBtn.addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('aiGenerateModal'));
+            modal.show();
+        });
+    }
+    
+    if (confirmGenerateBtn) {
+        confirmGenerateBtn.addEventListener('click', function() {
+            const startDate = '{{ start_date|date:"Y-m-d" }}';
+            const endDate = '{{ end_date|date:"Y-m-d" }}';
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+            
+            fetch('{% url "admin_shift:generate_ai_shifts" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken
+                },
+                body: `start_date=${startDate}&end_date=${endDate}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('エラー: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('エラーが発生しました。');
+                console.error('Error:', error);
+            });
+            
+            bootstrap.Modal.getInstance(document.getElementById('aiGenerateModal')).hide();
+        });
+    }
+    
+    // シフト確定
+    const confirmShiftsBtn = document.getElementById('confirmShiftsBtn');
+    if (confirmShiftsBtn) {
+        confirmShiftsBtn.addEventListener('click', function() {
+            alert('シフト確定機能は、個別のシフト編集画面からご利用ください。');
+        });
+    }
+});
+</script>
+<style>
+.gantt-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    text-align: center;
+    padding: 8px 4px;
+}
+.gantt-table td {
+    border: 1px solid #dee2e6;
+    padding: 2px;
+}
+.gantt-container {
+    max-height: 600px;
+    overflow-y: auto;
+}
+</style>
+{% endblock %}
+

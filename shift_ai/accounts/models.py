@@ -1,15 +1,31 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+import random
 
 
 class Store(models.Model):
     """店舗モデル"""
     name = models.CharField(max_length=100, verbose_name="店舗名")
     opening_time = models.TimeField(verbose_name="開店時刻")
+    service_start_time = models.TimeField(verbose_name="営業開始時刻", null=True, blank=True)
     closing_time = models.TimeField(verbose_name="閉店時刻")
-    preparation_minutes = models.IntegerField(default=60, verbose_name="準備時間（分）")
-    cleanup_minutes = models.IntegerField(default=60, verbose_name="片付け時間（分）")
+    last_order_time = models.TimeField(verbose_name="ラストオーダー時刻", null=True, blank=True)
+    has_break_time = models.BooleanField(default=False, verbose_name="中休憩の有無")
+    lunch_end_time = models.TimeField(verbose_name="ランチタイム終了時刻", null=True, blank=True)
+    dinner_start_time = models.TimeField(verbose_name="ディナー営業開始時刻", null=True, blank=True)
+    shift_submission_start_day = models.IntegerField(
+        default=1, 
+        verbose_name="シフト提出開始日",
+        validators=[MinValueValidator(1), MaxValueValidator(28)],
+        help_text="各月の何日からシフト提出が可能になるか（1-28日）"
+    )
+    shift_submission_deadline_day = models.IntegerField(
+        default=20,
+        verbose_name="シフト提出締切日",
+        validators=[MinValueValidator(1), MaxValueValidator(28)],
+        help_text="各月の何日までシフト提出が可能か（1-28日）"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -29,7 +45,9 @@ class Staff(models.Model):
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="ユーザー")
+    employee_id = models.CharField(max_length=20, unique=True, verbose_name="社員ID", blank=True)
     store = models.ForeignKey(Store, on_delete=models.CASCADE, verbose_name="店舗")
+    birth_date = models.DateField(verbose_name="生年月日", null=True, blank=True)
     employment_type = models.CharField(
         max_length=20, 
         choices=EMPLOYMENT_TYPE_CHOICES, 
@@ -56,7 +74,28 @@ class Staff(models.Model):
         verbose_name_plural = "スタッフ"
 
     def __str__(self):
-        return f"{self.user.get_full_name()} ({self.store.name})"
+        return f"{self.employee_id} - {self.user.get_full_name()} ({self.store.name})"
+    
+    @staticmethod
+    def generate_employee_id():
+        """重複しない6桁のランダムな社員番号を生成"""
+        max_attempts = 100
+        for _ in range(max_attempts):
+            # 100000 から 999999 の範囲でランダムな番号を生成
+            new_id = str(random.randint(100000, 999999))
+            # 重複チェック（User.usernameとしても使用されるため、両方をチェック）
+            from django.contrib.auth.models import User
+            if not Staff.objects.filter(employee_id=new_id).exists() and not User.objects.filter(username=new_id).exists():
+                return new_id
+        # 100回試行しても重複しない番号が見つからない場合
+        raise ValueError("社員番号の生成に失敗しました。既存の社員番号が多すぎます。")
+    
+    def save(self, *args, **kwargs):
+        """社員IDを自動生成（6桁のランダムな数字）"""
+        if not self.employee_id:
+            self.employee_id = Staff.generate_employee_id()
+        
+        super().save(*args, **kwargs)
 
 
 class StaffRequirement(models.Model):
@@ -89,3 +128,35 @@ class StaffRequirement(models.Model):
 
     def __str__(self):
         return f"{self.store.name} - {self.get_day_of_week_display()} {self.start_time}-{self.end_time}"
+
+
+class Announcement(models.Model):
+    """お知らせモデル"""
+    PRIORITY_CHOICES = [
+        ('low', '低'),
+        ('normal', '通常'),
+        ('high', '高'),
+        ('urgent', '緊急'),
+    ]
+    
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, verbose_name="店舗")
+    title = models.CharField(max_length=200, verbose_name="タイトル")
+    content = models.TextField(verbose_name="内容")
+    priority = models.CharField(
+        max_length=20,
+        choices=PRIORITY_CHOICES,
+        default='normal',
+        verbose_name="優先度"
+    )
+    is_published = models.BooleanField(default=True, verbose_name="公開中")
+    created_by = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name="作成者")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
+    
+    class Meta:
+        verbose_name = "お知らせ"
+        verbose_name_plural = "お知らせ"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} ({self.store.name})"

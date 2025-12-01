@@ -71,6 +71,22 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
+または、テストデータを作成（管理者アカウント含む）：
+
+```bash
+python reset_database.py
+```
+
+### 4-1. 管理者アカウント情報の確認
+
+別のPCで起動した場合など、管理者のログイン情報がわからない場合は、以下のコマンドで確認できます：
+
+```bash
+python manage.py show_admin_info
+```
+
+このコマンドを実行すると、管理者の社員IDとパスワード（生年月日形式）が表示されます。
+
 ### 5. 開発サーバーの起動
 
 ```bash

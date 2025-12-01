@@ -1,0 +1,738 @@
+{% extends 'admin/base.html' %}
+
+{% block page_title %}シフトカレンダー{% endblock %}
+
+{% block content %}
+<!-- 月選択とアクション -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary" onclick="changeMonth(-1)">
+                <i class="fas fa-chevron-left"></i> 前月
+            </button>
+            <button type="button" class="btn btn-outline-secondary disabled" id="current-month-display">
+                {{ month_start|date:"Y年m月" }}
+            </button>
+            <button type="button" class="btn btn-outline-primary" onclick="changeMonth(1)">
+                次月 <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+    <div class="col-md-6 text-end">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-success" onclick="openBulkAssignModal()">
+                <i class="fas fa-users"></i> 一括割当
+            </button>
+            <button type="button" class="btn btn-primary" onclick="openAIGenerateModal()">
+                <i class="fas fa-robot"></i> AI生成
+            </button>
+            <button type="button" class="btn btn-info" onclick="exportShiftData()">
+                <i class="fas fa-file-excel"></i> エクスポート
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- シフト統計 -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted mb-1">総シフト数</h6>
+                <h3 class="mb-0 text-primary" id="total-shifts">{{ total_shifts }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted mb-1">確定シフト</h6>
+                <h3 class="mb-0 text-success" id="confirmed-shifts">{{ confirmed_shifts }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted mb-1">未確定シフト</h6>
+                <h3 class="mb-0 text-warning" id="pending-shifts">{{ pending_shifts }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted mb-1">予想人件費</h6>
+                <h3 class="mb-0 text-info" id="estimated-cost">¥{{ total_cost|floatformat:0 }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- シフトカレンダー -->
+<div class="card shadow">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-calendar-alt"></i> シフトカレンダー
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="calendar-container">
+            <!-- 曜日ヘッダー -->
+            <div class="calendar-header">
+                <div class="calendar-weekdays">
+                    <div class="weekday sunday">日</div>
+                    <div class="weekday">月</div>
+                    <div class="weekday">火</div>
+                    <div class="weekday">水</div>
+                    <div class="weekday">木</div>
+                    <div class="weekday">金</div>
+                    <div class="weekday saturday">土</div>
+                </div>
+            </div>
+            
+            <!-- カレンダーグリッド -->
+            <div class="calendar-grid" id="shift-calendar-grid">
+                <!-- JavaScriptで動的に生成 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- シフト詳細モーダル -->
+<div class="modal fade" id="shiftDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-calendar-day"></i> <span id="modal-date"></span>のシフト
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 必要人数表示 -->
+                <div class="alert alert-info" id="required-staff-info">
+                    <i class="fas fa-info-circle"></i> 必要人数: <strong>0人</strong>
+                </div>
+                
+                <!-- スタッフ選択 -->
+                <div class="mb-3">
+                    <label class="form-label">スタッフを追加</label>
+                    <div class="input-group">
+                        <select class="form-select" id="staff-select">
+                            <option value="">スタッフを選択...</option>
+                            <!-- スタッフリストをここに動的に追加 -->
+                        </select>
+                        <input type="time" class="form-control" id="shift-start-time" placeholder="開始時間">
+                        <input type="time" class="form-control" id="shift-end-time" placeholder="終了時間">
+                        <button class="btn btn-primary" onclick="addStaffToShift()">
+                            <i class="fas fa-plus"></i> 追加
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 割り当て済みスタッフ一覧 -->
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>スタッフ</th>
+                                <th>時間</th>
+                                <th>勤務時間</th>
+                                <th>人件費</th>
+                                <th>状態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assigned-staff-list">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    スタッフが割り当てられていません
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- スタッフの希望シフト表示 -->
+                <div class="mt-3">
+                    <h6><i class="fas fa-heart"></i> この日の希望シフト</h6>
+                    <div id="staff-requests-list">
+                        <p class="text-muted">希望シフトがありません</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                <button type="button" class="btn btn-success" onclick="confirmDayShift()">
+                    <i class="fas fa-check"></i> この日のシフトを確定
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 一括割当モーダル -->
+<div class="modal fade" id="bulkAssignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-users"></i> 一括割当
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">対象期間</label>
+                    <div class="row">
+                        <div class="col-6">
+                            <input type="date" class="form-control" id="bulk-start-date">
+                        </div>
+                        <div class="col-6">
+                            <input type="date" class="form-control" id="bulk-end-date">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">対象スタッフ</label>
+                    <select class="form-select" id="bulk-staff-select" multiple size="5">
+                        <!-- スタッフリスト -->
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">曜日選択</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="checkbox" class="btn-check" id="day-sun" value="0">
+                        <label class="btn btn-outline-danger" for="day-sun">日</label>
+                        
+                        <input type="checkbox" class="btn-check" id="day-mon" value="1">
+                        <label class="btn btn-outline-primary" for="day-mon">月</label>
+                        
+                        <input type="checkbox" class="btn-check" id="day-tue" value="2">
+                        <label class="btn btn-outline-primary" for="day-tue">火</label>
+                        
+                        <input type="checkbox" class="btn-check" id="day-wed" value="3">
+                        <label class="btn btn-outline-primary" for="day-wed">水</label>
+                        
+                        <input type="checkbox" class="btn-check" id="day-thu" value="4">
+                        <label class="btn btn-outline-primary" for="day-thu">木</label>
+                        
+                        <input type="checkbox" class="btn-check" id="day-fri" value="5">
+                        <label class="btn btn-outline-primary" for="day-fri">金</label>
+                        
+                        <input type="checkbox" class="btn-check" id="day-sat" value="6">
+                        <label class="btn btn-outline-primary" for="day-sat">土</label>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">時間設定</label>
+                    <div class="input-group">
+                        <input type="time" class="form-control" id="bulk-start-time">
+                        <span class="input-group-text">-</span>
+                        <input type="time" class="form-control" id="bulk-end-time">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" onclick="executeBulkAssign()">
+                    <i class="fas fa-check"></i> 一括割当実行
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentYear = {{ month_start|date:"Y" }};
+let currentMonth = {{ month_start|date:"n" }} - 1; // JavaScriptは0-11で月を扱う
+let shiftData = {};
+let staffList = [];
+
+// サーバーから取得したシフトデータ
+const serverShifts = {{ shifts_json|safe|default:"[]" }};
+// 日付ごとの統計情報
+const dateStats = {{ date_stats_json|safe|default:"{}" }};
+
+// 初期化
+document.addEventListener('DOMContentLoaded', function() {
+    loadStaffList();
+    generateCalendar();
+    // カレンダー生成後にシフトデータを読み込み
+    setTimeout(() => {
+    loadShiftData();
+    }, 100);
+});
+
+// スタッフリスト読み込み
+function loadStaffList() {
+    fetch('{% url "admin_accounts:staff_management" %}')
+        .then(response => response.json())
+        .catch(error => {
+            console.error('Error loading staff:', error);
+            // デモデータ
+            staffList = [
+                {id: 1, name: '山田太郎', hourly_wage: 1200},
+                {id: 2, name: '佐藤花子', hourly_wage: 1100},
+                {id: 3, name: '田中一郎', hourly_wage: 1300},
+            ];
+            updateStaffSelects();
+        });
+}
+
+// スタッフセレクトボックス更新
+function updateStaffSelects() {
+    const staffSelect = document.getElementById('staff-select');
+    const bulkStaffSelect = document.getElementById('bulk-staff-select');
+    
+    staffSelect.innerHTML = '<option value="">スタッフを選択...</option>';
+    bulkStaffSelect.innerHTML = '';
+    
+    staffList.forEach(staff => {
+        const option1 = document.createElement('option');
+        option1.value = staff.id;
+        option1.textContent = staff.name;
+        staffSelect.appendChild(option1);
+        
+        const option2 = document.createElement('option');
+        option2.value = staff.id;
+        option2.textContent = staff.name;
+        bulkStaffSelect.appendChild(option2);
+    });
+}
+
+// カレンダー生成
+function generateCalendar() {
+    const grid = document.getElementById('shift-calendar-grid');
+    grid.innerHTML = '';
+    
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    const firstDayOfWeek = firstDay.getDay();
+    const daysInMonth = lastDay.getDate();
+    
+    let weekRow = document.createElement('div');
+    weekRow.className = 'calendar-week';
+    
+    // 前月の日付で埋める
+    for (let i = 0; i < firstDayOfWeek; i++) {
+        const dayCell = createDayCell(null, true);
+        weekRow.appendChild(dayCell);
+    }
+    
+    // 今月の日付
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(currentYear, currentMonth, day);
+        const dayCell = createDayCell(date, false);
+        weekRow.appendChild(dayCell);
+        
+        if (weekRow.children.length === 7) {
+            grid.appendChild(weekRow);
+            weekRow = document.createElement('div');
+            weekRow.className = 'calendar-week';
+        }
+    }
+    
+    // 次月の日付で埋める
+    if (weekRow.children.length > 0) {
+        while (weekRow.children.length < 7) {
+            const dayCell = createDayCell(null, true);
+            weekRow.appendChild(dayCell);
+        }
+        grid.appendChild(weekRow);
+    }
+}
+
+// 日付セル作成
+function createDayCell(date, isOtherMonth) {
+    const cell = document.createElement('div');
+    cell.className = 'calendar-day';
+    
+    if (isOtherMonth) {
+        cell.classList.add('other-month');
+        return cell;
+    }
+    
+    const dateStr = date.toISOString().split('T')[0];
+    const dayOfWeek = date.getDay();
+    
+    if (dayOfWeek === 0) cell.classList.add('sunday');
+    if (dayOfWeek === 6) cell.classList.add('saturday');
+    
+    cell.innerHTML = `
+        <div class="day-header">
+            <div class="day-number">${date.getDate()}</div>
+            <div class="day-actions">
+                <button class="btn btn-sm btn-primary" onclick="openDayModal('${dateStr}')">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        </div>
+        <div class="day-stats" id="stats-${dateStr}"></div>
+        <div class="shift-list" id="shifts-${dateStr}">
+            <div class="text-muted small">シフトなし</div>
+        </div>
+    `;
+    
+    cell.setAttribute('data-date', dateStr);
+    
+    return cell;
+}
+
+// 日付モーダル開く
+function openDayModal(dateStr) {
+    document.getElementById('modal-date').textContent = dateStr;
+    const modal = new bootstrap.Modal(document.getElementById('shiftDetailModal'));
+    modal.show();
+    loadDayShifts(dateStr);
+}
+
+// その日のシフト読み込み
+function loadDayShifts(dateStr) {
+    const tbody = document.getElementById('assigned-staff-list');
+    const dayShifts = serverShifts.filter(shift => shift.date === dateStr);
+    
+    if (dayShifts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">スタッフが割り当てられていません</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    dayShifts.forEach(shift => {
+        const startTime = new Date(`2000-01-01T${shift.start_time}`);
+        const endTime = new Date(`2000-01-01T${shift.end_time}`);
+        const durationHours = (endTime - startTime) / (1000 * 60 * 60);
+        if (durationHours < 0) durationHours += 24; // 日をまたぐ場合
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${shift.staff_name}</strong></td>
+            <td>${shift.start_time} - ${shift.end_time}</td>
+            <td>${durationHours.toFixed(1)}時間</td>
+            <td>¥${(shift.wage_cost || 0).toLocaleString()}</td>
+            <td>
+                ${shift.is_confirmed ? 
+                    '<span class="badge bg-success">確定</span>' : 
+                    '<span class="badge bg-warning">未確定</span>'
+                }
+            </td>
+            <td>
+                <a href="{% url 'admin_shift:shift_detail' 0 %}".replace('0', shift.id) 
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-edit"></i>
+                </a>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// スタッフをシフトに追加
+function addStaffToShift() {
+    const staffId = document.getElementById('staff-select').value;
+    const startTime = document.getElementById('shift-start-time').value;
+    const endTime = document.getElementById('shift-end-time').value;
+    
+    if (!staffId || !startTime || !endTime) {
+        alert('スタッフと時間を選択してください。');
+        return;
+    }
+    
+    // シフト追加処理
+    alert('シフトを追加しました！');
+}
+
+// 月変更
+function changeMonth(delta) {
+    currentMonth += delta;
+    if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+    } else if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+    }
+    
+    document.getElementById('current-month-display').textContent = 
+        `${currentYear}年${currentMonth + 1}月`;
+    
+    // ページをリロードして新しい月のデータを取得
+    const url = new URL(window.location.href);
+    url.searchParams.set('year', currentYear);
+    url.searchParams.set('month', currentMonth + 1);
+    window.location.href = url.toString();
+}
+
+// 日付セルにシフトを表示
+function updateDayShifts(dateStr, cell) {
+    if (!cell) {
+        cell = document.querySelector(`[data-date="${dateStr}"]`);
+        if (!cell) return;
+    }
+    
+    const shiftList = cell.querySelector('.shift-list');
+    const statsDiv = cell.querySelector('.day-stats');
+    if (!shiftList || !statsDiv) return;
+    
+    const dayShifts = serverShifts.filter(shift => shift.date === dateStr);
+    
+    // 既存のバッジを削除
+    const dayNumber = cell.querySelector('.day-number');
+    const existingBadge = dayNumber.querySelector('.badge');
+    if (existingBadge) {
+        existingBadge.remove();
+    }
+    
+    // 統計情報を表示
+    const stats = dateStats[dateStr] || { staff_count: 0, total_cost: 0 };
+    if (dayShifts.length > 0) {
+        statsDiv.innerHTML = `
+            <div class="day-stat-item">
+                <i class="fas fa-users"></i> <span class="stat-value">${stats.staff_count}名</span>
+            </div>
+            <div class="day-stat-item">
+                <i class="fas fa-yen-sign"></i> <span class="stat-value">¥${Math.round(stats.total_cost).toLocaleString()}</span>
+            </div>
+        `;
+    } else {
+        statsDiv.innerHTML = '';
+    }
+    
+    if (dayShifts.length === 0) {
+        shiftList.innerHTML = '<div class="text-muted small">シフトなし</div>';
+        return;
+    }
+    
+    shiftList.innerHTML = '';
+    dayShifts.forEach(shift => {
+        const shiftItem = document.createElement('div');
+        shiftItem.className = 'shift-item';
+        if (shift.is_confirmed) {
+            shiftItem.classList.add('confirmed');
+        }
+        shiftItem.innerHTML = `
+            <div class="shift-staff">${escapeHtml(shift.staff_name)}</div>
+            <div class="shift-time">${shift.start_time} - ${shift.end_time}</div>
+        `;
+        shiftItem.onclick = function(e) {
+            e.stopPropagation();
+            openDayModal(dateStr);
+        };
+        shiftList.appendChild(shiftItem);
+    });
+    
+    // 日付にシフト数バッジを表示
+    if (dayShifts.length > 0) {
+        const badge = document.createElement('span');
+        badge.className = 'badge bg-primary ms-1';
+        badge.style.fontSize = '10px';
+        badge.textContent = dayShifts.length;
+        dayNumber.appendChild(badge);
+    }
+}
+
+// HTMLエスケープ関数
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+// シフトデータ読み込み
+function loadShiftData() {
+    // サーバーから取得したデータを使用して統計情報を更新
+    const totalShifts = serverShifts.length;
+    const confirmedShifts = serverShifts.filter(s => s.is_confirmed).length;
+    const pendingShifts = totalShifts - confirmedShifts;
+    const totalCost = serverShifts.filter(s => s.is_confirmed).reduce((sum, s) => sum + (s.wage_cost || 0), 0);
+    
+    document.getElementById('total-shifts').textContent = totalShifts;
+    document.getElementById('confirmed-shifts').textContent = confirmedShifts;
+    document.getElementById('pending-shifts').textContent = pendingShifts;
+    document.getElementById('estimated-cost').textContent = `¥${totalCost.toLocaleString()}`;
+    
+    // カレンダーの各日付セルを更新
+    const calendarDays = document.querySelectorAll('.calendar-day:not(.other-month)');
+    calendarDays.forEach(cell => {
+        const dateStr = cell.getAttribute('data-date');
+        if (dateStr) {
+            updateDayShifts(dateStr, cell);
+        }
+    });
+}
+
+// 一括割当モーダル
+function openBulkAssignModal() {
+    const modal = new bootstrap.Modal(document.getElementById('bulkAssignModal'));
+    modal.show();
+}
+
+// 一括割当実行
+function executeBulkAssign() {
+    alert('一括割当を実行します（実装中）');
+}
+
+// AIシフト生成
+function openAIGenerateModal() {
+    alert('AIシフト生成機能（実装中）');
+}
+
+// エクスポート
+function exportShiftData() {
+    alert('シフトデータをエクスポートします（実装中）');
+}
+
+// その日のシフトを確定
+function confirmDayShift() {
+    alert('シフトを確定しました！');
+}
+</script>
+
+<style>
+.calendar-container {
+    background: white;
+}
+
+.calendar-header {
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-weight: 600;
+}
+
+.weekday {
+    padding: 12px;
+    border-right: 1px solid #dee2e6;
+}
+
+.weekday:last-child {
+    border-right: none;
+}
+
+.weekday.sunday {
+    color: #dc3545;
+}
+
+.weekday.saturday {
+    color: #007bff;
+}
+
+.calendar-grid {
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 1px solid #dee2e6;
+}
+
+.calendar-day {
+    min-height: 120px;
+    border-right: 1px solid #dee2e6;
+    padding: 8px;
+    background: white;
+}
+
+.calendar-day:last-child {
+    border-right: none;
+}
+
+.calendar-day.other-month {
+    background: #f8f9fa;
+}
+
+.calendar-day.sunday {
+    background: #fff5f5;
+}
+
+.calendar-day.saturday {
+    background: #f0f8ff;
+}
+
+.day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.day-number {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.day-actions {
+    opacity: 0.7;
+}
+
+.day-actions:hover {
+    opacity: 1;
+}
+
+.shift-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.shift-item {
+    background: #e3f2fd;
+    border-left: 3px solid #2196f3;
+    padding: 4px 6px;
+    font-size: 12px;
+    border-radius: 2px;
+}
+
+.shift-item.confirmed {
+    background: #e8f5e9;
+    border-left-color: #4caf50;
+}
+
+.day-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 4px;
+    font-size: 10px;
+}
+
+.day-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #666;
+    white-space: nowrap;
+}
+
+.day-stat-item i {
+    font-size: 9px;
+    width: 12px;
+    text-align: center;
+}
+
+.day-stat-item .stat-value {
+    font-weight: 600;
+    color: #333;
+}
+</style>
+{% endblock %}
+

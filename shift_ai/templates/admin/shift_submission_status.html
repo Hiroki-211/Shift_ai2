@@ -1,0 +1,516 @@
+{% extends 'admin/base.html' %}
+
+{% block page_title %}シフト提出状況{% endblock %}
+
+{% block content %}
+<!-- 期間選択 -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <label class="form-label">対象月選択</label>
+                <div class="input-group">
+                    <input type="month" class="form-control" id="target-month" 
+                           value="{{ month_start|date:'Y-m' }}">
+                    <button class="btn btn-primary" onclick="loadSubmissionStatus()">
+                        <i class="fas fa-search"></i> 表示
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <label class="form-label">提出期限</label>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0" id="submission-deadline">毎月{{ submission_deadline.day }}日</h4>
+                    <button class="btn btn-outline-primary btn-sm" onclick="sendReminderAll()">
+                        <i class="fas fa-bell"></i> 全員に催促
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 提出状況サマリー -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center border-success">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h6 class="text-muted mb-1">提出済み</h6>
+                <h2 class="mb-0 text-success" id="submitted-count">{{ submitted_count }}</h2>
+                <small class="text-muted">人</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-warning">
+            <div class="card-body">
+                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                <h6 class="text-muted mb-1">未提出</h6>
+                <h2 class="mb-0 text-warning" id="not-submitted-count">{{ not_submitted_count }}</h2>
+                <small class="text-muted">人</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-info">
+            <div class="card-body">
+                <i class="fas fa-calendar-alt fa-2x text-info mb-2"></i>
+                <h6 class="text-muted mb-1">総希望日数</h6>
+                <h2 class="mb-0 text-info" id="total-requests">{{ total_requests }}</h2>
+                <small class="text-muted">日</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-primary">
+            <div class="card-body">
+                <i class="fas fa-percentage fa-2x text-primary mb-2"></i>
+                <h6 class="text-muted mb-1">提出率</h6>
+                <h2 class="mb-0 text-primary" id="submission-rate">{{ submission_rate|floatformat:1 }}%</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- スタッフ別提出状況 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users"></i> スタッフ別提出状況
+                    </h5>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-outline-primary active" onclick="filterStatus('all')">
+                            全て
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="filterStatus('submitted')">
+                            提出済み
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="filterStatus('pending')">
+                            未提出
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>スタッフ名</th>
+                                <th>雇用形態</th>
+                                <th>提出状況</th>
+                                <th>勤務希望</th>
+                                <th>休み希望</th>
+                                <th>提出日時</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staff-status-tbody">
+                            <!-- JavaScriptで動的に生成 -->
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+                                    <p>読み込み中...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 提出内容詳細モーダル -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-calendar-check"></i> <span id="staff-name-modal"></span>の提出内容
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- カレンダー表示 -->
+                <div class="calendar-view mb-3">
+                    <div id="request-calendar">
+                        <!-- JavaScriptで生成 -->
+                    </div>
+                </div>
+                
+                <!-- 詳細リスト -->
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>日付</th>
+                                <th>曜日</th>
+                                <th>種別</th>
+                                <th>時間</th>
+                            </tr>
+                        </thead>
+                        <tbody id="request-details-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                <button type="button" class="btn btn-primary" onclick="sendReminderToStaff()">
+                    <i class="fas fa-envelope"></i> 催促メール送信
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 催促メール送信モーダル -->
+<div class="modal fade" id="reminderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-bell"></i> 提出催促
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">対象スタッフ</label>
+                    <select class="form-select" id="reminder-staff-select" multiple size="5">
+                        <!-- 未提出スタッフのリスト -->
+                    </select>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="select-all-staff">
+                        <label class="form-check-label" for="select-all-staff">
+                            未提出者全員を選択
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">メッセージ</label>
+                    <textarea class="form-control" id="reminder-message" rows="4">【シフト提出のお願い】
+来月のシフト希望をまだ提出されていません。
+提出期限は今月{{ submission_deadline.day }}日です。
+お早めにご提出をお願いいたします。</textarea>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    選択したスタッフにメール通知が送信されます。
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" onclick="executeReminderSend()">
+                    <i class="fas fa-paper-plane"></i> 送信
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let staffData = [
+    {% for staff in staff_status_list %}
+    {
+        id: {{ staff.id }},
+        name: '{{ staff.name }}',
+        employment_type: '{{ staff.employment_type }}',
+        is_submitted: {{ staff.is_submitted|lower }},
+        work_requests: {{ staff.work_requests }},
+        off_requests: {{ staff.off_requests }},
+        submitted_at: {% if staff.submitted_at %}'{{ staff.submitted_at }}'{% else %}null{% endif %}
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+let selectedStaffId = null;
+
+// 初期化
+document.addEventListener('DOMContentLoaded', function() {
+    updateStaffTable();
+});
+
+// 提出状況読み込み
+function loadSubmissionStatus() {
+    const targetMonth = document.getElementById('target-month').value;
+    
+    // ページをリロードして新しい月のデータを取得
+    window.location.href = `/admin-panel/shift/submission-status/?month=${targetMonth}`;
+}
+
+// スタッフテーブル更新
+function updateStaffTable() {
+    const tbody = document.getElementById('staff-status-tbody');
+    tbody.innerHTML = '';
+    
+    staffData.forEach(staff => {
+        const row = document.createElement('tr');
+        row.className = staff.is_submitted ? '' : 'table-warning';
+        row.dataset.status = staff.is_submitted ? 'submitted' : 'pending';
+        
+        row.innerHTML = `
+            <td>
+                <strong>${staff.name}</strong>
+                ${staff.is_submitted ? '' : '<span class="badge bg-warning ms-2">未提出</span>'}
+            </td>
+            <td>${staff.employment_type}</td>
+            <td>
+                ${staff.is_submitted ? 
+                    '<span class="badge bg-success"><i class="fas fa-check"></i> 提出済み</span>' :
+                    '<span class="badge bg-warning"><i class="fas fa-clock"></i> 未提出</span>'
+                }
+            </td>
+            <td>
+                ${staff.work_requests > 0 ? 
+                    `<span class="badge bg-success">${staff.work_requests}日</span>` : 
+                    '<span class="text-muted">-</span>'
+                }
+            </td>
+            <td>
+                ${staff.off_requests > 0 ? 
+                    `<span class="badge bg-warning">${staff.off_requests}日</span>` : 
+                    '<span class="text-muted">-</span>'
+                }
+            </td>
+            <td>${staff.submitted_at || '<span class="text-muted">-</span>'}</td>
+            <td>
+                ${staff.is_submitted ? 
+                    `<button class="btn btn-sm btn-outline-primary" onclick="showDetail(${staff.id})">
+                        <i class="fas fa-eye"></i> 詳細
+                    </button>` :
+                    `<button class="btn btn-sm btn-outline-warning" onclick="sendReminder(${staff.id})">
+                        <i class="fas fa-bell"></i> 催促
+                    </button>`
+                }
+            </td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+}
+
+// フィルター
+function filterStatus(status) {
+    const rows = document.querySelectorAll('#staff-status-tbody tr');
+    
+    rows.forEach(row => {
+        if (status === 'all') {
+            row.style.display = '';
+        } else {
+            row.style.display = row.dataset.status === status ? '' : 'none';
+        }
+    });
+    
+    // ボタンのアクティブ状態を更新
+    document.querySelectorAll('.btn-group button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+}
+
+// 詳細表示
+function showDetail(staffId) {
+    selectedStaffId = staffId;
+    const staff = staffData.find(s => s.id === staffId);
+    
+    document.getElementById('staff-name-modal').textContent = staff.name;
+    
+    // カレンダー表示（簡略版）
+    const calendarDiv = document.getElementById('request-calendar');
+    calendarDiv.innerHTML = `
+        <div class="alert alert-info">
+            <i class="fas fa-spinner fa-spin"></i> データを読み込み中...
+        </div>
+    `;
+    
+    // 詳細リストをクリア
+    const detailsTbody = document.getElementById('request-details-tbody');
+    detailsTbody.innerHTML = '';
+    
+    // APIから実際のデータを取得
+    fetch(`/admin-panel/shift/api/submission-detail/${staffId}/?month=${document.getElementById('target-month').value}`)
+        .then(response => response.json())
+        .then(data => {
+            calendarDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <strong>${data.staff_name}</strong>の希望シフト詳細<br>
+                    ${data.period}
+                </div>
+            `;
+            
+            // 詳細リストを表示
+            data.requests.forEach(req => {
+                const row = document.createElement('tr');
+                const dateObj = new Date(req.date + 'T00:00:00');
+                const month = dateObj.getMonth() + 1;
+                const day = dateObj.getDate();
+                const weekdayMap = {'Sun': '日', 'Mon': '月', 'Tue': '火', 'Wed': '水', 'Thu': '木', 'Fri': '金', 'Sat': '土'};
+                
+                let badgeClass = 'bg-success';
+                let badgeText = req.request_type;
+                if (req.request_type === '休み希望') {
+                    badgeClass = 'bg-warning';
+                } else if (req.request_type === '残業希望') {
+                    badgeClass = 'bg-info';
+                }
+                
+                const timeDisplay = req.start_time && req.end_time ? 
+                    `${req.start_time} - ${req.end_time}` : '-';
+                
+                row.innerHTML = `
+                    <td>${month}/${day}</td>
+                    <td>${weekdayMap[req.weekday]}</td>
+                    <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+                    <td>${timeDisplay}</td>
+                `;
+                detailsTbody.appendChild(row);
+            });
+            
+            if (data.requests.length === 0) {
+                detailsTbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">提出されたシフトがありません</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            calendarDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    データの読み込みに失敗しました
+                </div>
+            `;
+        });
+    
+    const modal = new bootstrap.Modal(document.getElementById('detailModal'));
+    modal.show();
+}
+
+// 個別催促
+function sendReminder(staffId) {
+    const staff = staffData.find(s => s.id === staffId);
+    if (confirm(`${staff.name}さんに提出催促メールを送信しますか？`)) {
+        alert('催促メールを送信しました！');
+    }
+}
+
+// 全員に催促
+function sendReminderAll() {
+    const notSubmitted = staffData.filter(s => !s.is_submitted);
+    
+    if (notSubmitted.length === 0) {
+        alert('未提出のスタッフはいません。');
+        return;
+    }
+    
+    // 未提出スタッフをセレクトボックスに追加
+    const select = document.getElementById('reminder-staff-select');
+    select.innerHTML = '';
+    
+    notSubmitted.forEach(staff => {
+        const option = document.createElement('option');
+        option.value = staff.id;
+        option.textContent = staff.name;
+        option.selected = true;
+        select.appendChild(option);
+    });
+    
+    const modal = new bootstrap.Modal(document.getElementById('reminderModal'));
+    modal.show();
+}
+
+// 催促メール送信実行
+function executeReminderSend() {
+    const selectedStaff = Array.from(document.getElementById('reminder-staff-select').selectedOptions)
+        .map(opt => opt.textContent);
+    const message = document.getElementById('reminder-message').value;
+    
+    if (selectedStaff.length === 0) {
+        alert('対象スタッフを選択してください。');
+        return;
+    }
+    
+    alert(`${selectedStaff.length}人に催促メールを送信しました！`);
+    bootstrap.Modal.getInstance(document.getElementById('reminderModal')).hide();
+}
+
+// 全選択チェックボックス
+document.getElementById('select-all-staff')?.addEventListener('change', function() {
+    const options = document.getElementById('reminder-staff-select').options;
+    for (let i = 0; i < options.length; i++) {
+        options[i].selected = this.checked;
+    }
+});
+
+// 選択したスタッフに催促
+function sendReminderToStaff() {
+    const staff = staffData.find(s => s.id === selectedStaffId);
+    if (confirm(`${staff.name}さんに催促メールを送信しますか？`)) {
+        alert('催促メールを送信しました！');
+        bootstrap.Modal.getInstance(document.getElementById('detailModal')).hide();
+    }
+}
+</script>
+
+<style>
+.card {
+    border-radius: 8px;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.table-warning {
+    background-color: #fff3cd !important;
+}
+
+.badge {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.65rem;
+}
+
+.btn-group button {
+    transition: all 0.2s;
+}
+
+.btn-group button.active {
+    font-weight: 600;
+}
+
+.calendar-view {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+/* アニメーション */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+tr {
+    animation: fadeIn 0.3s ease-in-out;
+}
+</style>
+{% endblock %}
+

@@ -5,8 +5,8 @@ from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.db.models import Q, Avg
 from datetime import datetime, date, timedelta
-from .models import Evaluation, AttendanceRecord
-from .forms import EvaluationForm, AttendanceRecordForm
+from .models import Evaluation, AttendanceRecord, EvaluationItem, EvaluationScore
+from .forms import EvaluationForm, AttendanceRecordForm, EvaluationItemForm, DynamicEvaluationForm
 from accounts.models import Staff
 
 
@@ -47,6 +47,12 @@ def admin_evaluation_input(request):
     current_period = datetime.now().strftime('%Y-%m')
     period = request.GET.get('period', current_period)
     
+    # 初期評価項目が存在することを保証
+    EvaluationItem.ensure_default_items(store)
+    
+    # 有効な評価項目を取得
+    evaluation_items = EvaluationItem.objects.filter(store=store, is_active=True).order_by('order', 'id')
+    
     # 既存の評価を取得
     evaluations = Evaluation.objects.filter(
         evaluator=staff,
@@ -57,24 +63,74 @@ def admin_evaluation_input(request):
         staff_id = request.POST.get('staff_id')
         target_staff_obj = get_object_or_404(Staff, id=staff_id, store=store)
         
-        # 評価フォームの処理
-        form = EvaluationForm(request.POST)
-        if form.is_valid():
-            evaluation = form.save(commit=False)
-            evaluation.staff = target_staff_obj
-            evaluation.evaluator = staff
-            evaluation.evaluation_period = period
-            evaluation.save()
-            messages.success(request, f"{target_staff_obj.user.get_full_name()}の評価を保存しました。")
-            return redirect('admin_eval:evaluation_input')
+        # 既存の評価を取得または新規作成
+        evaluation, created = Evaluation.objects.get_or_create(
+            staff=target_staff_obj,
+            evaluator=staff,
+            evaluation_period=period,
+            defaults={'total_score': 0}
+        )
+        
+        # 動的評価フォームの処理
+        if evaluation_items.exists():
+            form = DynamicEvaluationForm(request.POST, evaluation_items=evaluation_items, evaluation=evaluation)
+            if form.is_valid():
+                form.save(evaluation, evaluation_items)
+                
+                # 合計スコアを計算
+                total_score = sum(
+                    EvaluationScore.objects.filter(evaluation=evaluation)
+                    .values_list('score', flat=True)
+                )
+                evaluation.total_score = total_score
+                evaluation.save()
+                
+                messages.success(request, f"{target_staff_obj.user.get_full_name()}の評価を保存しました。")
+                return redirect('admin_eval:evaluation_input')
+        else:
+            # 評価項目がない場合は従来のフォームを使用
+            evaluation, created = Evaluation.objects.get_or_create(
+                staff=target_staff_obj,
+                evaluator=staff,
+                evaluation_period=period,
+                defaults={
+                    'attendance_score': 0,
+                    'skill_score': 0,
+                    'teamwork_score': 0,
+                    'customer_service_score': 0,
+                    'total_score': 0
+                }
+            )
+            form = EvaluationForm(request.POST, instance=evaluation)
+            if form.is_valid():
+                evaluation = form.save(commit=False)
+                evaluation.staff = target_staff_obj
+                evaluation.evaluator = staff
+                evaluation.evaluation_period = period
+                evaluation.save()
+                messages.success(request, f"{target_staff_obj.user.get_full_name()}の評価を保存しました。")
+                return redirect('admin_eval:evaluation_input')
     else:
-        form = EvaluationForm()
+        if evaluation_items.exists():
+            form = DynamicEvaluationForm(evaluation_items=evaluation_items)
+        else:
+            form = EvaluationForm()
+    
+    # 評価項目とフォームフィールドのマッピングを作成
+    item_fields = {}
+    if evaluation_items.exists() and isinstance(form, DynamicEvaluationForm):
+        for item in evaluation_items:
+            field_name = f'item_{item.id}'
+            if field_name in form.fields:
+                item_fields[item.id] = form[field_name]
     
     context = {
         'target_staff': target_staff,
         'evaluations': evaluations,
         'form': form,
         'period': period,
+        'evaluation_items': evaluation_items,
+        'item_fields': item_fields,
     }
     
     return render(request, 'admin/evaluation_input.html', context)
@@ -129,6 +185,18 @@ def admin_attendance_records(request):
         date__range=[month_start, month_end]
     ).order_by('-date', 'staff__user__last_name')
     
+    # 統計情報を計算
+    total_count = attendance_records.count()
+    normal_count = attendance_records.filter(
+        is_absent=False,
+        is_late=False,
+        is_early_leave=False
+    ).count()
+    late_count = attendance_records.filter(is_late=True).count()
+    early_count = attendance_records.filter(is_early_leave=True).count()
+    late_early_count = late_count + early_count
+    absent_count = attendance_records.filter(is_absent=True).count()
+    
     # スタッフ別勤務時間集計
     staff_work_hours = {}
     for record in attendance_records:
@@ -143,6 +211,10 @@ def admin_attendance_records(request):
         'staff_work_hours': staff_work_hours,
         'month_start': month_start,
         'month_end': month_end,
+        'total_count': total_count,
+        'normal_count': normal_count,
+        'late_early_count': late_early_count,
+        'absent_count': absent_count,
     }
     
     return render(request, 'admin/attendance_records.html', context)
@@ -235,3 +307,122 @@ def admin_evaluation_reports(request):
     }
     
     return render(request, 'admin/evaluation_reports.html', context)
+
+
+@login_required
+@admin_required
+def admin_evaluation_items(request):
+    """評価項目管理"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    # 初期評価項目が存在することを保証
+    EvaluationItem.ensure_default_items(store)
+    
+    evaluation_items = EvaluationItem.objects.filter(store=store).order_by('order', 'id')
+    
+    context = {
+        'store': store,
+        'evaluation_items': evaluation_items,
+    }
+    
+    return render(request, 'admin/evaluation_items.html', context)
+
+
+@login_required
+@admin_required
+def admin_evaluation_item_create(request):
+    """評価項目作成"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    if request.method == 'POST':
+        form = EvaluationItemForm(request.POST)
+        if form.is_valid():
+            evaluation_item = form.save(commit=False)
+            evaluation_item.store = store
+            evaluation_item.save()
+            messages.success(request, f"評価項目「{evaluation_item.name}」を作成しました。")
+            return redirect('admin_eval:evaluation_items')
+    else:
+        form = EvaluationItemForm()
+    
+    context = {
+        'form': form,
+        'store': store,
+    }
+    
+    return render(request, 'admin/evaluation_item_form.html', context)
+
+
+@login_required
+@admin_required
+def admin_evaluation_item_edit(request, item_id):
+    """評価項目編集"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    evaluation_item = get_object_or_404(EvaluationItem, id=item_id, store=store)
+    
+    if request.method == 'POST':
+        form = EvaluationItemForm(request.POST, instance=evaluation_item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"評価項目「{evaluation_item.name}」を更新しました。")
+            return redirect('admin_eval:evaluation_items')
+    else:
+        form = EvaluationItemForm(instance=evaluation_item)
+    
+    context = {
+        'form': form,
+        'evaluation_item': evaluation_item,
+        'store': store,
+    }
+    
+    return render(request, 'admin/evaluation_item_form.html', context)
+
+
+@login_required
+@admin_required
+def admin_evaluation_item_delete(request, item_id):
+    """評価項目削除"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    evaluation_item = get_object_or_404(EvaluationItem, id=item_id, store=store)
+    
+    if request.method == 'POST':
+        item_name = evaluation_item.name
+        is_default = evaluation_item.is_default
+        evaluation_item.delete()
+        messages.success(request, f"評価項目「{item_name}」を削除しました。")
+        
+        # 初期評価項目を削除した場合は、再度作成
+        if is_default:
+            EvaluationItem.ensure_default_items(store)
+            messages.info(request, "初期評価項目は自動的に再作成されました。")
+        
+        return redirect('admin_eval:evaluation_items')
+    
+    context = {
+        'evaluation_item': evaluation_item,
+        'store': store,
+    }
+    
+    return render(request, 'admin/evaluation_item_delete.html', context)

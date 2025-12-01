@@ -1,0 +1,110 @@
+{% extends 'staff/base.html' %}
+
+{% block page_title %}自分のシフト交代募集{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <h5><i class="fas fa-list"></i> 自分のシフト交代募集</h5>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{% url 'staff_shift:shift_swap_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> 募集一覧に戻る
+        </a>
+        <a href="{% url 'staff_shift:shift_swap_create' %}" class="btn btn-primary ms-2">
+            <i class="fas fa-plus"></i> 新規募集
+        </a>
+    </div>
+</div>
+
+{% if my_swap_requests %}
+<div class="row">
+    {% for swap_req in my_swap_requests %}
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ swap_req.date|date:"Y年m月d日 (D)" }}</strong>
+                </div>
+                <div>
+                    {% if swap_req.status == 'open' %}
+                        {% if swap_req.is_available %}
+                            <span class="badge bg-success">募集中</span>
+                        {% else %}
+                            <span class="badge bg-warning">締切</span>
+                        {% endif %}
+                    {% elif swap_req.status == 'completed' %}
+                        <span class="badge bg-info">完了</span>
+                    {% elif swap_req.status == 'cancelled' %}
+                        <span class="badge bg-secondary">キャンセル</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ swap_req.get_status_display }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <i class="fas fa-clock"></i> <strong>時間:</strong> {{ swap_req.start_time }} - {{ swap_req.end_time }}
+                </div>
+                <div class="mb-2">
+                    <i class="fas fa-hourglass-half"></i> <strong>締切:</strong> {{ swap_req.deadline|date:"m月d日" }}まで
+                </div>
+                
+                {% if swap_req.applications_list %}
+                <hr>
+                <h6><i class="fas fa-users"></i> 立候補者 ({{ swap_req.applications_list|length }}名)</h6>
+                <ul class="list-group list-group-flush">
+                    {% for application in swap_req.applications_list %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ application.applicant.user.get_full_name|default:application.applicant.user.username }}</strong>
+                                <br>
+                                <small class="text-muted">
+                                    {{ application.start_time }} - {{ application.end_time }}
+                                    {% if application.message %}
+                                        <br>{{ application.message }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <span class="badge bg-primary">待機中</span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle"></i> まだ立候補がありません
+                </div>
+                {% endif %}
+                
+                {% if swap_req.status == 'open' %}
+                <div class="mt-3">
+                    <form method="post" action="{% url 'staff_shift:shift_swap_cancel' swap_req.id %}" 
+                          onsubmit="return confirm('この募集をキャンセルしますか？')" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-times"></i> 募集をキャンセル
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-list fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">募集がありません</h5>
+        <p class="text-muted">まだシフト交代募集を作成していません。</p>
+        <a href="{% url 'staff_shift:shift_swap_create' %}" class="btn btn-primary mt-3">
+            <i class="fas fa-plus"></i> 募集を開始
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

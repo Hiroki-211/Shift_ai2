@@ -90,6 +90,22 @@
                             </a>
                         </li>
                         
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'shift_swap' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'staff_shift:shift_swap_list' %}">
+                                <i class="fas fa-exchange-alt me-2"></i>
+                                シフト交代
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'chat' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'staff_shift:chat_list' %}">
+                                <i class="fas fa-comments me-2"></i>
+                                チャット
+                            </a>
+                        </li>
+                        
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="applicationsDropdown" role="button" 
                                data-bs-toggle="dropdown" aria-expanded="false">
@@ -123,6 +139,14 @@
                         </li>
                         
                         <li class="nav-item">
+                            <a class="nav-link {% if 'announcement' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'staff_accounts:announcement_list' %}">
+                                <i class="fas fa-bullhorn me-2"></i>
+                                お知らせ
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
                             <a class="nav-link {% if 'profile' in request.resolver_match.url_name %}active{% endif %}" 
                                href="{% url 'staff_accounts:profile' %}">
                                 <i class="fas fa-user-circle me-2"></i>
@@ -134,20 +158,14 @@
                     <hr class="text-white">
                     
                     <ul class="nav flex-column">
-                        {% if request.user.staff.is_manager %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'admin_accounts:dashboard' %}">
-                                <i class="fas fa-cogs me-2"></i>
-                                管理者画面へ
-                            </a>
-                        </li>
-                        {% endif %}
-                        
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'logout' %}">
-                                <i class="fas fa-sign-out-alt me-2"></i>
-                                ログアウト
-                            </a>
+                            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="nav-link" style="border: none; background: none; width: 100%; text-align: left; color: rgba(255,255,255,.75);">
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    ログアウト
+                                </button>
+                            </form>
                         </li>
                     </ul>
                 </div>
