@@ -60,6 +60,34 @@ class Evaluation(models.Model):
 
 class EvaluationItem(models.Model):
     """評価項目モデル"""
+    # 初期評価項目の名前（定数）
+    DEFAULT_ITEMS = {
+        'attendance': {
+            'name': '勤怠関連',
+            'description': '出勤率、遅刻・早退、シフト遵守',
+            'max_score': 30,
+            'order': 1
+        },
+        'skill': {
+            'name': '業務スキル',
+            'description': 'ホール業務、キッチン業務、開店・閉店作業、責任者業務',
+            'max_score': 40,
+            'order': 2
+        },
+        'teamwork': {
+            'name': 'チームワーク・態度',
+            'description': '協調性、コミュニケーション、向上心',
+            'max_score': 20,
+            'order': 3
+        },
+        'customer_service': {
+            'name': '顧客対応',
+            'description': '接客態度、クレーム対応',
+            'max_score': 10,
+            'order': 4
+        }
+    }
+    
     store = models.ForeignKey(Store, on_delete=models.CASCADE, verbose_name="店舗")
     name = models.CharField(max_length=100, verbose_name="評価項目名")
     description = models.TextField(blank=True, null=True, verbose_name="説明")
@@ -70,6 +98,7 @@ class EvaluationItem(models.Model):
     )
     order = models.IntegerField(default=0, verbose_name="表示順序")
     is_active = models.BooleanField(default=True, verbose_name="有効")
+    is_default = models.BooleanField(default=False, verbose_name="初期評価項目")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -81,6 +110,33 @@ class EvaluationItem(models.Model):
 
     def __str__(self):
         return f"{self.store.name} - {self.name} (最大{self.max_score}点)"
+    
+    @classmethod
+    def create_default_items(cls, store):
+        """初期評価項目を作成"""
+        created_items = []
+        for key, item_data in cls.DEFAULT_ITEMS.items():
+            item, created = cls.objects.get_or_create(
+                store=store,
+                name=item_data['name'],
+                defaults={
+                    'description': item_data['description'],
+                    'max_score': item_data['max_score'],
+                    'order': item_data['order'],
+                    'is_default': True,
+                    'is_active': True
+                }
+            )
+            if created:
+                created_items.append(item)
+        return created_items
+    
+    @classmethod
+    def ensure_default_items(cls, store):
+        """初期評価項目が存在することを保証（なければ作成）"""
+        if not cls.objects.filter(store=store, is_default=True).exists():
+            return cls.create_default_items(store)
+        return []
 
 
 class EvaluationScore(models.Model):

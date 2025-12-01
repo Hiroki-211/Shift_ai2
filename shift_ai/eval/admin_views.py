@@ -47,6 +47,9 @@ def admin_evaluation_input(request):
     current_period = datetime.now().strftime('%Y-%m')
     period = request.GET.get('period', current_period)
     
+    # 初期評価項目が存在することを保証
+    EvaluationItem.ensure_default_items(store)
+    
     # 有効な評価項目を取得
     evaluation_items = EvaluationItem.objects.filter(store=store, is_active=True).order_by('order', 'id')
     
@@ -317,6 +320,9 @@ def admin_evaluation_items(request):
         messages.error(request, "スタッフ情報が見つかりません。")
         return redirect('login')
     
+    # 初期評価項目が存在することを保証
+    EvaluationItem.ensure_default_items(store)
+    
     evaluation_items = EvaluationItem.objects.filter(store=store).order_by('order', 'id')
     
     context = {
@@ -403,8 +409,15 @@ def admin_evaluation_item_delete(request, item_id):
     
     if request.method == 'POST':
         item_name = evaluation_item.name
+        is_default = evaluation_item.is_default
         evaluation_item.delete()
         messages.success(request, f"評価項目「{item_name}」を削除しました。")
+        
+        # 初期評価項目を削除した場合は、再度作成
+        if is_default:
+            EvaluationItem.ensure_default_items(store)
+            messages.info(request, "初期評価項目は自動的に再作成されました。")
+        
         return redirect('admin_eval:evaluation_items')
     
     context = {

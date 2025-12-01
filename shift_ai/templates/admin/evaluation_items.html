@@ -25,6 +25,7 @@
                                 <th>説明</th>
                                 <th>最大スコア</th>
                                 <th>状態</th>
+                                <th>種別</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
@@ -32,7 +33,12 @@
                             {% for item in evaluation_items %}
                             <tr>
                                 <td>{{ item.order }}</td>
-                                <td><strong>{{ item.name }}</strong></td>
+                                <td>
+                                    <strong>{{ item.name }}</strong>
+                                    {% if item.is_default %}
+                                        <span class="badge bg-info ms-2">初期項目</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if item.description %}
                                         <small class="text-muted">{{ item.description|truncatechars:50 }}</small>
@@ -46,6 +52,13 @@
                                         <span class="badge bg-success">有効</span>
                                     {% else %}
                                         <span class="badge bg-secondary">無効</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.is_default %}
+                                        <span class="badge bg-info">初期項目</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">カスタム</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -102,15 +115,25 @@
                     無効にした評価項目は評価入力画面に表示されませんが、既存の評価データには影響しません。
                 </p>
                 
+                <h6>初期評価項目について</h6>
+                <p class="text-muted">
+                    システムには初期評価項目（勤怠関連、業務スキル、チームワーク・態度、顧客対応）が自動的に作成されます。
+                    これらの初期評価項目は編集・削除が可能ですが、削除しても自動的に再作成されます。
+                    初期評価項目には「初期項目」バッジが表示されます。
+                </p>
+                
                 <h6>注意事項</h6>
                 <ul class="text-muted">
                     <li>評価項目を削除すると、その項目に関連する評価スコアも削除されます</li>
-                    <li>評価項目がない場合は、従来の固定評価項目（勤怠、業務スキル、チームワーク、顧客対応）が使用されます</li>
-                    <li>評価項目を追加した後は、既存の評価を再入力する必要がある場合があります</li>
+                    <li>初期評価項目を削除しても自動的に再作成されますが、既存の評価データには影響があります</li>
+                    <li>評価項目を追加・編集した後は、既存の評価を再入力する必要がある場合があります</li>
+                    <li>初期評価項目も通常の評価項目と同様に編集できます（名前、説明、最大スコア、表示順序など）</li>
                 </ul>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
+
+
 

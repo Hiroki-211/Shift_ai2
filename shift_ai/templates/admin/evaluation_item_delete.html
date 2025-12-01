@@ -47,6 +47,13 @@
                     <strong>注意:</strong> この評価項目に関連するすべての評価スコアも削除されます。
                 </div>
                 
+                {% if evaluation_item.is_default %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>初期評価項目について:</strong> この項目は初期評価項目です。削除しても自動的に再作成されますが、既存の評価データには影響があります。
+                </div>
+                {% endif %}
+                
                 <form method="post">
                     {% csrf_token %}
                     <div class="d-flex justify-content-between">
@@ -63,4 +70,6 @@
     </div>
 </div>
 {% endblock %}
+
+
 

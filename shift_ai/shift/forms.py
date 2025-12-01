@@ -1,5 +1,5 @@
 from django import forms
-from .models import ShiftSettings
+from .models import ShiftSettings, ChatMessage
 
 
 class ShiftSettingsForm(forms.ModelForm):
@@ -79,6 +79,30 @@ class ShiftSettingsForm(forms.ModelForm):
             raise forms.ValidationError('ディナータイム中の最小人数は最大人数以下である必要があります。')
         
         return cleaned_data
+
+
+class ChatMessageForm(forms.ModelForm):
+    """チャットメッセージフォーム"""
+    
+    class Meta:
+        model = ChatMessage
+        fields = ['message']
+        widgets = {
+            'message': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'メッセージを入力してください...',
+                'id': 'messageInput'
+            })
+        }
+    
+    def clean_message(self):
+        message = self.cleaned_data.get('message')
+        if not message or not message.strip():
+            raise forms.ValidationError("メッセージを入力してください。")
+        if len(message) > 1000:
+            raise forms.ValidationError("メッセージは1000文字以内で入力してください。")
+        return message.strip()
 
 
 
