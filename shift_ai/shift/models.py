@@ -184,3 +184,123 @@ class ShiftSwapApplication(models.Model):
     
     def __str__(self):
         return f"{self.applicant.user.get_full_name()} - {self.swap_request.date} {self.start_time}-{self.end_time}"
+
+
+class ChatRoom(models.Model):
+    """チャットルームモデル"""
+    ROOM_TYPE_CHOICES = [
+        ('staff_staff', 'スタッフ同士'),
+        ('staff_manager', 'スタッフ-管理者'),
+        ('swap_request', 'シフト交代関連'),
+    ]
+    
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, verbose_name="店舗")
+    room_type = models.CharField(
+        max_length=20,
+        choices=ROOM_TYPE_CHOICES,
+        default='staff_staff',
+        verbose_name="ルームタイプ"
+    )
+    participant1 = models.ForeignKey(
+        Staff,
+        on_delete=models.CASCADE,
+        related_name='chat_rooms_as_participant1',
+        verbose_name="参加者1"
+    )
+    participant2 = models.ForeignKey(
+        Staff,
+        on_delete=models.CASCADE,
+        related_name='chat_rooms_as_participant2',
+        verbose_name="参加者2"
+    )
+    swap_request = models.ForeignKey(
+        ShiftSwapRequest,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='chat_rooms',
+        verbose_name="シフト交代申請"
+    )
+    swap_application = models.ForeignKey(
+        ShiftSwapApplication,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='chat_rooms',
+        verbose_name="シフト交代立候補"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
+    
+    class Meta:
+        verbose_name = "チャットルーム"
+        verbose_name_plural = "チャットルーム"
+        unique_together = ['participant1', 'participant2', 'swap_request']
+        ordering = ['-updated_at']
+    
+    def __str__(self):
+        return f"{self.participant1.user.get_full_name()} - {self.participant2.user.get_full_name()}"
+    
+    def get_other_participant(self, current_staff):
+        """現在のスタッフ以外の参加者を取得"""
+        if self.participant1 == current_staff:
+            return self.participant2
+        return self.participant1
+    
+    def get_unread_count(self, staff):
+        """未読メッセージ数を取得"""
+        return self.messages.filter(is_read=False).exclude(sender=staff).count()
+    
+    @classmethod
+    def get_or_create_room(cls, staff1, staff2, swap_request=None, swap_application=None):
+        """チャットルームを取得または作成"""
+        # 参加者の順序を統一（IDが小さい方をparticipant1に）
+        if staff1.id > staff2.id:
+            staff1, staff2 = staff2, staff1
+        
+        room_type = 'swap_request' if swap_request else ('staff_manager' if (staff1.is_manager or staff2.is_manager) else 'staff_staff')
+        
+        room, created = cls.objects.get_or_create(
+            participant1=staff1,
+            participant2=staff2,
+            swap_request=swap_request,
+            defaults={
+                'store': staff1.store,
+                'room_type': room_type,
+                'swap_application': swap_application
+            }
+        )
+        return room, created
+
+
+class ChatMessage(models.Model):
+    """チャットメッセージモデル"""
+    room = models.ForeignKey(
+        ChatRoom,
+        on_delete=models.CASCADE,
+        related_name='messages',
+        verbose_name="チャットルーム"
+    )
+    sender = models.ForeignKey(
+        Staff,
+        on_delete=models.CASCADE,
+        related_name='sent_messages',
+        verbose_name="送信者"
+    )
+    message = models.TextField(verbose_name="メッセージ")
+    is_read = models.BooleanField(default=False, verbose_name="既読")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="送信日時")
+    
+    class Meta:
+        verbose_name = "チャットメッセージ"
+        verbose_name_plural = "チャットメッセージ"
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"{self.sender.user.get_full_name()} - {self.message[:50]}"
+    
+    def mark_as_read(self, reader):
+        """メッセージを既読にする"""
+        if self.sender != reader:
+            self.is_read = True
+            self.save()

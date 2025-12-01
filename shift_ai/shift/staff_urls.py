@@ -17,4 +17,9 @@ urlpatterns = [
     path('shift-swap/<int:swap_request_id>/apply/', staff_views.shift_swap_apply, name='shift_swap_apply'),
     path('shift-swap/my-requests/', staff_views.shift_swap_my_requests, name='shift_swap_my_requests'),
     path('shift-swap/<int:swap_request_id>/cancel/', staff_views.shift_swap_cancel, name='shift_swap_cancel'),
+    
+    # チャット機能
+    path('chat/', staff_views.chat_list, name='chat_list'),
+    path('chat/<int:room_id>/', staff_views.chat_detail, name='chat_detail'),
+    path('chat/create/<int:staff_id>/', staff_views.chat_create, name='chat_create'),
 ]

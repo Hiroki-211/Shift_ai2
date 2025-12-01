@@ -17,4 +17,8 @@ urlpatterns = [
     path('shift-settings/', admin_views.admin_shift_settings, name='shift_settings'),
     path('api/submission-detail/<int:staff_id>/', admin_views.admin_submission_detail_api, name='submission_detail_api'),
     path('api/shift-detail-by-date/<str:shift_date>/', admin_views.admin_shift_detail_by_date, name='shift_detail_by_date'),
+    # チャット機能
+    path('chat/', admin_views.admin_chat_list, name='chat_list'),
+    path('chat/<int:room_id>/', admin_views.admin_chat_detail, name='chat_detail'),
+    path('chat/create/<int:staff_id>/', admin_views.admin_chat_create, name='chat_create'),
 ]

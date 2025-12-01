@@ -7,7 +7,8 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
 from datetime import datetime, date, timedelta
-from .models import Shift, ShiftRequest, ShiftSwapRequest, ShiftSwapApplication
+from .models import Shift, ShiftRequest, ShiftSwapRequest, ShiftSwapApplication, ChatRoom, ChatMessage
+from .forms import ChatMessageForm
 from accounts.models import Staff
 
 
@@ -727,3 +728,126 @@ def shift_swap_cancel(request, swap_request_id):
         'swap_request': swap_request,
     }
     return render(request, 'staff/shift_swap_cancel.html', context)
+
+
+@login_required
+@staff_required
+def chat_list(request):
+    """チャット一覧"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    # 自分が参加しているチャットルームを取得
+    chat_rooms = ChatRoom.objects.filter(
+        Q(participant1=staff) | Q(participant2=staff),
+        store=store
+    ).select_related('participant1', 'participant2', 'swap_request').prefetch_related('messages').order_by('-updated_at')
+    
+    # 各ルームの最新メッセージと未読数を取得
+    for room in chat_rooms:
+        room.other_participant = room.get_other_participant(staff)
+        room.unread_count = room.get_unread_count(staff)
+        room.last_message = room.messages.last()
+    
+    # 同じ店舗のスタッフ一覧（新規チャット作成用）
+    other_staff = Staff.objects.filter(store=store).exclude(id=staff.id).order_by('user__last_name', 'user__first_name')
+    
+    context = {
+        'staff': staff,
+        'store': store,
+        'chat_rooms': chat_rooms,
+        'other_staff': other_staff,
+    }
+    
+    return render(request, 'staff/chat_list.html', context)
+
+
+@login_required
+@staff_required
+def chat_detail(request, room_id):
+    """チャット詳細"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    room = get_object_or_404(
+        ChatRoom,
+        id=room_id,
+        store=store
+    )
+    
+    # 参加者チェック
+    if room.participant1 != staff and room.participant2 != staff:
+        messages.error(request, "このチャットルームにアクセスする権限がありません。")
+        return redirect('staff_shift:chat_list')
+    
+    other_participant = room.get_other_participant(staff)
+    
+    # メッセージを取得
+    messages_list = room.messages.all().select_related('sender').order_by('created_at')
+    
+    # 未読メッセージを既読にする
+    unread_messages = room.messages.filter(is_read=False).exclude(sender=staff)
+    unread_messages.update(is_read=True)
+    
+    # メッセージ送信処理
+    if request.method == 'POST':
+        form = ChatMessageForm(request.POST)
+        if form.is_valid():
+            message = form.save(commit=False)
+            message.room = room
+            message.sender = staff
+            message.save()
+            
+            # ルームの更新日時を更新
+            room.save()
+            
+            messages.success(request, "メッセージを送信しました。")
+            return redirect('staff_shift:chat_detail', room_id=room.id)
+    else:
+        form = ChatMessageForm()
+    
+    context = {
+        'staff': staff,
+        'store': store,
+        'room': room,
+        'other_participant': other_participant,
+        'messages_list': messages_list,
+        'form': form,
+    }
+    
+    return render(request, 'staff/chat_detail.html', context)
+
+
+@login_required
+@staff_required
+def chat_create(request, staff_id):
+    """チャットルーム作成"""
+    try:
+        staff = request.user.staff
+        store = staff.store
+    except Staff.DoesNotExist:
+        messages.error(request, "スタッフ情報が見つかりません。")
+        return redirect('login')
+    
+    other_staff = get_object_or_404(Staff, id=staff_id, store=store)
+    if other_staff == staff:
+        messages.error(request, "自分自身とのチャットは作成できません。")
+        return redirect('staff_shift:chat_list')
+    
+    # チャットルームを取得または作成
+    room, created = ChatRoom.get_or_create_room(
+        staff1=staff,
+        staff2=other_staff,
+        swap_request=None,
+        swap_application=None
+    )
+    
+    return redirect('staff_shift:chat_detail', room_id=room.id)

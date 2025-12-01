@@ -1,0 +1,87 @@
+{% extends 'admin/base.html' %}
+
+{% block page_title %}チャット - {{ other_participant.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-comments"></i> 
+                        {{ other_participant.user.get_full_name|default:other_participant.user.username }}
+                        {% if other_participant.is_manager %}
+                            <span class="badge bg-warning">管理者</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <a href="{% url 'admin_shift:chat_list' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> 一覧に戻る
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <!-- メッセージ表示エリア -->
+                <div id="messagesContainer" class="p-3" style="height: 500px; overflow-y: auto; background-color: #f8f9fa;">
+                    {% for message in messages_list %}
+                    <div class="mb-3 {% if message.sender == staff %}text-end{% endif %}">
+                        <div class="d-inline-block {% if message.sender == staff %}text-end{% endif %}" style="max-width: 70%;">
+                            <div class="d-flex align-items-center mb-1 {% if message.sender == staff %}flex-row-reverse{% endif %}">
+                                <strong class="me-2">{{ message.sender.user.get_full_name|default:message.sender.user.username }}</strong>
+                                <small class="text-muted">{{ message.created_at|date:"m/d H:i" }}</small>
+                            </div>
+                            <div class="p-3 rounded {% if message.sender == staff %}bg-primary text-white{% else %}bg-white border{% endif %}">
+                                {{ message.message|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-comments fa-3x mb-3"></i>
+                        <p>まだメッセージがありません。メッセージを送信して会話を始めましょう。</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- メッセージ送信フォーム -->
+                <div class="border-top p-3 bg-white">
+                    <form method="post" id="messageForm">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            {{ form.message }}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> 送信
+                            </button>
+                        </div>
+                        {% if form.message.errors %}
+                            <div class="text-danger small mt-2">
+                                {% for error in form.message.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // メッセージ送信後、自動的にスクロール
+    const messagesContainer = document.getElementById('messagesContainer');
+    if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    // 定期的にメッセージを更新（30秒ごと）
+    setInterval(function() {
+        location.reload();
+    }, 30000);
+});
+</script>
+{% endblock %}
+

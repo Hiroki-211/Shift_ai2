@@ -38,73 +38,125 @@
                     </div>
                     
                     <div class="card mb-4">
-                        <div class="card-header">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h6 class="card-title mb-0">評価項目</h6>
+                            <a href="{% url 'admin_eval:evaluation_items' %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-cog"></i> 評価項目を管理
+                            </a>
                         </div>
                         <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.attendance_score.id_for_label }}" class="form-label">
-                                        勤怠関連（30点満点）
-                                    </label>
-                                    {{ form.attendance_score }}
-                                    <div class="form-text">出勤率、遅刻・早退、シフト遵守</div>
-                                    {% if form.attendance_score.errors %}
-                                        <div class="text-danger">
-                                            {% for error in form.attendance_score.errors %}
-                                                <small>{{ error }}</small>
+                            {% if evaluation_items %}
+                                {# 動的評価フォーム #}
+                                <div class="row">
+                                    {% for item in evaluation_items %}
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_item_{{ item.id }}" class="form-label">
+                                            {{ item.name }}（{{ item.max_score }}点満点）
+                                        </label>
+                                        {% if item_fields %}
+                                            {% for key, field in item_fields.items %}
+                                                {% if key == item.id %}
+                                                    {{ field }}
+                                                {% endif %}
                                             {% endfor %}
-                                        </div>
-                                    {% endif %}
+                                        {% endif %}
+                                        {% if not item_fields or item.id not in item_fields %}
+                                            <input type="number" 
+                                                   name="item_{{ item.id }}" 
+                                                   id="id_item_{{ item.id }}" 
+                                                   class="form-control score-input"
+                                                   min="0" 
+                                                   max="{{ item.max_score }}" 
+                                                   placeholder="0-{{ item.max_score }}点">
+                                        {% endif %}
+                                        {% if item.description %}
+                                            <div class="form-text">{{ item.description }}</div>
+                                        {% endif %}
+                                        {% if form.errors %}
+                                            {% for field_name, errors in form.errors.items %}
+                                                {% if field_name == "item_"|add:item.id %}
+                                                    <div class="text-danger">
+                                                        {% for error in errors %}
+                                                            <small>{{ error }}</small>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {# 従来の固定評価フォーム #}
+                                <div class="alert alert-info mb-3">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>現在、固定の評価項目を使用しています。</strong>
+                                    評価項目をカスタマイズするには、<a href="{% url 'admin_eval:evaluation_items' %}" class="alert-link">評価項目管理</a>から評価項目を追加してください。
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.attendance_score.id_for_label }}" class="form-label">
+                                            勤怠関連（30点満点）
+                                        </label>
+                                        {{ form.attendance_score }}
+                                        <div class="form-text">出勤率、遅刻・早退、シフト遵守</div>
+                                        {% if form.attendance_score.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.attendance_score.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.skill_score.id_for_label }}" class="form-label">
+                                            業務スキル（40点満点）
+                                        </label>
+                                        {{ form.skill_score }}
+                                        <div class="form-text">ホール業務、キッチン業務、開店・閉店作業、責任者業務</div>
+                                        {% if form.skill_score.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.skill_score.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
                                 
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.skill_score.id_for_label }}" class="form-label">
-                                        業務スキル（40点満点）
-                                    </label>
-                                    {{ form.skill_score }}
-                                    <div class="form-text">ホール業務、キッチン業務、開店・閉店作業、責任者業務</div>
-                                    {% if form.skill_score.errors %}
-                                        <div class="text-danger">
-                                            {% for error in form.skill_score.errors %}
-                                                <small>{{ error }}</small>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.teamwork_score.id_for_label }}" class="form-label">
+                                            チームワーク・態度（20点満点）
+                                        </label>
+                                        {{ form.teamwork_score }}
+                                        <div class="form-text">協調性、コミュニケーション、向上心</div>
+                                        {% if form.teamwork_score.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.teamwork_score.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.customer_service_score.id_for_label }}" class="form-label">
+                                            顧客対応（10点満点）
+                                        </label>
+                                        {{ form.customer_service_score }}
+                                        <div class="form-text">接客態度、クレーム対応</div>
+                                        {% if form.customer_service_score.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.customer_service_score.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.teamwork_score.id_for_label }}" class="form-label">
-                                        チームワーク・態度（20点満点）
-                                    </label>
-                                    {{ form.teamwork_score }}
-                                    <div class="form-text">協調性、コミュニケーション、向上心</div>
-                                    {% if form.teamwork_score.errors %}
-                                        <div class="text-danger">
-                                            {% for error in form.teamwork_score.errors %}
-                                                <small>{{ error }}</small>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.customer_service_score.id_for_label }}" class="form-label">
-                                        顧客対応（10点満点）
-                                    </label>
-                                    {{ form.customer_service_score }}
-                                    <div class="form-text">接客態度、クレーム対応</div>
-                                    {% if form.customer_service_score.errors %}
-                                        <div class="text-danger">
-                                            {% for error in form.customer_service_score.errors %}
-                                                <small>{{ error }}</small>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
+                            {% endif %}
                             
                             <div class="mb-3">
                                 <label for="{{ form.comment.id_for_label }}" class="form-label">コメント</label>
@@ -148,10 +200,16 @@
                         <thead class="table-light">
                             <tr>
                                 <th>スタッフ名</th>
-                                <th>勤怠</th>
-                                <th>スキル</th>
-                                <th>チームワーク</th>
-                                <th>顧客対応</th>
+                                {% if evaluation_items %}
+                                    {% for item in evaluation_items %}
+                                    <th>{{ item.name }}</th>
+                                    {% endfor %}
+                                {% else %}
+                                    <th>勤怠</th>
+                                    <th>スキル</th>
+                                    <th>チームワーク</th>
+                                    <th>顧客対応</th>
+                                {% endif %}
                                 <th>合計</th>
                                 <th>操作</th>
                             </tr>
@@ -160,10 +218,22 @@
                             {% for evaluation in evaluations %}
                             <tr>
                                 <td>{{ evaluation.staff.user.get_full_name|default:evaluation.staff.user.username }}</td>
-                                <td>{{ evaluation.attendance_score }}</td>
-                                <td>{{ evaluation.skill_score }}</td>
-                                <td>{{ evaluation.teamwork_score }}</td>
-                                <td>{{ evaluation.customer_service_score }}</td>
+                                {% if evaluation_items %}
+                                    {% for item in evaluation_items %}
+                                    <td>
+                                        {% for score in evaluation.scores.all %}
+                                            {% if score.evaluation_item.id == item.id %}
+                                                {{ score.score }}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    {% endfor %}
+                                {% else %}
+                                    <td>{{ evaluation.attendance_score }}</td>
+                                    <td>{{ evaluation.skill_score }}</td>
+                                    <td>{{ evaluation.teamwork_score }}</td>
+                                    <td>{{ evaluation.customer_service_score }}</td>
+                                {% endif %}
                                 <td>
                                     <strong class="text-primary">{{ evaluation.total_score }}</strong>
                                 </td>
@@ -227,18 +297,33 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // スコア入力時の合計計算
-    const scoreInputs = document.querySelectorAll('input[type="number"]');
+    {% if evaluation_items %}
+        const scoreInputs = document.querySelectorAll('.score-input');
+    {% else %}
+        const scoreInputs = document.querySelectorAll('input[type="number"]');
+    {% endif %}
     scoreInputs.forEach(input => {
         input.addEventListener('input', calculateTotalScore);
     });
     
     function calculateTotalScore() {
-        const attendance = parseInt(document.getElementById('{{ form.attendance_score.id_for_label }}')?.value) || 0;
-        const skill = parseInt(document.getElementById('{{ form.skill_score.id_for_label }}')?.value) || 0;
-        const teamwork = parseInt(document.getElementById('{{ form.teamwork_score.id_for_label }}')?.value) || 0;
-        const customerService = parseInt(document.getElementById('{{ form.customer_service_score.id_for_label }}')?.value) || 0;
+        let total = 0;
         
-        const total = attendance + skill + teamwork + customerService;
+        {% if evaluation_items %}
+            // 動的評価フォームの場合
+            const scoreInputs = document.querySelectorAll('.score-input');
+            scoreInputs.forEach(input => {
+                total += parseInt(input.value) || 0;
+            });
+        {% else %}
+            // 従来の固定評価フォームの場合
+            const attendance = parseInt(document.getElementById('{{ form.attendance_score.id_for_label }}')?.value) || 0;
+            const skill = parseInt(document.getElementById('{{ form.skill_score.id_for_label }}')?.value) || 0;
+            const teamwork = parseInt(document.getElementById('{{ form.teamwork_score.id_for_label }}')?.value) || 0;
+            const customerService = parseInt(document.getElementById('{{ form.customer_service_score.id_for_label }}')?.value) || 0;
+            total = attendance + skill + teamwork + customerService;
+        {% endif %}
+        
         const totalElement = document.getElementById('totalScore');
         if (totalElement) {
             totalElement.textContent = total;
