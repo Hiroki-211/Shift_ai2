@@ -380,52 +380,6 @@ def staff_shift_detail(request, shift_id):
 
 @login_required
 @staff_required
-def leave_requests(request):
-    """希望休提出（固定契約者のみ）"""
-    try:
-        staff = request.user.staff
-        store = staff.store
-    except Staff.DoesNotExist:
-        messages.error(request, "スタッフ情報が見つかりません。")
-        return redirect('login')
-    
-    # 固定契約者かどうかをチェック
-    if staff.employment_type != 'fixed':
-        messages.warning(request, "希望休提出は固定契約者のみ利用可能です。")
-        return redirect('staff_accounts:dashboard')
-    
-    if request.method == 'POST':
-        # 希望休提出の処理
-        leave_date = request.POST.get('leave_date')
-        reason = request.POST.get('reason', '')
-        
-        if leave_date:
-            try:
-                leave_date = datetime.strptime(leave_date, '%Y-%m-%d').date()
-                # 希望休申請の保存処理（モデルが必要）
-                messages.success(request, f"{leave_date}の希望休を申請しました。")
-                return redirect('staff_shift:leave_requests')
-            except ValueError:
-                messages.error(request, "正しい日付を入力してください。")
-        else:
-            messages.error(request, "希望休の日付を選択してください。")
-    
-    # 今月と来月の希望休申請一覧を取得
-    today = timezone.now().date()
-    current_month = today.replace(day=1)
-    next_month = (current_month + timedelta(days=32)).replace(day=1)
-    
-    context = {
-        'staff': staff,
-        'current_month': current_month,
-        'next_month': next_month,
-    }
-    
-    return render(request, 'staff/leave_requests.html', context)
-
-
-@login_required
-@staff_required
 def paid_leave_requests(request):
     """有給提出"""
     try:

@@ -114,28 +114,12 @@
                             </a>
                         </li>
                         
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="applicationsDropdown" role="button" 
-                               data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-file-alt me-2"></i>
-                                各種申請
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'paid_leave_requests' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'staff_shift:paid_leave_requests' %}">
+                                <i class="fas fa-calendar-check me-2"></i>
+                                有給提出
                             </a>
-                            <ul class="dropdown-menu" aria-labelledby="applicationsDropdown">
-                                <li>
-                                    <a class="dropdown-item {% if 'leave_requests' in request.resolver_match.url_name %}active{% endif %}" 
-                                       href="{% url 'staff_shift:leave_requests' %}">
-                                        <i class="fas fa-calendar-times me-2"></i>
-                                        希望休提出
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item {% if 'paid_leave_requests' in request.resolver_match.url_name %}active{% endif %}" 
-                                       href="{% url 'staff_shift:paid_leave_requests' %}">
-                                        <i class="fas fa-calendar-check me-2"></i>
-                                        有給提出
-                                    </a>
-                                </li>
-                            </ul>
                         </li>
                         
                         <li class="nav-item">

@@ -43,7 +43,6 @@ class Shift(models.Model):
 class ShiftRequest(models.Model):
     """希望シフトモデル"""
     REQUEST_TYPE_CHOICES = [
-        ('off', '休み希望'),
         ('work', '勤務希望'),
     ]
 

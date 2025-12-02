@@ -552,16 +552,13 @@ def admin_staff_shift_requests(request):
             monthly_data[month_key]['staffs'][staff_id] = {
                 'staff': req.staff,
                 'requests': [],
-                'off_count': 0,
                 'work_count': 0,
             }
         
         monthly_data[month_key]['staffs'][staff_id]['requests'].append(req)
         monthly_data[month_key]['total_count'] += 1
         
-        if req.request_type == 'off':
-            monthly_data[month_key]['staffs'][staff_id]['off_count'] += 1
-        elif req.request_type == 'work':
+        if req.request_type == 'work':
             monthly_data[month_key]['staffs'][staff_id]['work_count'] += 1
     
     # 月ごとのデータをリストに変換（月の降順でソート）
@@ -575,7 +572,6 @@ def admin_staff_shift_requests(request):
         monthly_list.append(month_info)
     
     # 全体の集計情報を計算
-    off_count = sum(sum(s['off_count'] for s in m['staff_list']) for m in monthly_list)
     work_count = sum(sum(s['work_count'] for s in m['staff_list']) for m in monthly_list)
     
     context = {
@@ -584,7 +580,6 @@ def admin_staff_shift_requests(request):
         'monthly_list': monthly_list,
         'month_start': month_start,
         'month_end': month_end,
-        'off_count': off_count,
         'work_count': work_count,
     }
     
@@ -846,7 +841,6 @@ def admin_shift_submission_status(request):
         )
         
         work_requests = requests.filter(request_type='work').count()
-        off_requests = requests.filter(request_type='off').count()
         is_submitted = requests.exists()
         
         last_request = requests.order_by('-submitted_at').first()
@@ -857,7 +851,6 @@ def admin_shift_submission_status(request):
             'employment_type': staff_member.get_employment_type_display(),
             'is_submitted': is_submitted,
             'work_requests': work_requests,
-            'off_requests': off_requests,
             'submitted_at': last_request.submitted_at if last_request else None,
         })
     
@@ -867,7 +860,7 @@ def admin_shift_submission_status(request):
     submission_rate = (submitted_count / total_count * 100) if total_count > 0 else 0
     
     # 総希望日数計算
-    total_requests = sum(s['work_requests'] + s['off_requests'] for s in staff_status_list)
+    total_requests = sum(s['work_requests'] for s in staff_status_list)
     
     # 提出期限を店舗設定から取得
     if next_month_start.month == 1:

@@ -83,13 +83,6 @@ class AIShiftGenerator:
             end_time__gt=requirement.start_time
         ).values_list('staff_id', flat=True)
         
-        # 休み希望のスタッフを除外
-        off_requests = shift_requests.filter(
-            request_type='off',
-            start_time__lte=requirement.start_time,
-            end_time__gte=requirement.end_time
-        ).values_list('staff_id', flat=True)
-        
         # 勤務希望のスタッフを優先
         work_requests = shift_requests.filter(
             request_type='work',
@@ -100,8 +93,6 @@ class AIShiftGenerator:
         # 利用可能なスタッフを取得
         available_staff = self.staff_list.exclude(
             id__in=assigned_staff
-        ).exclude(
-            id__in=off_requests
         )
         
         # 責任者が必要な場合

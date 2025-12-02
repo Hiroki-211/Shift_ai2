@@ -85,12 +85,6 @@
                             <div class="btn-group w-100" role="group">
                                 <input type="radio" class="btn-check" name="edit_request_type" id="edit_work_type" value="work" checked>
                                 <label class="btn btn-outline-success" for="edit_work_type">勤務希望</label>
-                                
-                                <input type="radio" class="btn-check" name="edit_request_type" id="edit_off_type" value="off">
-                                <label class="btn btn-outline-warning" for="edit_off_type">休み希望</label>
-                                
-                                <input type="radio" class="btn-check" name="edit_request_type" id="edit_overtime_type" value="overtime">
-                                <label class="btn btn-outline-info" for="edit_overtime_type">残業希望</label>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -197,22 +191,10 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-12">
                         <div class="alert alert-info">
                             <h6><i class="fas fa-info-circle me-2"></i>勤務希望</h6>
                             <p class="mb-0">希望する勤務日と時間を指定してください</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="alert alert-warning">
-                            <h6><i class="fas fa-calendar-times me-2"></i>休み希望</h6>
-                            <p class="mb-0">勤務できない日を指定してください</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="alert alert-success">
-                            <h6><i class="fas fa-clock me-2"></i>残業希望</h6>
-                            <p class="mb-0">追加で勤務したい日と時間を指定してください</p>
                         </div>
                     </div>
                 </div>
@@ -568,13 +550,13 @@ function addShiftFromTimeInput() {
     const endTime = endTimeInput ? endTimeInput.value : '';
     
     // 時間が入力されている場合のみ処理を進める
-    if (!(requestType === 'off' || (startTime && endTime))) {
+    if (!(startTime && endTime)) {
         alert('開始時間と終了時間を入力してください。');
         return;
     }
     
     // 時間の検証
-    if (requestType !== 'off') {
+    {
         const startHour = parseInt(startTime.split(':')[0]);
         const endHour = parseInt(endTime.split(':')[0]);
         
@@ -774,10 +756,6 @@ function updateDayStatusForEdit(cell, type, startTime, endTime) {
     let statusHtml = '';
     if (type === 'work' && startTime && endTime) {
         statusHtml = `<small class="badge bg-success">${startTime}-${endTime}</small>`;
-    } else if (type === 'off') {
-        statusHtml = `<small class="badge bg-warning">休み</small>`;
-    } else if (type === 'overtime' && startTime && endTime) {
-        statusHtml = `<small class="badge bg-info">残業 ${startTime}-${endTime}</small>`;
     }
     
     statusDiv.innerHTML = statusHtml;
@@ -944,10 +922,6 @@ function displaySubmittedShifts() {
                 let statusHtml = '';
                 if (shift.request_type === 'work') {
                     statusHtml = `<small class="badge bg-success">${shift.start_time}-${shift.end_time}</small>`;
-                } else if (shift.request_type === 'off') {
-                    statusHtml = `<small class="badge bg-warning">休み</small>`;
-                } else if (shift.request_type === 'overtime') {
-                    statusHtml = `<small class="badge bg-info">残業 ${shift.start_time}-${shift.end_time}</small>`;
                 }
                 statusDiv.innerHTML = statusHtml;
             }
