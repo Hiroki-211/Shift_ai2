@@ -17,10 +17,20 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from django.views.generic import RedirectView
+from django.contrib.staticfiles.storage import staticfiles_storage
+from django.http import HttpResponse
 from accounts import views as accounts_views
+
+def favicon_view(request):
+    """favicon.icoのリクエストを処理（空のレスポンスを返す）"""
+    return HttpResponse(status=204)  # No Content
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    
+    # favicon
+    path('favicon.ico', favicon_view, name='favicon'),
     
     # ホームページ
     path('', accounts_views.home, name='home'),

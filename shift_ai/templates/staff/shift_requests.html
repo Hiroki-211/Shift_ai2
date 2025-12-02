@@ -215,8 +215,9 @@ let submittedShifts = {
     {% for date, shift in submitted_shifts.items %}
     '{{ date|date:"Y-m-d" }}': {
         request_type: '{{ shift.request_type }}',
-        start_time: '{{ shift.start_time|time:"H:i" }}',
-        end_time: '{{ shift.end_time|time:"H:i" }}'
+        start_time: '{{ shift.start_time|time:"H:i"|default:"" }}',
+        end_time: '{{ shift.end_time|time:"H:i"|default:"" }}',
+        end_date: '{{ shift.end_date|date:"Y-m-d"|default:"" }}'
     },
     {% endfor %}
 };
@@ -649,10 +650,12 @@ function addShiftFromTimeInput() {
     pendingChanges[currentSelectedDate] = {
         action: 'update',
         request_type: requestType,
-        start_time: startTime,
-        end_time: endTime,
-        end_date_offset: endDateOffset
+        start_time: startTime || '',
+        end_time: endTime || '',
+        end_date_offset: endDateOffset || '0'
     };
+    
+    console.log('Added to pendingChanges:', currentSelectedDate, pendingChanges[currentSelectedDate]);
     
     // カレンダー表示を更新
     cell.classList.remove('deleted', 'selected-edit');
@@ -844,23 +847,60 @@ function saveAllChanges() {
     console.log('Sending request to:', window.location.href);
     console.log('FormData keys:', Array.from(formData.keys()));
     
+    // FormDataの内容を確認
+    for (const [key, value] of formData.entries()) {
+        console.log(`FormData[${key}]:`, value);
+    }
+    
     fetch(window.location.href, {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrfToken.value
+        },
+        credentials: 'same-origin'
     })
     .then(response => {
         console.log('Response status:', response.status);
-        if (response.ok) {
+        console.log('Response type:', response.type);
+        
+        // JSONレスポンスを期待
+        if (response.headers.get('content-type') && response.headers.get('content-type').includes('application/json')) {
+            return response.json().then(data => {
+                console.log('JSON response:', data);
+                if (data.success) {
+                    alert(data.message || 'シフトの変更が完了しました！');
+                    location.reload();
+                } else {
+                    alert('エラー: ' + (data.message || 'エラーが発生しました。'));
+                }
+            });
+        }
+        
+        // HTMLレスポンスの場合（リダイレクトなど）
+        if (response.ok || response.status === 302 || response.status === 303) {
             alert('シフトの変更が完了しました！');
             location.reload();
-        } else {
-            console.error('Response not OK:', response.status);
-            alert('エラーが発生しました。ステータス: ' + response.status);
+            return;
         }
+        
+        // エラーレスポンスの場合
+        return response.text().then(text => {
+            console.error('Error response:', text.substring(0, 1000));
+            let errorMsg = 'エラーが発生しました。';
+            const errorMatch = text.match(/alert.*?danger.*?>(.*?)<\/div>/is) || 
+                              text.match(/error.*?>(.*?)<\/div>/is) ||
+                              text.match(/CSRF.*?token/i);
+            if (errorMatch) {
+                errorMsg = errorMatch[1] || errorMatch[0];
+            }
+            alert('エラーが発生しました: ' + errorMsg);
+        });
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('エラーが発生しました。');
+        console.error('Fetch error:', error);
+        alert('エラーが発生しました: ' + error.message);
     });
 }
 
@@ -912,18 +952,34 @@ function submitShiftRequests() {
 
 // 提出済みシフトを表示
 function displaySubmittedShifts() {
+    console.log('displaySubmittedShifts called, submittedShifts:', submittedShifts);
+    
     for (const [date, shift] of Object.entries(submittedShifts)) {
         const cell = document.querySelector(`[data-date="${date}"]`);
         if (cell) {
+            console.log('Found cell for date:', date, cell);
+            
             // 提出済みマークを追加
             cell.classList.add('submitted');
             const statusDiv = cell.querySelector('.day-status');
             if (statusDiv) {
                 let statusHtml = '';
-                if (shift.request_type === 'work') {
-                    statusHtml = `<small class="badge bg-success">${shift.start_time}-${shift.end_time}</small>`;
+                if (shift.request_type === 'work' && shift.start_time && shift.end_time) {
+                    // 日付をまたぐ場合は終了日も表示
+                    if (shift.end_date && shift.end_date !== date) {
+                        const endDateObj = new Date(shift.end_date + 'T00:00:00');
+                        const endDateStr = `${endDateObj.getMonth() + 1}/${endDateObj.getDate()}`;
+                        statusHtml = `<small class="badge bg-success">${shift.start_time}-${shift.end_time} (${endDateStr}まで)</small>`;
+                    } else {
+                        statusHtml = `<small class="badge bg-success">${shift.start_time}-${shift.end_time}</small>`;
+                    }
+                } else if (shift.request_type === 'work') {
+                    statusHtml = `<small class="badge bg-success">勤務希望</small>`;
                 }
                 statusDiv.innerHTML = statusHtml;
+                console.log('Updated status for date:', date, statusHtml);
+            } else {
+                console.warn('Status div not found for date:', date);
             }
             
             // 削除ボタンは編集モードでのみ表示
@@ -933,11 +989,15 @@ function displaySubmittedShifts() {
             } else if (deleteBtn) {
                 deleteBtn.style.display = 'none';
             }
+        } else {
+            console.warn('Cell not found for date:', date);
         }
     }
+    
+    console.log('displaySubmittedShifts completed');
 }
 
-// 既存の希望シフトを読み込み
+// 既存の希望シフトを読み込み（この関数は不要だが、互換性のため残す）
 function loadExistingRequests() {
     // 提出済みシフトをカレンダーに表示
     displaySubmittedShifts();

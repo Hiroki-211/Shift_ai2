@@ -75,14 +75,27 @@ def staff_shift_requests(request):
     
     if request.method == 'POST':
         action = request.POST.get('action')
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"POST request received. Action: {action}, All POST keys: {list(request.POST.keys())}")
         
         if action == 'update_existing':
             # 編集モード：既存シフトの削除と更新
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"Update existing request received. Staff: {staff.user.username}")
+            
             delete_dates = request.POST.getlist('delete_dates')
             update_dates = request.POST.getlist('update_dates')
             request_types = request.POST.getlist('request_types')
             start_times = request.POST.getlist('start_times')
             end_times = request.POST.getlist('end_times')
+            
+            logger.info(f"Delete dates: {delete_dates}")
+            logger.info(f"Update dates: {update_dates}")
+            logger.info(f"Request types: {request_types}")
+            logger.info(f"Start times: {start_times}")
+            logger.info(f"End times: {end_times}")
             
             deleted_count = 0
             updated_count = 0
@@ -101,13 +114,35 @@ def staff_shift_requests(request):
             
             # 更新処理
             end_date_offsets = request.POST.getlist('end_date_offsets')
+            logger.info(f"End date offsets: {end_date_offsets}")
+            
+            if not update_dates:
+                logger.warning("No update dates provided")
+            
             for i, date_str in enumerate(update_dates):
                 try:
                     date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
                     request_type = request_types[i] if i < len(request_types) else 'work'
-                    start_time = start_times[i] if i < len(start_times) and start_times[i] else None
-                    end_time = end_times[i] if i < len(end_times) and end_times[i] else None
+                    start_time_str = start_times[i] if i < len(start_times) and start_times[i] else None
+                    end_time_str = end_times[i] if i < len(end_times) and end_times[i] else None
                     end_date_offset = int(end_date_offsets[i]) if i < len(end_date_offsets) else 0
+                    
+                    # 時間の変換（空文字列やNoneの場合はNone）
+                    start_time = None
+                    end_time = None
+                    if start_time_str and start_time_str.strip():
+                        try:
+                            start_time = datetime.strptime(start_time_str, '%H:%M').time()
+                        except ValueError:
+                            messages.error(request, f"{date_str}の開始時間が不正です。")
+                            continue
+                    
+                    if end_time_str and end_time_str.strip():
+                        try:
+                            end_time = datetime.strptime(end_time_str, '%H:%M').time()
+                        except ValueError:
+                            messages.error(request, f"{date_str}の終了時間が不正です。")
+                            continue
                     
                     # 終了日の計算
                     end_date = date_obj + timedelta(days=end_date_offset) if end_date_offset > 0 else None
@@ -119,18 +154,35 @@ def staff_shift_requests(request):
                     ).delete()
                     
                     # 新しい希望を作成
-                    ShiftRequest.objects.create(
+                    shift_request = ShiftRequest.objects.create(
                         staff=staff,
                         date=date_obj,
                         request_type=request_type,
-                        start_time=datetime.strptime(start_time, '%H:%M').time() if start_time else None,
-                        end_time=datetime.strptime(end_time, '%H:%M').time() if end_time else None,
+                        start_time=start_time,
+                        end_time=end_time,
                         end_date=end_date,
                     )
                     updated_count += 1
+                    logger.info(f"Created shift request: {date_obj}, type: {request_type}, time: {start_time}-{end_time}")
                     
-                except ValueError:
+                except ValueError as e:
+                    messages.error(request, f"{date_str}の処理でエラーが発生しました: {str(e)}")
                     continue
+                except Exception as e:
+                    messages.error(request, f"{date_str}の処理で予期しないエラーが発生しました: {str(e)}")
+                    continue
+            
+            logger.info(f"Processing completed. Deleted: {deleted_count}, Updated: {updated_count}")
+            
+            # Ajaxリクエストの場合はJSONレスポンスを返す
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                logger.info("Returning JSON response for Ajax request")
+                return JsonResponse({
+                    'success': True,
+                    'message': f"{deleted_count}件を削除、{updated_count}件を更新しました。",
+                    'deleted_count': deleted_count,
+                    'updated_count': updated_count
+                })
             
             messages.success(request, f"{deleted_count}件を削除、{updated_count}件を更新しました。")
             return redirect('staff_shift:shift_requests')
