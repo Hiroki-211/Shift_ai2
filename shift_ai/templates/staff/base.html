@@ -75,28 +75,35 @@
                             </a>
                         </li>
                         
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'shift' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'staff_shift:shift_view' %}">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {% if 'shift' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="#" id="shiftDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-calendar-alt me-2"></i>
-                                シフト確認
+                                シフト管理
                             </a>
-                        </li>
-                        
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'shift_requests' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'staff_shift:shift_requests' %}">
-                                <i class="fas fa-calendar-plus me-2"></i>
-                                シフト提出
-                            </a>
-                        </li>
-                        
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'shift_swap' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'staff_shift:shift_swap_list' %}">
-                                <i class="fas fa-exchange-alt me-2"></i>
-                                シフト交代
-                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="shiftDropdown">
+                                <li>
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'shift_view' %}active{% endif %}" 
+                                       href="{% url 'staff_shift:shift_view' %}">
+                                        <i class="fas fa-calendar me-2"></i>
+                                        シフト確認
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'shift_requests' %}active{% endif %}" 
+                                       href="{% url 'staff_shift:shift_requests' %}">
+                                        <i class="fas fa-calendar-plus me-2"></i>
+                                        シフト提出
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'shift_swap_list' %}active{% endif %}" 
+                                       href="{% url 'staff_shift:shift_swap_list' %}">
+                                        <i class="fas fa-exchange-alt me-2"></i>
+                                        シフト交代
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         
                         <li class="nav-item">

@@ -68,26 +68,39 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'shift_creation' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'shift:shift_creation' %}">
-                                <i class="fas fa-calendar-plus"></i> シフト作成
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link {% if 'evaluation_input' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'eval:evaluation_input' %}">
                                 <i class="fas fa-star"></i> 評価入力
                             </a>
                         </li>
                         {% endif %}
                         
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'staff_shift_requests' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'shift:staff_shift_requests' %}">
-                                <i class="fas fa-calendar-check"></i> 希望シフト提出
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {% if 'shift' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="#" id="shiftDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-calendar-alt"></i> シフト管理
                             </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'staff_shift_view' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'shift:staff_shift_view' %}">
-                                <i class="fas fa-calendar"></i> シフト確認
-                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="shiftDropdown">
+                                {% if user.staff.is_manager %}
+                                <li>
+                                    <a class="dropdown-item {% if 'shift_creation' in request.resolver_match.url_name %}active{% endif %}" 
+                                       href="{% url 'shift:shift_creation' %}">
+                                        <i class="fas fa-calendar-plus"></i> シフト作成
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <li>
+                                    <a class="dropdown-item {% if 'staff_shift_requests' in request.resolver_match.url_name %}active{% endif %}" 
+                                       href="{% url 'shift:staff_shift_requests' %}">
+                                        <i class="fas fa-calendar-check"></i> 希望シフト提出
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if 'staff_shift_view' in request.resolver_match.url_name %}active{% endif %}" 
+                                       href="{% url 'shift:staff_shift_view' %}">
+                                        <i class="fas fa-calendar"></i> シフト確認
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if 'staff_evaluation_view' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'eval:staff_evaluation_view' %}">
