@@ -26,8 +26,9 @@ urlpatterns = [
     path('', accounts_views.home, name='home'),
     
     # 認証関連
-    path('admin-login/', accounts_views.AdminLoginView.as_view(), name='admin_login'),
-    path('staff-login/', accounts_views.StaffLoginView.as_view(), name='staff_login'),
+    path('login/', accounts_views.UnifiedLoginView.as_view(), name='login'),
+    path('admin-login/', accounts_views.AdminLoginView.as_view(), name='admin_login'),  # 後方互換性のため残す
+    path('staff-login/', accounts_views.StaffLoginView.as_view(), name='staff_login'),  # 後方互換性のため残す
     path('logout/', accounts_views.custom_logout, name='logout'),
     path('register/', accounts_views.register, name='register'),
     

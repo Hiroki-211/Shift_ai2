@@ -120,43 +120,21 @@
                     </div>
                     
                     <div class="login-options">
-                        <div class="row g-4">
-                            <!-- 管理者ログイン -->
-                            <div class="col-md-6">
-                                <div class="login-option-card admin-card" onclick="location.href='{% url 'admin_login' %}'">
-                                    <div class="icon-circle admin-icon">
-                                        <i class="fas fa-user-shield"></i>
+                        <div class="row justify-content-center">
+                            <!-- 統一ログイン -->
+                            <div class="col-md-8 col-lg-6">
+                                <div class="login-option-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+                                    <div class="icon-circle" style="background: rgba(255, 255, 255, 0.2);">
+                                        <i class="fas fa-sign-in-alt" style="color: white;"></i>
                                     </div>
-                                    <h3>管理者</h3>
-                                    <p class="text-muted mb-4">店舗管理者・マネージャーの方</p>
-                                    <ul class="text-start mb-4">
-                                        <li>シフト作成・管理</li>
-                                        <li>スタッフ管理</li>
-                                        <li>勤怠管理</li>
-                                        <li>評価・給与管理</li>
+                                    <h3 style="color: white;">ログイン</h3>
+                                    <p class="mb-4" style="color: rgba(255, 255, 255, 0.9);">管理者・スタッフ共通のログイン画面</p>
+                                    <ul class="text-start mb-4" style="color: rgba(255, 255, 255, 0.9);">
+                                        <li>管理者：シフト作成・管理、スタッフ管理、勤怠管理</li>
+                                        <li>スタッフ：シフト希望提出、シフト確認、勤怠入力</li>
                                     </ul>
-                                    <a href="{% url 'admin_login' %}" class="btn btn-admin btn-login-choice w-100">
-                                        <i class="fas fa-sign-in-alt"></i> 管理者としてログイン
-                                    </a>
-                                </div>
-                            </div>
-                            
-                            <!-- スタッフログイン -->
-                            <div class="col-md-6">
-                                <div class="login-option-card staff-card" onclick="location.href='{% url 'staff_login' %}'">
-                                    <div class="icon-circle staff-icon">
-                                        <i class="fas fa-users"></i>
-                                    </div>
-                                    <h3>スタッフ</h3>
-                                    <p class="text-muted mb-4">従業員の方</p>
-                                    <ul class="text-start mb-4">
-                                        <li>シフト希望提出</li>
-                                        <li>シフト確認</li>
-                                        <li>勤怠入力</li>
-                                        <li>休暇申請</li>
-                                    </ul>
-                                    <a href="{% url 'staff_login' %}" class="btn btn-staff btn-login-choice w-100">
-                                        <i class="fas fa-sign-in-alt"></i> スタッフとしてログイン
+                                    <a href="{% url 'login' %}" class="btn btn-light btn-login-choice w-100" style="font-weight: bold;">
+                                        <i class="fas fa-sign-in-alt"></i> ログイン画面へ
                                     </a>
                                 </div>
                             </div>

@@ -180,9 +180,9 @@ def delete_requirement(request, requirement_id):
     return redirect('staff_requirements')
 
 
-class AdminLoginView(LoginView):
-    """管理者用ログインビュー"""
-    template_name = 'registration/admin_login.html'
+class UnifiedLoginView(LoginView):
+    """統一ログインビュー（管理者・スタッフ共通）"""
+    template_name = 'registration/login.html'
     
     def dispatch(self, *args, **kwargs):
         """キャッシュを無効化"""
@@ -200,9 +200,11 @@ class AdminLoginView(LoginView):
         # スタッフ情報を確認
         try:
             staff = user.staff
-            if not staff.is_manager:
-                messages.error(self.request, "このアカウントは管理者権限がありません。スタッフログインをご利用ください。")
-                return self.form_invalid(form)
+            # ユーザータイプに応じてリダイレクト先を設定
+            if staff.is_manager:
+                self.success_url = '/admin-panel/'
+            else:
+                self.success_url = '/staff/'
         except Staff.DoesNotExist:
             messages.error(self.request, "スタッフ情報が見つかりません。")
             return self.form_invalid(form)
@@ -211,37 +213,25 @@ class AdminLoginView(LoginView):
     
     def get_success_url(self):
         """ログイン成功時のリダイレクト先"""
+        # form_validで設定されたsuccess_urlを使用
+        if hasattr(self, 'success_url'):
+            return self.success_url
+        return '/staff/'
+
+
+# 後方互換性のため、既存のビューも残す（非推奨）
+class AdminLoginView(UnifiedLoginView):
+    """管理者用ログインビュー（後方互換性のため）"""
+    template_name = 'registration/login.html'
+    
+    def get_success_url(self):
+        """ログイン成功時のリダイレクト先"""
         return '/admin-panel/'
 
 
-class StaffLoginView(LoginView):
-    """スタッフ用ログインビュー"""
-    template_name = 'registration/staff_login.html'
-    
-    def dispatch(self, *args, **kwargs):
-        """キャッシュを無効化"""
-        response = super().dispatch(*args, **kwargs)
-        # すべてのレスポンスにキャッシュ無効化ヘッダーを設定
-        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response['Pragma'] = 'no-cache'
-        response['Expires'] = '0'
-        return response
-    
-    def form_valid(self, form):
-        """ログイン成功時の処理"""
-        user = form.get_user()
-        
-        # スタッフ情報を確認
-        try:
-            staff = user.staff
-            if staff.is_manager:
-                messages.error(self.request, "このアカウントは管理者アカウントです。管理者ログインをご利用ください。")
-                return self.form_invalid(form)
-        except Staff.DoesNotExist:
-            messages.error(self.request, "スタッフ情報が見つかりません。")
-            return self.form_invalid(form)
-        
-        return super().form_valid(form)
+class StaffLoginView(UnifiedLoginView):
+    """スタッフ用ログインビュー（後方互換性のため）"""
+    template_name = 'registration/login.html'
     
     def get_success_url(self):
         """ログイン成功時のリダイレクト先"""
