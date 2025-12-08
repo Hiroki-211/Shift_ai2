@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-x9^j9x=jp#+ioj14d4!b6%zfeinb++xoucw+on3s$b^^n^tz@-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']  # 開発環境: 同一WiFi内の他PCからアクセス可能にする
 
 
 # Application definition
