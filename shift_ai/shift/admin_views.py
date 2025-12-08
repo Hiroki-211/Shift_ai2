@@ -8,6 +8,7 @@ from django.db.models import Q
 from datetime import datetime, date, timedelta
 import calendar
 import json
+from django.utils import timezone  # 追加
 from .models import Shift, ShiftRequest, ShiftSettings, ChatRoom, ChatMessage, ShiftSwapRequest
 from .forms import ShiftSettingsForm, ChatMessageForm
 from .ai_shift_generator import AIShiftGenerator
@@ -841,9 +842,19 @@ def admin_shift_submission_status(request):
         )
         
         work_requests = requests.filter(request_type='work').count()
+        # 現在のモデルには「休み希望」タイプがないため、0を設定
+        # 将来的に「休み希望」タイプを追加する場合は、以下のように変更:
+        # off_requests = requests.filter(request_type='off').count()
+        off_requests = 0
         is_submitted = requests.exists()
         
         last_request = requests.order_by('-submitted_at').first()
+        
+        # 日本時間に変換してフォーマット
+        submitted_at_str = None
+        if last_request and last_request.submitted_at:
+            jst_time = timezone.localtime(last_request.submitted_at)
+            submitted_at_str = jst_time.strftime('%Y-%m-%d %H:%M:%S')
         
         staff_status_list.append({
             'id': staff_member.id,
@@ -851,7 +862,8 @@ def admin_shift_submission_status(request):
             'employment_type': staff_member.get_employment_type_display(),
             'is_submitted': is_submitted,
             'work_requests': work_requests,
-            'submitted_at': last_request.submitted_at if last_request else None,
+            'off_requests': off_requests,
+            'submitted_at': submitted_at_str,  # 日本時間でフォーマット済み
         })
     
     # 提出率計算
